@@ -1,18 +1,11 @@
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const mongoose = require('mongoose');
-
+const express = require('express'); // Declaralo SOLO UNA VEZ al principio
 const app = express();
-const server = http.createServer(app);
-const io = new Server(server);
-const express = require('express');
-const app = express();
+const http = require('http'); // Asegurate de importar http si lo usas
+const { Server } = require('socket.io'); // Ajusta según tu versión
 
-// --- AQUÍ VA EL CÓDIGO DE PROTECCIÓN QUE TE PASÉ ---
-const ADMIN_USER = "admin";
-const ADMIN_PASS = "1234";
+// --- CONFIGURACIÓN DE SEGURIDAD (Solo una vez) ---
+const ADMIN_USER = "admin_fenix";
+const ADMIN_PASS = "12345678"; 
 
 const auth = (req, res, next) => {
     const authHeader = req.headers.authorization;
