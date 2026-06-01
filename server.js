@@ -7,6 +7,31 @@ const mongoose = require('mongoose');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
+const express = require('express');
+const app = express();
+
+// --- AQUÍ VA EL CÓDIGO DE PROTECCIÓN QUE TE PASÉ ---
+const ADMIN_USER = "admin";
+const ADMIN_PASS = "1234";
+
+const auth = (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        res.setHeader('WWW-Authenticate', 'Basic');
+        return res.status(401).send('Se requiere autenticación');
+    }
+    const auth = Buffer.from(authHeader.split(' ')[1], 'base64').toString().split(':');
+    if (auth[0] === ADMIN_USER && auth[1] === ADMIN_PASS) {
+        next();
+    } else {
+        res.status(401).send('Usuario o contraseña incorrectos');
+    }
+};
+
+// --- RUTA PROTEGIDA ---
+app.get('/admin.html', auth, (req, res) => {
+    res.sendFile(__dirname + '/public/admin.html');
+});
 
 app.use(express.static('Public'));
 
