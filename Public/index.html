@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat Asistencia - Casino</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .chat-window { width: 360px; height: 540px; background-color: #111827; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #1f2937; }
+        .chat-header { background-color: #1f2937; padding: 15px; color: #ffffff; font-weight: bold; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #374151; }
+        .status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; }
+        .chat-body { flex: 1; display: flex; flex-direction: column; padding: 15px; overflow-y: auto; color: #cbd5e1; }
+        .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
+        .active { display: flex; }
+        
+        /* Contenedor corregido para evitar solapamientos */
+        .bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 14px; width: 100%; position: relative; }
+        .bubble { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; word-wrap: break-word; box-sizing: border-box; }
+        .bubble.bot { background-color: #1f2937; color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #374151; }
+        .bubble.admin { background-color: #1e3a8a; color: #ffffff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #2563eb; }
+        .bubble.cliente { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
+
+        /* Estilo del visto corregido posicionado abajo de la burbuja */
+        .status-text { font-size: 10px; color: #64748b; align-self: flex-end; margin-right: 5px; margin-top: 4px; font-weight: bold; display: block; }
+        .status-text.visto { color: #38bdf8; }
+
+        .login-input { width: 100%; padding: 12px; background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; color: white; text-align: center; margin-bottom: 15px; box-sizing: border-box; }
+        .btn-general { width: 100%; padding: 14px; background-color: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
+        
+        .deposit-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 8px; width: 100%; margin-top: auto; padding-top: 10px; }
+        .btn-action { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 5px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .btn-action:hover { background-color: #2563eb; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
+
+        .chat-input-area { display: none; gap: 8px; border-top: 1px solid #1f2937; padding-top: 10px; margin-top: auto; width: 100%; box-sizing: border-box; }
+        .client-text-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 10px; color: white; font-size: 13px; }
+        .btn-send-client { background-color: #2563eb; border: none; color: white; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
+    </style>
+</head>
+<body>
+
+    <div class="chat-window">
+        <div class="chat-header"><div class="status-dot"></div><span id="header-title">Chat Asistencia (En línea)</span></div>
+        <div class="chat-body" id="chat-flow-container">
+            
+            <div id="screen-login" class="screen active" style="justify-content: center; align-items: center; height: 100%;">
+                <h2 style="color:white; margin-bottom: 5px;">Identificación</h2>
+                <input type="text" id="username" class="login-input" placeholder="Tu usuario de casino...">
+                <button class="btn-general" onclick="conectarAlChat()">Entra aquí</button>
+            </div>
+
+            <div id="screen-conversation" class="screen" style="height: 100%;">
+                <div id="messages-area" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 10px;"></div>
+                
+                <div id="container-menu-options" class="menu-grid" style="display: none;">
+                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
+                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
+                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
+                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
+                </div>
+
+                <div id="container-deposit-options" class="deposit-grid" style="display: none;">
+                    <button class="btn-action" onclick="ejecutarAccionDeposito('Subir Comprobante')">📁 Subir Comprobante</button>
+                    <button class="btn-action" onclick="ejecutarAccionDeposito('Reportar Pago')">📄 Reportar Pago</button>
+                    <button class="btn-action" style="background-color: #374151;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
+                </div>
+
+                <div id="container-chat-input" class="chat-input-area">
+                    <input type="text" id="client-raw-input" class="client-text-input" placeholder="Escribí tu mensaje acá...">
+                    <button class="btn-send-client" onclick="enviarMensajeLibreCliente()">Enviar</button>
+                    <button class="btn-action" style="background-color: #374151; padding: 0 10px; border-radius: 8px;" onclick="irAlMenuPrincipal()">↩️</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        const msgArea = document.getElementById('messages-area');
+
+        function conectarAlChat() {
+            const usuarioInput = document.getElementById('username').value.trim();
+            if (usuarioInput === '') return;
+            socket.emit('identificar_usuario', { usuario: usuarioInput });
+        }
+
+        socket.on('resultado_validacion', (respuesta) => {
+            if (respuesta.exito) {
+                document.getElementById('header-title').innerText = "Hola, " + respuesta.usuario;
+                document.getElementById('screen-login').classList.remove('active');
+                document.getElementById('screen-conversation').classList.add('active');
+                irAlMenuPrincipal();
+            }
+        });
+
+        function irAlMenuPrincipal() {
+            document.getElementById('container-deposit-options').style.display = 'none';
+            document.getElementById('container-chat-input').style.display = 'none';
+            document.getElementById('container-menu-options').style.display = 'grid';
+            
+            let msgBot = 'Volviste al menú principal. ¿En qué te podemos ayudar?';
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot"><b>Club Zeus:</b><br>${msgBot}</div></div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+            
+            socket.emit('cliente_accion', { estado: 'Menú', mensajeBot: msgBot });
+        }
+
+        function seleccionarOpcion(opcion) {
+            document.getElementById('container-menu-options').style.display = 'none';
+            
+            if (opcion === 'Depósito') {
+                document.getElementById('container-deposit-options').style.display = 'grid';
+                let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><b>Titular:</b> BAIRES LOGISTICAS AUDIOVISUALES S.A.<br><br>Realizá la transferencia y enviá el comprobante 📄`;
+                
+                // Inicialmente sale dinámico, el servidor nos responderá si lo vió al instante
+                msgArea.innerHTML += `
+                    <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
+                    <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
+                `;
+                socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
+            } else if (opcion === 'Soporte') {
+                document.getElementById('container-chat-input').style.display = 'flex';
+                let msgBot = `🛠️ <b>Conectado con Soporte:</b> Podés escribir tu consulta acá abajo. Un asesor te va a responder de inmediato.`;
+                
+                msgArea.innerHTML += `
+                    <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
+                    <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
+                `;
+                socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+            } else {
+                let msgBot = `⏳ Derivando a un asesor... Elegiste la opción de <b>${opcion}</b>. Aguardá un instante en línea por favor.`;
+                msgArea.innerHTML += `
+                    <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
+                    <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
+                `;
+                socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
+                setTimeout(irAlMenuPrincipal, 4000); 
+            }
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
+
+        function ejecutarAccionDeposito(accion) {
+            let confirmacionBot = "";
+            if(accion === 'Subir Comprobante') { confirmacionBot = "📁 Archivo recibido con éxito. Aguarde a que un cajero verifique su saldo."; }
+            if(accion === 'Reportar Pago') { confirmacionBot = "✅ Pago reportado. El administrador revisará la transferencia a la brevedad."; }
+
+            msgArea.innerHTML += `
+                <div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div>
+                <div class="bubble-wrapper"><div class="bubble bot">${confirmacionBot}</div></div>
+            `;
+            msgArea.scrollTop = msgArea.scrollHeight;
+            socket.emit('cliente_accion', { estado: accion, mensajeCliente: accion, mensajeBot: confirmacionBot });
+        }
+
+        function enviarMensajeLibreCliente() {
+            const input = document.getElementById('client-raw-input');
+            const texto = input.value.trim();
+            if (texto === '') return;
+
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${texto}</div><span class="status-text">✓ Enviado</span></div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+
+            socket.emit('cliente_envia_mensaje_libre', { mensaje: texto });
+            input.value = '';
+        }
+
+        socket.on('recibir_mensaje_admin', (datos) => {
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${datos.mensaje}</div></div>`;
+            marcarMensajesLocalesComoVistos();
+            msgArea.scrollTop = msgArea.scrollHeight;
+        });
+
+        // Evento REAL cuando el admin abre nuestra ventana
+        socket.on('tus_mensajes_fueron_leidos', () => {
+            marcarMensajesLocalesComoVistos();
+        });
+
+        function marcarMensajesLocalesComoVistos() {
+            const marcas = document.querySelectorAll('.status-text');
+            marcas.forEach(m => {
+                m.innerText = '✓ Visto';
+                m.classList.add('visto');
+            });
+        }
+    </script>
+</body>
+</html>
