@@ -445,7 +445,12 @@
                                 <td style="color:#10b981; font-weight:bold;">$${c.saldo.toLocaleString('es-AR')}</td>
                                 <td>$${c.wager.toLocaleString('es-AR')}</td>
                                 <td><span style="color:#10b981;">● ${c.estado}</span></td>
-                                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                                <td>
+    <button style="background: #2563eb; border: none; padding: 5px 10px; color: white; border-radius: 4px; cursor: pointer;" 
+            onclick="cargarFichas('${c.usuarioCasino}')">
+        💰 Cargar Fichas
+    </button>
+</td>
                             </tr>
                         `;
                     });
