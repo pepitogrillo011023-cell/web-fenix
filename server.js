@@ -4,6 +4,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session'); 
+const puppeteer = require('puppeteer'); // NUEVO: Librería del Bot Invisible
 
 const app = express();
 const server = http.createServer(app);
@@ -11,7 +12,7 @@ const io = new Server(server);
 
 // --- CONFIGURACIÓN DE SESIÓN (LOGIN) Y MIDDLEWARES ---
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); // NUEVO: Obligatorio para recibir los datos del importador
+app.use(express.json()); 
 app.use(session({
     secret: 'CasinoFenix2026_Seguro',
     resave: false,
@@ -31,7 +32,6 @@ const requireLogin = (req, res, next) => {
 // --- RUTAS DE LOGIN Y LOGOUT ---
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    // Usuario y contraseña de acceso al panel
     if (username === 'admin' && password === '1234') {
         req.session.loggedIn = true;
         res.redirect('/admin.html');
@@ -50,48 +50,112 @@ app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(__dirname + '/public/admin.html');
 });
 
-// --- RUTA DE IMPORTACIÓN DE DATOS (VERSIÓN DEFINITIVA GANAMOS.NET) ---
+// --------------------------------------------------------
+// 🤖 BOT INVISIBLE: CONEXIÓN EN TIEMPO REAL CON GANAMOS.NET
+// --------------------------------------------------------
+async function operarGanamosNet(usuarioJugador, monto) {
+    // 1. Abrimos el Chrome Fantasma
+    const browser = await puppeteer.launch({ 
+        headless: true, // Cambiá a 'false' si querés ver cómo lo hace en vivo en tu pantalla
+        args: ['--no-sandbox', '--disable-setuid-sandbox'] 
+    });
+    
+    try {
+        const page = await browser.newPage();
+        
+        // 2. IR AL LOGIN (⚠️ IMPORTANTÍSIMO: Cambiá esta URL por la página real de login de Ganamos)
+        await page.goto('https://agents.ganamosnet.org/'); 
+        
+        // Suponemos que los campos se llaman "username" y "password". 
+        // Si fallara el login, hay que inspeccionar esos casilleros también.
+        await page.waitForSelector('input[name="Usuario"]', { timeout: 5000 }); 
+        await page.type('input[name="Usuario"]', process.env.GANAMOS_USER || 'Fenix80');
+        await page.type('input[name="Contraseña"]', process.env.GANAMOS_PASS || 'Cipriano123');
+        await page.keyboard.press('Enter');
+        
+        await page.waitForNavigation(); // Esperamos que cargue el inicio
+        
+        // 3. IR A LA SECCIÓN DE USUARIOS (⚠️ Cambiá por la URL donde ves la tabla de jugadores)
+        await page.goto('https://agents.ganamosnet.org/users/all'); 
+        
+        // 4. BUSCAR AL USUARIO (Código que vos me pasaste)
+        await page.waitForSelector('input[placeholder="Buscar Usuario"]');
+        await page.type('input[placeholder="Buscar Usuario"]', usuarioJugador);
+        
+        // Esperamos 2 segundos para que la tabla filtre al usuario correcto
+        await new Promise(r => setTimeout(r, 2000));
+        
+        // 5. HACER CLIC EN DEPOSITAR (Busca href dinámico)
+        await page.waitForSelector('a[href^="/user/deposit/"]');
+        await page.click('a[href^="/user/deposit/"]');
+        
+        // 6. ESCRIBIR EL MONTO
+        await page.waitForSelector('input[name="amount"]');
+        await page.type('input[name="amount"]', monto.toString());
+        
+        // 7. CONFIRMAR LA CARGA
+        await page.waitForSelector('button[type="submit"]');
+        await page.click('button[type="submit"]');
+        
+        // Esperamos 2 segundos para que Ganamos procese la transacción
+        await new Promise(r => setTimeout(r, 2000));
+        
+        await browser.close();
+        return { exito: true };
+        
+    } catch (error) {
+        console.error("🔴 Error en el bot de Ganamos:", error);
+        await browser.close();
+        return { exito: false, error: error.message };
+    }
+}
+
+// --- RUTA PARA QUE TU PANEL LE ORDENE AL BOT CARGAR FICHAS ---
+app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
+    const { usuario, monto } = req.body;
+    
+    // Disparamos el bot invisible
+    const resultado = await operarGanamosNet(usuario, monto);
+    
+    if (resultado.exito) {
+        // Le sumamos el saldo en tu MongoDB local
+        await Cliente.updateOne(
+            { usuarioCasino: usuario }, 
+            { $inc: { saldo: monto } }
+        );
+        res.json({ exito: true, mensaje: `¡Acreditados $${monto} a ${usuario} en tiempo real!` });
+    } else {
+        res.status(500).json({ exito: false, mensaje: 'El bot falló al entrar a Ganamos.net.' });
+    }
+});
+
+// --- RUTA DE IMPORTACIÓN DE DATOS MASIVA (La que ya andaba perfecto) ---
 app.post('/importar-datos', requireLogin, async (req, res) => {
     try {
         const { datosCrudos } = req.body;
-        
-        // 1. Limpiamos el texto: separamos por renglones y eliminamos espacios en blanco
         const lineas = datosCrudos.split('\n').map(l => l.trim()).filter(l => l !== '');
-        
         let actualizados = 0;
 
-        // 2. Recorremos todas las líneas buscando el patrón
         for (let i = 0; i < lineas.length; i++) {
-            // Buscamos la palabra "player"
             if (lineas[i].toLowerCase() === 'player') {
-                
-                // El usuario es siempre el renglón de ARRIBA
                 const usuario = lineas[i - 1];
-                // El saldo es siempre el renglón de ABAJO
                 const saldoString = lineas[i + 1];
-
                 if (usuario && saldoString) {
-                    // 3. Convertimos el saldo a número (cambiamos la coma por punto)
                     const saldoNumerico = parseFloat(saldoString.replace(/\./g, '').replace(',', '.'));
-
                     if (!isNaN(saldoNumerico)) {
-                        // 4. Actualizamos o creamos el cliente en MongoDB
                         await Cliente.updateOne(
                             { usuarioCasino: usuario }, 
                             { $set: { saldo: saldoNumerico, estado: 'Activo' } }, 
                             { upsert: true }
                         );
                         actualizados++;
-                        console.log(`✅ Importado: ${usuario} | Saldo: $${saldoNumerico}`);
                     }
                 }
             }
         }
-
-        res.json({ mensaje: `¡Éxito total, Mauri! Se actualizaron ${actualizados} usuarios de Casino Fénix correctamente.` });
+        res.json({ mensaje: `¡Se actualizaron ${actualizados} usuarios de Casino Fénix!` });
     } catch (error) {
-        console.error("Error en la importación:", error);
-        res.status(500).json({ mensaje: 'Hubo un error en el servidor al procesar la tabla.' });
+        res.status(500).json({ mensaje: 'Hubo un error en el servidor.' });
     }
 });
 
@@ -151,7 +215,6 @@ let usuarioSeleccionadoActivoAdmin = null;
 
 io.on('connection', (socket) => {
     
-    // Al conectar el Admin, le traemos todo desde MongoDB en tiempo real
     socket.on('identificar_admin', async () => {
         adminSocketId = socket.id;
         socket.emit('lista_usuarios_actualizada', usuariosConectados);
@@ -277,18 +340,6 @@ async function inicializarDatosDePrueba() {
     const countCl = await Cliente.countDocuments();
     if(countCl === 0) {
         await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save();
-        await new Cliente({ usuarioCasino: 'axel032704', saldo: 3000, wager: 0, estado: 'Activo' }).save();
-        await new Cliente({ usuarioCasino: 'camilta', saldo: 0, wager: 0, estado: 'Soporte' }).save();
-    }
-    const countRet = await Retiro.countDocuments();
-    if(countRet === 0) {
-        await new Retiro({ cliente: 'yanina21667', monto: 30900, cbuAlias: '0000013000032318656943', titular: 'YANINA PATRICIA GALLARDO', estado: 'Aprobado (Enviado)' }).save();
-        await new Retiro({ cliente: 'Alexz33515', monto: 17400, cbuAlias: '0000003100061568003829', titular: 'ALEXIS SANCHEZ', estado: 'Rechazado (Error saldo)', procesadoPor: 'Admin (Manual)' }).save();
-    }
-    const countUs = await UsuarioInterno.countDocuments();
-    if(countUs === 0) {
-        await new UsuarioInterno({ nombre: 'Admin clubzeus', usuario: 'admin', email: 'admin@clubzeus.local', rol: 'Master' }).save();
-        await new UsuarioInterno({ nombre: 'Flor Cajera', usuario: 'jorgue33', email: 'jorge@gmail.com', rol: 'Usuario' }).save();
     }
 }
 
