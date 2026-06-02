@@ -4,11 +4,13 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session'); 
+const fs = require('fs'); // Para manejar la carpeta de la foto
+const path = require('path');
 
 // --- LA ARTILLERÍA PESADA: PUPPETEER STEALTH ---
 const puppeteer = require('puppeteer-extra');
 const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-puppeteer.use(StealthPlugin()); // Activamos el camuflaje antibloqueos
+puppeteer.use(StealthPlugin()); 
 
 const app = express();
 const server = http.createServer(app);
@@ -21,7 +23,7 @@ app.use(session({
     secret: 'CasinoFenix2026_Seguro',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 } // Sesión por 1 hora
+    cookie: { maxAge: 1000 * 60 * 60 } 
 }));
 
 // --- MIDDLEWARE DE PROTECCIÓN ---
@@ -49,19 +51,20 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
-// --- RUTA PROTEGIDA PARA ADMIN ---
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(__dirname + '/public/admin.html');
 });
 
 // --------------------------------------------------------
-// 🤖 BOT INVISIBLE CON RADAR DE RAYOS X
+// 🤖 BOT INVISIBLE CON CÁMARA DE SEGURIDAD
 // --------------------------------------------------------
 async function operarGanamosNet(usuarioJugador, monto) {
     let browser;
+    let page; // Lo declaramos acá para poder sacarle foto en el catch si falla
+    
     try {
         browser = await puppeteer.launch({ 
-            headless: "new",
+            headless: true, // "true" funciona mejor con Stealth en la versión 22
             args: [
                 '--no-sandbox', 
                 '--disable-setuid-sandbox',
@@ -71,11 +74,13 @@ async function operarGanamosNet(usuarioJugador, monto) {
             ] 
         });
         
-        const page = await browser.newPage();
+        // USAMOS LA PESTAÑA PRINCIPAL (Así el radar no se confunde)
+        const pages = await browser.pages();
+        page = pages[0];
         
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
         
-        // Cambiamos 'networkidle2' por 'domcontentloaded' para evitar bloqueos por anuncios
+        // 2. IR AL LOGIN
         await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'domcontentloaded', timeout: 30000 });
         
         // --- LOGIN ---
@@ -113,21 +118,21 @@ async function operarGanamosNet(usuarioJugador, monto) {
         return { exito: true };
         
     } catch (error) {
-        // --- EL RADAR DE RAYOS X ---
-        if (browser) {
-            const pages = await browser.pages();
-            if (pages.length > 0) {
-                console.log("========================================");
-                console.log("🔴 REPORTE DE INTELIGENCIA DEL BOT 🔴");
-                console.log("URL ACTUAL:", pages[0].url());
-                console.log("TÍTULO:", await pages[0].title());
-                const html = await pages[0].content();
-                console.log("LO QUE VE EL BOT EN LA PANTALLA:");
-                console.log(html.substring(0, 600)); // Imprimimos los primeros 600 caracteres de la web
-                console.log("========================================");
+        // --- LA CÁMARA DE SEGURIDAD ---
+        if (page) {
+            console.log("🔴 TOMANDO FOTO DEL ERROR...");
+            try {
+                const dir = path.join(__dirname, 'public');
+                if (!fs.existsSync(dir)){ fs.mkdirSync(dir); } // Crea la carpeta public si no existe
+                
+                await page.screenshot({ path: path.join(dir, 'error-bot.png'), fullPage: true });
+                console.log("📸 ¡FOTO GUARDADA! Mirala entrando a: https://casino-fenix.onrender.com/error-bot.png");
+                console.log("URL DONDE FALLÓ:", page.url());
+            } catch(e) {
+                console.log("No se pudo sacar la foto:", e);
             }
-            await browser.close();
         }
+        if (browser) await browser.close();
         console.error("🔴 Error DETALLADO:", error.message);
         return { exito: false, error: error.message };
     }
@@ -136,12 +141,9 @@ async function operarGanamosNet(usuarioJugador, monto) {
 // --- RUTA PARA QUE TU PANEL LE ORDENE AL BOT CARGAR FICHAS ---
 app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     const { usuario, monto } = req.body;
-    
-    // Disparamos el bot invisible
     const resultado = await operarGanamosNet(usuario, monto);
     
     if (resultado.exito) {
-        // Le sumamos el saldo en tu MongoDB local
         await Cliente.updateOne(
             { usuarioCasino: usuario }, 
             { $inc: { saldo: monto } }
