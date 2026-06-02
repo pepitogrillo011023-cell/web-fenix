@@ -3,89 +3,81 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración Avanzado - Club Fenix</title>
+    <title>Panel de Administración - Club Fenix</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
         .sidebar { width: 240px; background-color: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
-        .sidebar h2 { color: #f8fafc; font-size: 18px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
-        .menu-category { font-size: 11px; font-weight: bold; color: #4b5563; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
-        .nav-btn { background: none; border: none; color: #94a3b8; text-align: left; padding: 10px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+        .nav-btn { background: none; border: none; color: #94a3b8; text-align: left; padding: 10px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; transition: all 0.2s; }
         .nav-btn.active-nav { color: #38bdf8; background-color: #1f2937; box-shadow: inset 4px 0 0 #38bdf8; }
-        .nav-btn:hover { background-color: #1f2937; color: white; }
         .main-content { flex: 1; display: flex; flex-direction: column; background-color: #0f172a; }
-        .top-bar { height: 60px; background-color: #111827; border-bottom: 1px solid #1f2937; display: flex; align-items: center; padding: 0 30px; font-weight: bold; color: #f8fafc; justify-content: space-between; }
+        .top-bar { height: 60px; background-color: #111827; border-bottom: 1px solid #1f2937; display: flex; align-items: center; padding: 0 30px; font-weight: bold; color: #f8fafc; }
         .workspace { flex: 1; display: flex; overflow: hidden; position: relative; }
-        .view-section { display: none; width: 100%; height: 100%; flex-direction: column; }
+        .view-section { display: none; width: 100%; height: 100%; flex-direction: column; padding: 20px; overflow-y: auto; }
         .view-section.active-view { display: flex; }
-        .panel-inside { flex: 1; padding: 30px; overflow-y: auto; }
-        .data-table { width: 100%; border-collapse: collapse; background-color: #111827; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; }
-        .data-table th { background-color: #1f2937; color: #38bdf8; padding: 14px; text-align: left; font-size: 13px; }
-        .data-table td { padding: 14px; border-bottom: 1px solid #1f2937; color: white; font-size: 13px; }
-        .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; }
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
         .modal-box { width: 450px; background: #111827; margin: 100px auto; padding: 25px; border-radius: 12px; border: 1px solid #374151; color: white; }
     </style>
 </head>
 <body>
+
     <div class="sidebar">
         <h2>⚡ Club Fenix</h2>
-        <div class="menu-category">Soporte</div>
         <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')">💬 Chats en Vivo</button>
-        <div class="menu-category">Control Personal</div>
         <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
         <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Datos de Clientes</button>
-        <div class="menu-category">Finanzas</div>
         <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')">💸 Control de Retiros</button>
-        <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
-        <div class="menu-category">Marketing</div>
-        <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
-        <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
-        <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
-        <div class="menu-category">Sistema</div>
         <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
         <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar Datos</button>
     </div>
 
     <div class="main-content">
-        <div class="top-bar" id="panel-title">Panel de Control - Chats en Vivo</div>
+        <div class="top-bar" id="panel-title">Panel de Control</div>
         <div class="workspace">
-            <div id="section-chats" class="view-section active-view" style="flex-direction: row;">
-                </div>
-            </div>
+            <div id="section-chats" class="view-section active-view"><h3>Chats en Vivo</h3></div>
+            <div id="section-usuarios" class="view-section"><h3>Usuarios Internos</h3></div>
+            <div id="section-clientes" class="view-section"><h3>Datos de Clientes</h3></div>
+            <div id="section-retiros" class="view-section"><h3>Control de Retiros</h3></div>
+            <div id="section-apis" class="view-section"><h3>Configuración APIs</h3></div>
+        </div>
     </div>
 
     <div id="modalImportador" class="modal-overlay">
         <div class="modal-box">
-            <h3 style="margin-top:0;">Importar de Ganamos.net</h3>
-            <textarea id="dataPaste" style="width:100%; height:150px; background:#0f172a; color:#cbd5e1; border:1px solid #374151; padding:10px;"></textarea>
-            <button class="btn-save" style="width:100%; margin-top:15px;" onclick="procesarDatos()">Actualizar Base de Datos</button>
-            <button onclick="cerrarImportador()" style="background:none; border:none; color:#64748b; cursor:pointer; width:100%; margin-top:10px;">Cancelar</button>
+            <h3>Importar de Ganamos.net</h3>
+            <textarea id="dataPaste" style="width:100%; height:150px; background:#0f172a; color:#cbd5e1; border:1px solid #374151;"></textarea>
+            <button onclick="procesarDatos()" style="width:100%; margin-top:15px; padding:10px;">Actualizar Base de Datos</button>
+            <button onclick="cerrarImportador()" style="width:100%; margin-top:5px; padding:10px;">Cancelar</button>
         </div>
     </div>
 
     <script>
         const socket = io();
-        let usuarioSeleccionadoActivo = null;
+        
+        function cambiarSeccion(seccion) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            document.getElementById('section-' + seccion).classList.add('active-view');
+            document.getElementById('btn-nav-' + seccion).classList.add('active-nav');
+            document.getElementById('panel-title').innerText = "Panel de Control - " + seccion.toUpperCase();
+        }
 
         function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
         function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; }
         
         async function procesarDatos() {
             const texto = document.getElementById('dataPaste').value;
-            const res = await fetch('/importar-datos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ datosCrudos: texto })
-            });
-            const result = await res.json();
-            alert(result.mensaje);
-            cerrarImportador();
+            try {
+                const res = await fetch('/importar-datos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ datosCrudos: texto })
+                });
+                const result = await res.json();
+                alert(result.mensaje);
+                cerrarImportador();
+            } catch(e) { alert('Error al procesar'); }
         }
-
-        // --- MANTENÉ AQUÍ ABAJO TODO TU CÓDIGO JS ORIGINAL DE SOCKETS Y FUNCIONES ---
-        socket.emit('identificar_admin');
-        // ... (resto de tus funciones cambiarSeccion, renderizarHistorial, socket.on, etc.)
     </script>
 </body>
 </html>
