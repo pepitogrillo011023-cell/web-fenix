@@ -1,576 +1,306 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración Avanzado - Club Fenix</title>
-    <script src="/socket.io/socket.io.js"></script>
-    <style>
-        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
+require('dotenv').config();
+const express = require('express');
+const http = require('http');
+const { Server } = require('socket.io');
+const mongoose = require('mongoose');
+const session = require('express-session'); 
+const puppeteer = require('puppeteer'); // Librería del Bot Invisible
+
+const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
+
+// --- CONFIGURACIÓN DE SESIÓN (LOGIN) Y MIDDLEWARES ---
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json()); 
+app.use(session({
+    secret: 'CasinoFenix2026_Seguro',
+    resave: false,
+    saveUninitialized: false,
+    cookie: { maxAge: 1000 * 60 * 60 } // Sesión por 1 hora
+}));
+
+// --- MIDDLEWARE DE PROTECCIÓN ---
+const requireLogin = (req, res, next) => {
+    if (req.session.loggedIn) {
+        next();
+    } else {
+        res.redirect('/login.html');
+    }
+};
+
+// --- RUTAS DE LOGIN Y LOGOUT ---
+app.post('/login', (req, res) => {
+    const { username, password } = req.body;
+    if (username === 'admin' && password === '1234') {
+        req.session.loggedIn = true;
+        res.redirect('/admin.html');
+    } else {
+        res.send('Usuario o contraseña incorrectos. <a href="/login.html">Volver</a>');
+    }
+});
+
+app.get('/logout', (req, res) => {
+    req.session.destroy();
+    res.redirect('/login.html');
+});
+
+// --- RUTA PROTEGIDA PARA ADMIN ---
+app.get('/admin.html', requireLogin, (req, res) => {
+    res.sendFile(__dirname + '/public/admin.html');
+});
+
+// --------------------------------------------------------
+// 🤖 BOT INVISIBLE: CONEXIÓN EN TIEMPO REAL CON GANAMOS.NET
+// --------------------------------------------------------
+async function operarGanamosNet(usuarioJugador, monto) {
+    // 1. Abrimos el Chrome Fantasma con perfil antibloqueo
+    const browser = await puppeteer.launch({ 
+        headless: "new",
+        args: [
+            '--no-sandbox', 
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu',
+            '--window-size=1920,1080'
+        ] 
+    });
+    
+    try {
+        const page = await browser.newPage();
         
-        /* BARRA LATERAL */
-        .sidebar { width: 240px; background-color: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
-        .sidebar h2 { color: #f8fafc; font-size: 18px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
-        .menu-category { font-size: 11px; font-weight: bold; color: #4b5563; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
-        
-        .nav-btn { background: none; border: none; color: #94a3b8; text-align: left; padding: 10px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
-        .nav-btn.active-nav { color: #38bdf8; background-color: #1f2937; box-shadow: inset 4px 0 0 #38bdf8; }
-        .nav-btn:hover { background-color: #1f2937; color: white; }
-
-        /* MODAL DE IMPORTACIÓN */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
-        .modal-content { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 450px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #38bdf8; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
-        .modal-content h3 { color: #38bdf8; margin-top: 0; }
-        .modal-content textarea { width: 100%; height: 150px; background: #0f172a; color: white; border: 1px solid #374151; padding: 10px; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px; font-family: monospace; }
-
-        /* CONTENIDO PRINCIPAL */
-        .main-content { flex: 1; display: flex; flex-direction: column; background-color: #0f172a; }
-        .top-bar { height: 60px; background-color: #111827; border-bottom: 1px solid #1f2937; display: flex; align-items: center; padding: 0 30px; font-weight: bold; color: #f8fafc; justify-content: space-between; }
-        
-        .workspace { flex: 1; display: flex; overflow: hidden; position: relative; }
-        .view-section { display: none; width: 100%; height: 100%; flex-direction: column; }
-        .view-section.active-view { display: flex; }
-
-        /* TABLAS Y TARJETAS */
-        .panel-inside { flex: 1; padding: 30px; overflow-y: auto; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
-        .stat-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; text-align: center; }
-        .stat-card .num { font-size: 26px; font-weight: bold; color: white; margin-top: 5px; }
-
-        .data-table { width: 100%; border-collapse: collapse; background-color: #111827; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; }
-        .data-table th { background-color: #1f2937; color: #38bdf8; padding: 14px; text-align: left; font-size: 13px; }
-        .data-table td { padding: 14px; border-bottom: 1px solid #1f2937; color: white; font-size: 13px; }
-        
-        .btn-action-table { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; border: none; cursor: pointer; margin-right: 5px; }
-        .btn-edit { background-color: #e2e8f0; color: #1e293b; }
-        .btn-delete { background-color: #ef4444; color: white; }
-        .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; margin-top: 15px; transition: background 0.2s; }
-        .btn-save:hover { background-color: #1d4ed8; }
-
-        /* CHATS EN VIVO */
-        .chats-sidebar { width: 300px; background-color: #111827; border-right: 1px solid #1f2937; display: flex; flex-direction: column; }
-        .chats-header { padding: 15px; font-weight: 600; border-bottom: 1px solid #1f2937; background-color: #1f2937; color: white; }
-        .user-list { flex: 1; overflow-y: auto; padding: 10px; }
-        .user-item { padding: 12px; background-color: #111827; border-radius: 8px; margin-bottom: 8px; border: 1px solid #374151; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
-        .user-item.selected-user { border-color: #2563eb; background-color: #1e293b; }
-        .user-item.unread-chat { border-left: 4px solid #38bdf8; background-color: #1a2236; }
-        .unread-indicator { width: 8px; height: 8px; background-color: #38bdf8; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .badge { color: white; font-size: 11px; padding: 4px 8px; border-radius: 10px; font-weight: bold; }
-
-        .live-chat-monitor { flex: 1; display: flex; flex-direction: column; background-color: #0b1329; }
-        .monitor-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
-        .admin-bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 15px; width: 100%; }
-        .admin-bubble { max-width: 75%; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
-        .admin-bubble.b-bot { background-color: #1f2937; color: #94a3b8; align-self: flex-start; }
-        .admin-bubble.b-admin { background-color: #1e3a8a; color: white; align-self: flex-end; }
-        .admin-bubble.b-cliente { background-color: #2563eb; color: white; align-self: flex-start; font-weight: 600; }
-        .read-receipt { font-size: 10px; color: #64748b; align-self: flex-start; margin-left: 5px; margin-top: 4px; font-weight: bold; }
-        .read-receipt.seen { color: #38bdf8; }
-        .monitor-input-area { padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; display: flex; gap: 10px; }
-        .admin-chat-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 12px; color: white; outline: none; }
-        .admin-chat-input:focus { border-color: #38bdf8; }
-
-        /* MENÚ HORIZONTAL DE EVENTOS */
-        .event-tabs-header { display: flex; gap: 10px; background-color: #111827; padding: 10px; border-radius: 10px; border: 1px solid #1f2937; margin-bottom: 20px; }
-        .event-tab-btn { background: none; border: none; color: #94a3b8; padding: 10px 16px; font-weight: bold; font-size: 13px; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .event-tab-btn.active-event-tab { background-color: #1f2937; color: #38bdf8; border: 1px solid #374151; }
-        .event-subview { display: none; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
-        .event-subview.active-subview { display: flex; flex-direction: column; }
-        
-        /* DISEÑO DE LA RULETA - LLAMATIVO */
-        .ruleta-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15); border: 1px solid #ffaa00; }
-        .ruleta-table th { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; padding: 14px; text-align: left; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
-        .ruleta-table td { padding: 12px; border-bottom: 1px solid #1f2937; color: white; background-color: #0b0f19; }
-        .input-ruleta-text { background-color: #1f2937; border: 1px solid #ffaa00; color: #ffaa00; font-weight: bold; padding: 8px; border-radius: 6px; width: 150px; font-size: 13px; }
-        .input-ruleta-val { background-color: #1f2937; border: 1px solid #38bdf8; color: #38bdf8; font-weight: bold; padding: 8px; border-radius: 6px; width: 90px; font-size: 13px; }
-        .prob-input { background-color: #1f2937; border: 1px solid #10b981; color: #10b981; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-weight: bold; font-size: 13px; }
-
-        /* NOTIFICACIONES PUSH AVANZADAS */
-        .push-layout { display: flex; gap: 25px; }
-        .push-form-card { flex: 1.2; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; }
-        .push-history-card { flex: 1; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; height: 430px; overflow-y: auto; }
-        .push-type-selector { display: flex; gap: 10px; }
-        .type-pill { background-color: #1f2937; border: 1px solid #374151; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; color: #94a3b8; }
-        .type-pill.active-pill { background-color: #2563eb; color: white; }
-        .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-        .form-row label { font-size: 12px; font-weight: 600; color: #94a3b8; }
-        .input-text-adv { background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; }
-        .history-card-item { border-bottom: 1px solid #1f2937; padding: 12px 0; }
-        .history-card-title { font-weight: bold; color: white; display: flex; justify-content: space-between; font-size: 13px; }
-        .history-card-desc { font-size: 12px; color: #94a3b8; margin-top: 4px; }
-
-        /* DISEÑO RETENCIÓN */
-        .retencion-container { display: flex; flex-direction: column; gap: 20px; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
-        .retencion-block { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px solid #1f2937; padding-bottom: 15px; }
-        .retencion-block:last-child { border: none; padding-bottom: 0; }
-        .retencion-header-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #38bdf8; }
-        .input-retencion-large { background-color: #0f172a; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; max-width: 600px; margin-top: 4px; }
-
-        /* APIS CARD GRID COMPLETAS */
-        .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .api-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .api-card-header { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 15px; color: white; border-bottom: 1px solid #1f2937; padding-bottom: 12px; margin-bottom: 5px; }
-        .wallet-status { font-size: 17px; font-weight: bold; color: #10b981; display: flex; align-items: center; gap: 8px; }
-
-        /* SWITCH AUTOMÁTICO */
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: #10b981; }
-        input:checked + .slider:before { transform: translateX(22px); }
-    </style>
-</head>
-<body>
-
-    <div class="sidebar">
-        <h2>⚡ Club Fenix</h2>
-        
-        <div class="menu-category">Soporte</div>
-        <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')">💬 Chats en Vivo</button>
-        
-        <div class="menu-category">Control Personal</div>
-        <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
-        <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Datos de Clientes</button>
-        
-        <div class="menu-category">Finanzas</div>
-        <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')">💸 Control de Retiros</button>
-        <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
-        
-        <div class="menu-category">Marketing</div>
-        <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
-        <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
-        <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
-        
-        <div class="menu-category">Sistema</div>
-        <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
-        
-        <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar de Ganamos.net</button>
-    </div>
-
-    <div class="main-content">
-        <div class="top-bar" id="panel-title">Panel de Control - Chats en Vivo</div>
-        
-        <div class="workspace">
-            
-            <div id="section-chats" class="view-section active-view" style="flex-direction: row; padding: 0;">
-                <div class="chats-sidebar">
-                    <div class="chats-header">Usuarios Activos</div>
-                    <div class="user-list" id="lista-usuarios"></div>
-                </div>
-                <div class="live-chat-monitor">
-                    <div class="monitor-header" id="active-chat-username" style="padding: 15px; border-bottom: 1px solid #1f2937; background: #111827; font-weight: bold;">Ningún usuario seleccionado</div>
-                    <div class="monitor-messages" id="active-chat-messages">
-                        <div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div>
-                    </div>
-                    <div class="monitor-input-area">
-                        <input type="text" id="admin-message-input" class="admin-chat-input" placeholder="Escribí un mensaje..." disabled>
-                        <button class="btn-save" id="btn-enviar-msg" onclick="enviarMensajeManual()" style="margin-top: 0;" disabled>Enviar</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="section-usuarios" class="view-section">
-                <div class="panel-inside">
-                    <div class="stats-grid">
-                        <div class="stat-card"><div class="label">Total Usuarios</div><div class="num">8</div></div>
-                        <div class="stat-card"><div class="label">Activos</div><div class="num">8</div></div>
-                    </div>
-                    <h3 style="color:white; margin-bottom:15px;">Listado de Operadores Internos</h3>
-                    <table class="data-table">
-                        <thead><tr><th>#</th><th>Nombre</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
-                        <tbody><tr><td>1</td><td>Admin clubzeus</td><td>admin</td><td>admin@clubzeus.local</td><td><span style="color:#a855f7; font-weight:bold;">Master</span></td><td><span class="badge" style="background-color:#10b981;">Activo</span></td><td><button class="btn-action-table btn-edit">Editar</button></td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="section-clientes" class="view-section">
-                <div class="panel-inside">
-                    <div class="stats-grid">
-                        <div class="stat-card"><div class="label">Total Clientes</div><div class="num">2.475</div></div>
-                        <div class="stat-card"><div class="label">Activos</div><div class="num">2.471</div></div>
-                    </div>
-                    <table class="data-table">
-                        <thead><tr><th>ID</th><th>Nombre Plataforma</th><th>Usuario Casino</th><th>Fichas / Saldo</th><th>Wager</th><th>Estado</th><th>Push</th></tr></thead>
-                        <tbody><tr><td>2475</td><td>Central</td><td>nicolas211150</td><td style="color:#10b981; font-weight:bold;">$0</td><td>$0</td><td><span style="color:#10b981;">● Activo</span></td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="section-retiros" class="view-section">
-                <div class="panel-inside">
-                    <h3 style="color:white; margin-bottom:15px;">Solicitudes de Retiro Recientes</h3>
-                    <table class="data-table">
-                        <thead><tr><th># ID</th><th>Fecha</th><th>Cliente</th><th>Monto</th><th>CBU / Alias</th><th>Titular</th><th>Estado</th><th>Procesado</th></tr></thead>
-                        <tbody><tr><td>1674</td><td>15/05, 19:03</td><td>yanina21667</td><td style="color:#3b82f6; font-weight:bold;">$30.900,00</td><td>0000013000032318656943</td><td>YANINA PATRICIA GALLARDO</td><td><span class="badge" style="background-color:#10b981;">Aprobado</span></td><td>Automático</td></tr></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="section-billetera" class="view-section">
-                <div class="panel-inside">
-                    <div class="stats-grid">
-                        <div class="stat-card" style="grid-column: span 2; text-align: left; border-left: 5px solid #10b981;">
-                            <div class="wallet-status">🟢 HG Cash Conectada</div>
-                            <div class="num" style="font-size:32px; color:#10b981; margin-top:10px;">$1.342.823,47 ARS</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="section-push" class="view-section">
-                <div class="panel-inside">
-                    <div class="stats-grid" style="margin-bottom:20px;">
-                        <div class="stat-card"><div class="label">Dispositivos Suscriptos</div><div class="num">568</div></div>
-                        <div class="stat-card"><div class="label">Push Enviados</div><div class="num">17</div></div>
-                        <div class="stat-card"><div class="label">Popups en Vivo Lanzados</div><div class="num">3</div></div>
-                    </div>
-                    <div class="push-layout">
-                        <div class="push-form-card">
-                            <div class="push-type-selector"><div class="type-pill active-pill">🔔 Push Notifications</div></div>
-                            <div class="form-row"><label>Título</label><input type="text" class="input-text-adv" value="Casino 463 - Bono Especial!"></div>
-                            <div class="form-row"><label>Mensaje Masivo</label><textarea class="input-text-adv" rows="3" style="resize:none;">Tenés un bono del 200% esperándote...</textarea></div>
-                            <button class="btn-save" style="width:fit-content; margin:0;" onclick="alert('Push lanzado')">🚀 Enviar Notificación</button>
-                        </div>
-                        <div class="push-history-card">
-                            <h4 style="margin:0 0 15px 0; color:#38bdf8;">Historial de Push Enviados</h4>
-                            <div class="history-card-item">
-                                <div class="history-card-title"><span>CARGANDO POR LA WEB, APP 🎁</span> <span style="color:#64748b; font-size:11px;">15/05, 17:28</span></div>
-                                <div class="history-card-desc">TENÉS 150% EN TODAS TUS CARGAS DIARIAS. ✅ 565 | ❌ 3</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="section-retencion" class="view-section">
-                <div class="panel-inside">
-                    <div class="panel-title-text" style="font-size: 20px;">Reglas por Inactividad</div>
-                    <p style="color: #64748b; margin: 0 0 25px 0; font-size:13.5px;">Activá o desactivá cada alerta con su switch correspondiente de manera independiente.</p>
-                    
-                    <div class="retencion-container">
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div>
-                            <input type="text" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div>
-                            <input type="text" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div>
-                            <input type="text" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox"><span class="slider"></span></label><span>Inactivo 15 días</span></div>
-                            <input type="text" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox"><span class="slider"></span></label><span>Inactivo 30 días</span></div>
-                            <input type="text" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy.">
-                        </div>
-                    </div>
-                    <button class="btn-save" onclick="alert('¡Reglas guardadas!')">Guardar</button>
-                </div>
-            </div>
-
-            <div id="section-eventos" class="view-section">
-                <div class="panel-inside">
-                    <div class="event-tabs-header">
-                        <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯<br>Ruleta</button>
-                        <button class="event-tab-btn" id="tab-ev-sorteo" onclick="cambiarSubJuego('sorteo')">🎟️<br>Sorteo</button>
-                        <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫<br>Raspa/Gana</button>
-                        <button class="event-tab-btn" id="tab-ev-slots" onclick="cambiarSubJuego('slots')">🎰<br>Slots</button>
-                        <button class="event-tab-btn" id="tab-ev-cofre" onclick="cambiarSubJuego('cofre')">💎<br>Cofre</button>
-                        <button class="event-tab-btn" id="tab-ev-rojo" onclick="cambiarSubJuego('rojo')">🔴<br>Rojo/Negro</button>
-                    </div>
-
-                    <div id="subview-ruleta" class="event-subview active-subview">
-                        <h4 style="margin:0 0 5px 0; color:white;">Configurar Ruleta Diaria</h4>
-                        <p style="color: #64748b; font-size:12.5px; margin:0 0 15px 0;">Modificá el nombre, el valor y las probabilidades de los casilleros de la ruleta.</p>
-                        
-                        <table class="ruleta-table">
-                            <thead>
-                                <tr><th>ID</th><th>Premio / Segmento</th><th>Tipo</th><th>Valor Fichas</th><th>Probabilidad</th></tr>
-                            </thead>
-                            <tbody>
-                                <tr><td># 0</td><td><input type="text" class="input-ruleta-text" value="🏆 JACKPOT"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="50000"></td><td><input type="text" class="prob-input" value="2"> %</td></tr>
-                                <tr><td># 1</td><td><input type="text" class="input-ruleta-text" value="🔥 Premio Mayor"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="10000"></td><td><input type="text" class="prob-input" value="8"> %</td></tr>
-                                <tr><td># 2</td><td><input type="text" class="input-ruleta-text" value="⭐ Premio Medio"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="5000"></td><td><input type="text" class="prob-input" value="12"> %</td></tr>
-                                <tr><td># 3</td><td><input type="text" class="input-ruleta-text" value="🍀 Premio Chico"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="2000"></td><td><input type="text" class="prob-input" value="18"> %</td></tr>
-                                <tr><td># 4</td><td><input type="text" class="input-ruleta-text" value="✨ Consolación"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="500"></td><td><input type="text" class="prob-input" value="20"> %</td></tr>
-                                <tr><td># 5</td><td><input type="text" class="input-ruleta-text" value="🎁 Sorpresa"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="100"></td><td><input type="text" class="prob-input" value="40"> %</td></tr>
-                            </tbody>
-                        </table>
-                        <button class="btn-save" onclick="alert('¡Configuraciones de la ruleta guardadas!')">Guardar Configuración Evento</button>
-                    </div>
-
-                    <div id="subview-sorteo" class="event-subview"><h4>Crear Nuevo Sorteo</h4></div>
-                    <div id="subview-raspa" class="event-subview"><h4>Raspa y Gana Digital</h4></div>
-                    <div id="subview-slots" class="event-subview"><h4>Configurar Tragamonedas (Slots)</h4></div>
-                    <div id="subview-cofre" class="event-subview"><h4>Crear Cofre del Tesoro</h4></div>
-                    <div id="subview-rojo" class="event-subview"><h4>Minijuego Rojo o Negro</h4></div>
-
-                </div>
-            </div>
-
-            <div id="section-apis" class="view-section">
-                <div class="panel-inside">
-                    <div class="panel-title-text" style="font-size: 20px; margin-bottom: 20px;">Integraciones y Llaves de API</div>
-                    
-                    <div class="api-grid">
-                        <div class="api-card">
-                            <div class="api-card-header">🎰 API Sincronización Casino</div>
-                            <div class="form-row"><label>URL Panel Servidor Casino</label><input type="text" class="input-text-adv" value="https://admin.clubzeus.vip/"></div>
-                            <div class="form-row"><label>Usuario Agente API</label><input type="text" class="input-text-adv" value="CHATZEUS"></div>
-                            <div class="form-row"><label>Password / Token de Acceso</label><input type="password" class="input-text-adv" value="••••••••••••••••••••••••"></div>
-                            <p style="font-size:11px; color:#64748b; margin:0;">Vinculado para importar automáticamente datos, saldos y wager de clientes desde tu base central.</p>
-                        </div>
-
-                        <div class="api-card">
-                            <div class="api-card-header">🧠 API OpenAI Vision (OCR)</div>
-                            <div class="form-row"><label>OpenAI Secret API Key</label><input type="password" class="input-text-adv" value="••••••••••••••••••••••••••••••••"></div>
-                            <div class="form-row"><label>Modelo AI</label><select class="input-text-adv"><option>gpt-4o (Más veloz y preciso)</option><option>gpt-4-vision-preview</option></select></div>
-                            <p style="font-size:11px; color:#64748b; margin:0;">Utilizada para escanear y validar de forma automática los montos e IDs de las capturas de transferencias.</p>
-                        </div>
-
-                        <div class="api-card">
-                            <div class="api-card-header">⚡ Webhooks Billetera Lambda</div>
-                            <div class="form-row" style="flex-direction:row; justify-content:space-between; align-items:center;"><label>Integración Activa</label><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
-                            <div class="form-row"><label>Callback Webhook URL</label><input type="text" class="input-text-adv" value="https://j5uky5p2k6.execute-api.us-east-2.amazonaws.com"></div>
-                            <div class="form-row"><label>Callback Secret Pass</label><input type="password" class="input-text-adv" value="••••••••••••••••"></div>
-                            <p style="font-size:11px; color:#64748b; margin:0;">Envía notificaciones de depósitos y ejecuta retiros bancarios en segundos directo desde tu panel.</p>
-                        </div>
-                    </div>
-
-                    <button class="btn-save" onclick="alert('¡Conexiones API guardadas! Credenciales encriptadas y sincronizadas.')">Guardar Conexiones</button>
-                </div>
-            </div>
-
-        </div>
-    </div>
-
-    <div id="modalImportador" class="modal-overlay">
-        <div class="modal-content">
-            <h3>📥 Importar datos desde Ganamos.net</h3>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Pegá a continuación la tabla de usuarios copiada directamente desde la plataforma.</p>
-            <textarea id="dataPaste" placeholder="Pegá aquí la tabla..."></textarea>
-            
-            <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button onclick="cerrarImportador()" style="background: none; border: 1px solid #374151; color: #cbd5e1; padding: 10px 15px; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                <button onclick="procesarDatos()" class="btn-save" style="margin-top: 0;">Actualizar Base de Datos</button>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        const socket = io();
-        let usuarioSeleccionadoActivo = null;
-
-        // 1. FUNCIONES DEL IMPORTADOR (Globales para que los botones las encuentren)
-        function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
-        function cerrarImportador() { 
-            document.getElementById('modalImportador').style.display = 'none'; 
-            document.getElementById('dataPaste').value = ''; // Limpiar el texto al cerrar
-        }
-        
-        async function procesarDatos() {
-            const texto = document.getElementById('dataPaste').value;
-            if (!texto.trim()) {
-                alert("Por favor, pegá los datos antes de procesar.");
-                return;
-            }
-            try {
-                const res = await fetch('/importar-datos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ datosCrudos: texto })
-                });
-                const result = await res.json();
-                alert(result.mensaje);
-                cerrarImportador();
-            } catch (error) {
-                alert("Hubo un error al conectar con el servidor.");
-            }
-        }
-
-        // 2. FUNCIONES DE NAVEGACIÓN
-        function cambiarSeccion(seccion) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
-            
-            const targetSection = document.getElementById('section-' + seccion);
-            const targetBtn = document.getElementById('btn-nav-' + seccion);
-            
-            if(targetSection) targetSection.classList.add('active-view');
-            if(targetBtn) targetBtn.classList.add('active-nav');
-            
-            const titulos = {
-                chats: "Panel de Control - Chats en Vivo",
-                usuarios: "Panel de Control - Operadores Internos",
-                clientes: "Panel de Control - Base de Clientes Casino",
-                retiros: "Panel de Control - Auditoría Financiera de Retiros",
-                billetera: "Panel de Control - Pasarela de Cuentas y Saldos",
-                push: "Panel de Control - Notificaciones Masivas y Canales",
-                retencion: "Panel de Control - Automatización de Retención",
-                eventos: "Panel de Control - Consola de Eventos y Minijuegos",
-                apis: "Panel de Control - Integraciones y Llaves de API"
-            };
-            document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
-        }
-
-        function cambiarSubJuego(juego) {
-            document.querySelectorAll('.event-subview').forEach(s => s.classList.remove('active-subview'));
-            document.querySelectorAll('.event-tab-btn').forEach(b => b.classList.remove('active-event-tab'));
-            
-            document.getElementById('subview-' + juego).classList.add('active-subview');
-            document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
-        }
-
-        // 3. FUNCIONES DE SOCKETS Y CHAT
-        socket.emit('identificar_admin');
-
-        socket.on('cargar_datos_tablas', (datos) => {
-            // Renderizar Clientes
-            if (datos.clientes) {
-                const tbodyClientes = document.querySelector('#section-clientes .data-table tbody');
-                if (tbodyClientes) {
-                    tbodyClientes.innerHTML = '';
-                    datos.clientes.forEach(c => {
-                        tbodyClientes.innerHTML += `
-                            <tr>
-                                <td>${c._id.toString().substring(18)}</td>
-                                <td>Plataforma Central</td>
-                                <td>${c.usuarioCasino}</td>
-                                <td style="color:#10b981; font-weight:bold;">$${c.saldo.toLocaleString('es-AR')}</td>
-                                <td>$${c.wager.toLocaleString('es-AR')}</td>
-                                <td><span style="color:#10b981;">● ${c.estado}</span></td>
-                                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
-                            </tr>
-                        `;
-                    });
-                }
-            }
-
-            // Renderizar Retiros
-            if (datos.retiros) {
-                const tbodyRetiros = document.querySelector('#section-retiros .data-table tbody');
-                if (tbodyRetiros) {
-                    tbodyRetiros.innerHTML = '';
-                    datos.retiros.forEach(r => {
-                        let colorMonto = r.estado.includes('Rechazado') ? '#ef4444' : '#3b82f6';
-                        let colorBadge = r.estado.includes('Rechazado') ? '#ef4444' : '#10b981';
-                        tbodyRetiros.innerHTML += `
-                            <tr>
-                                <td># ${r._id.toString().substring(18)}</td>
-                                <td>${r.fecha}</td>
-                                <td>${r.cliente}</td>
-                                <td style="color:${colorMonto}; font-weight:bold;">$${r.monto.toLocaleString('es-AR')},00</td>
-                                <td>${r.cbuAlias}</td>
-                                <td>${r.titular}</td>
-                                <td><span class="badge" style="background-color:${colorBadge}">${r.estado}</span></td>
-                                <td>${r.procesadoPor}</td>
-                            </tr>
-                        `;
-                    });
-                }
-            }
-
-            // Renderizar Usuarios Internos
-            if (datos.usuariosInternos) {
-                const tbodyInternos = document.querySelector('#section-usuarios .data-table tbody');
-                if (tbodyInternos) {
-                    tbodyInternos.innerHTML = '';
-                    datos.usuariosInternos.forEach((u, index) => {
-                        let colorRol = u.rol === 'Master' ? '#a855f7' : '#cbd5e1';
-                        tbodyInternos.innerHTML += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${u.nombre}</td>
-                                <td>${u.usuario}</td>
-                                <td>${u.email}</td>
-                                <td><span style="color:${colorRol}; font-weight:bold;">${u.rol}</span></td>
-                                <td><span class="badge" style="background-color:#10b981;">${u.estado}</span></td>
-                                <td><button class="btn-action-table btn-edit">Editar</button></td>
-                            </tr>
-                        `;
-                    });
-                }
-            }
+        // --- EVADIR DETECCIÓN DE BOT ---
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
+        await page.evaluateOnNewDocument(() => {
+            Object.defineProperty(navigator, 'webdriver', { get: () => false });
         });
+        
+        // 2. IR AL LOGIN
+        await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'networkidle2' });
+        
+        // --- LOGIN CON PLACEHOLDER "Nombre" ---
+        await page.waitForSelector('input[placeholder="Nombre"]', { timeout: 10000 }); 
+        await page.type('input[placeholder="Nombre"]', process.env.GANAMOS_USER || 'Fenix80');
+        
+        // Input de contraseña por su tipo
+        await page.waitForSelector('input[type="password"]');
+        await page.type('input[type="password"]', process.env.GANAMOS_PASS || 'Cipriano123');
+        
+        // Presionamos Enter para acceder
+        await page.keyboard.press('Enter');
+        
+        // Esperamos a que el panel principal termine de cargar
+        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+        
+        // 3. IR A LA SECCIÓN DE USUARIOS
+        await page.goto('https://agents.ganamosnet.org/users/all', { waitUntil: 'networkidle2' });
+        
+        // 4. BUSCAR AL USUARIO
+        await page.waitForSelector('input[placeholder="Buscar Usuario"]');
+        await page.type('input[placeholder="Buscar Usuario"]', usuarioJugador);
+        
+        // Esperamos 2 segundos para que la tabla filtre al usuario correcto
+        await new Promise(r => setTimeout(r, 2000));
+        
+        // 5. HACER CLIC EN DEPOSITAR
+        await page.waitForSelector('a[href^="/user/deposit/"]');
+        await page.click('a[href^="/user/deposit/"]');
+        
+        // 6. ESCRIBIR EL MONTO
+        await page.waitForSelector('input[name="amount"]');
+        await page.type('input[name="amount"]', monto.toString());
+        
+        // 7. CONFIRMAR LA CARGA
+        await page.waitForSelector('button[type="submit"]');
+        await page.click('button[type="submit"]');
+        
+        // Esperamos 2 segundos para que Ganamos procese la transacción
+        await new Promise(r => setTimeout(r, 2000));
+        
+        await browser.close();
+        return { exito: true };
+        
+    } catch (error) {
+        console.error("🔴 Error DETALLADO en el bot de Ganamos:", error);
+        await browser.close();
+        return { exito: false, error: error.message };
+    }
+}
 
-        socket.on('lista_usuarios_actualizada', (usuarios) => {
-            const listaDiv = document.getElementById('lista-usuarios');
-            if (!listaDiv) return;
-            listaDiv.innerHTML = ''; 
-            usuarios.forEach(user => {
-                let tieneMensajesSinLeer = user.historial.some(h => h.emisor === 'cliente' && h.leido === false);
-                let colorEtiqueta = '#4b5563'; 
-                if (user.estado === 'Depósito') colorEtiqueta = '#eab308'; 
-                if (user.estado === 'Subir Comprobante' || user.estado === 'Reportar Pago') colorEtiqueta = '#10b981'; 
-                if (user.estado === 'Soporte') colorEtiqueta = '#2563eb';
-                
-                const item = document.createElement('div');
-                let claseNoLeido = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? 'unread-chat' : '';
-                item.className = `user-item ${usuarioSeleccionadoActivo === user.nombre ? 'selected-user' : ''} ${claseNoLeido}`;
-                let dotVisual = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? '<span class="unread-indicator"></span>' : '';
-                
-                item.innerHTML = `
-                    <div class="name">👤 ${dotVisual}${user.nombre}</div>
-                    <div class="badge" style="background-color: ${colorEtiqueta}">${user.estado || 'Menú'}</div>
-                `;
-                
-                item.onclick = () => {
-                    usuarioSeleccionadoActivo = user.nombre;
-                    document.getElementById('active-chat-username').innerText = "Monitoreando a: " + user.nombre;
-                    document.getElementById('admin-message-input').disabled = false;
-                    document.getElementById('btn-enviar-msg').disabled = false;
-                    socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
-                    renderizarHistorialChat(user.historial);
-                };
-                listaDiv.appendChild(item);
-                if (usuarioSeleccionadoActivo === user.nombre) renderizarHistorialChat(user.historial);
+// --- RUTA PARA QUE TU PANEL LE ORDENE AL BOT CARGAR FICHAS ---
+app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
+    const { usuario, monto } = req.body;
+    
+    // Disparamos el bot invisible
+    const resultado = await operarGanamosNet(usuario, monto);
+    
+    if (resultado.exito) {
+        // Le sumamos el saldo en tu MongoDB local
+        await Cliente.updateOne(
+            { usuarioCasino: usuario }, 
+            { $inc: { saldo: monto } }
+        );
+        res.json({ exito: true, mensaje: `¡Acreditados $${monto} a ${usuario} en tiempo real!` });
+    } else {
+        res.status(500).json({ exito: false, mensaje: 'El bot falló al entrar a Ganamos.net.' });
+    }
+});
+
+// --- RUTA DE IMPORTACIÓN DE DATOS MASIVA ---
+app.post('/importar-datos', requireLogin, async (req, res) => {
+    try {
+        const { datosCrudos } = req.body;
+        const lineas = datosCrudos.split('\n').map(l => l.trim()).filter(l => l !== '');
+        let actualizados = 0;
+
+        for (let i = 0; i < lineas.length; i++) {
+            if (lineas[i].toLowerCase() === 'player') {
+                const usuario = lineas[i - 1];
+                const saldoString = lineas[i + 1];
+                if (usuario && saldoString) {
+                    const saldoNumerico = parseFloat(saldoString.replace(/\./g, '').replace(',', '.'));
+                    if (!isNaN(saldoNumerico)) {
+                        await Cliente.updateOne(
+                            { usuarioCasino: usuario }, 
+                            { $set: { saldo: saldoNumerico, estado: 'Activo' } }, 
+                            { upsert: true }
+                        );
+                        actualizados++;
+                    }
+                }
+            }
+        }
+        res.json({ mensaje: `¡Se actualizaron ${actualizados} usuarios de Casino Fénix!` });
+    } catch (error) {
+        res.status(500).json({ mensaje: 'Hubo un error en el servidor.' });
+    }
+});
+
+app.use(express.static('public'));
+
+// --------------------------------------------------------
+// 🟢 CONEXIÓN A MONGODB
+// --------------------------------------------------------
+if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONGODB') {
+    mongoose.connect(process.env.MONGO_URI, { family: 4 })
+        .then(async () => {
+            console.log('🟢 CONECTADO A MONGODB');
+            await inicializarDatosDePrueba();
+        })
+        .catch(err => console.log('🔴 ERROR DE MONGODB:', err));
+}
+
+// --------------------------------------------------------
+// 📝 MODELOS DE DATOS DE MONGODB
+// --------------------------------------------------------
+const clienteSchema = new mongoose.Schema({
+    usuarioCasino: { type: String, required: true, unique: true },
+    saldo: { type: Number, default: 0 },
+    wager: { type: Number, default: 0 },
+    estado: { type: String, default: 'Activo' },
+    historialChat: { type: Array, default: [] },
+    ultimaConexion: { type: Date, default: Date.now }
+});
+const Cliente = mongoose.model('Cliente', clienteSchema);
+
+const retiroSchema = new mongoose.Schema({
+    fecha: { type: String, default: () => new Date().toLocaleString('es-AR') },
+    cliente: String,
+    monto: Number,
+    cbuAlias: String,
+    titular: String,
+    estado: { type: String, default: 'Aprobado (Enviado)' },
+    procesadoPor: { type: String, default: 'Lambda (Automático)' }
+});
+const Retiro = mongoose.model('Retiro', retiroSchema);
+
+const usuarioInternoSchema = new mongoose.Schema({
+    nombre: String,
+    usuario: String,
+    email: String,
+    rol: String,
+    estado: { type: String, default: 'Activo' }
+});
+const UsuarioInterno = mongoose.model('UsuarioInterno', usuarioInternoSchema);
+
+// --------------------------------------------------------
+// VARIABLES EN VIVO PARA SOCKETS
+// --------------------------------------------------------
+let usuariosConectados = []; 
+let adminSocketId = null;
+let usuarioSeleccionadoActivoAdmin = null;
+
+io.on('connection', (socket) => {
+    
+    socket.on('identificar_admin', async () => {
+        adminSocketId = socket.id;
+        socket.emit('lista_usuarios_actualizada', usuariosConectados);
+        
+        try {
+            const clientesDB = await Cliente.find();
+            const retirosDB = await Retiro.find();
+            const internosDB = await UsuarioInterno.find();
+            
+            socket.emit('cargar_datos_tablas', {
+                clientes: clientesDB,
+                retiros: retirosDB,
+                usuariosInternos: internosDB
             });
-        });
+        } catch (e) { console.log(e); }
+    });
 
-        function renderizarHistorialChat(historial) {
-            const areaMsg = document.getElementById('active-chat-messages');
-            if (!areaMsg) return;
-            areaMsg.innerHTML = ''; 
-            historial.forEach(h => {
-                const wrap = document.createElement('div');
-                wrap.className = 'admin-bubble-wrapper';
-                const b = document.createElement('div');
-                if (h.emisor === 'bot') { b.className = 'admin-bubble b-bot'; b.innerHTML = `🤖 <b>Bot:</b><br>${h.mensaje}`; wrap.appendChild(b); }
-                if (h.emisor === 'admin') { b.className = 'admin-bubble b-admin'; b.innerHTML = `👨‍💼 <b>Vos:</b><br>${h.mensaje}`; wrap.appendChild(b); }
-                if (h.emisor === 'cliente') { 
-                    let checkLectura = h.leido ? '<span class="read-receipt seen">✓ Visto</span>' : '<span class="read-receipt">✓ Enviado</span>';
-                    b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}`; wrap.appendChild(b); wrap.innerHTML += checkLectura;
-                }
-                areaMsg.appendChild(wrap);
-            });
-            areaMsg.scrollTop = areaMsg.scrollHeight;
-        }
-
-        function enviarMensajeManual() {
-            const input = document.getElementById('admin-message-input');
-            const texto = input.value.trim();
-            if (!texto || !usuarioSeleccionadoActivo) return;
-            socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto });
-            input.value = '';
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual();
-            if (e.key === 'Escape' && usuarioSeleccionadoActivo !== null) {
-                usuarioSeleccionadoActivo = null;
-                socket.emit('admin_cambio_chat_activo', { usuario: null });
-                document.getElementById('active-chat-username').innerText = "Ningún usuario seleccionado";
-                document.getElementById('active-chat-messages').innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear.</div>';
-                document.getElementById('admin-message-input').disabled = true;
-                document.getElementById('btn-enviar-msg').disabled = true;
+    socket.on('admin_cambio_chat_activo', async (datos) => {
+        usuarioSeleccionadoActivoAdmin = datos.usuario;
+        
+        if (usuarioSeleccionadoActivoAdmin) {
+            let usuario = usuariosConectados.find(u => u.nombre === usuarioSeleccionadoActivoAdmin);
+            if (usuario) {
+                usuario.historial.forEach(h => { if (h.emisor === 'cliente') h.leido = true; });
+                await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
+                if (usuario.id) io.to(usuario.id).emit('tus_mensajes_fueron_leidos');
             }
-        });
-    </script>
-</body>
-</html>
+        }
+        if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+    });
+
+    socket.on('identificar_usuario', async (datos) => {
+        socket.username = datos.usuario;
+        let clienteDB = await Cliente.findOne({ usuarioCasino: datos.usuario });
+        
+        if (!clienteDB) {
+            clienteDB = new Cliente({
+                usuarioCasino: datos.usuario,
+                historialChat: [{ emisor: 'bot', mensaje: 'Volviste al menú principal. ¿En qué te podemos ayudar?', leido: true }]
+            });
+            await clienteDB.save();
+        }
+
+        let usuarioExistente = usuariosConectados.find(u => u.nombre === datos.usuario);
+        if (!usuarioExistente) {
+            usuariosConectados.push({ 
+                id: socket.id, 
+                nombre: datos.usuario, 
+                estado: 'Menú',
+                historial: clienteDB.historialChat
+            });
+        } else {
+            usuarioExistente.id = socket.id; 
+            usuarioExistente.historial = clienteDB.historialChat; 
+        }
+        
+        socket.emit('resultado_validacion', { exito: true, usuario: datos.usuario, historial: clienteDB.historialChat });
+        if (adminSocketId) {
+            io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+            const clientesDB = await Cliente.find();
+            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
+    });
+
+    socket.on('cliente_accion', async (datos) => {
+        let usuario = usuariosConectados.find(u => u.nombre === socket.username);
+        if (usuario) {
+            usuario.estado = datos.estado;
+            let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
+
+            if (datos.mensajeCliente) { usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); }
+            if (datos.mensajeBot) { usuario.historial
