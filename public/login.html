@@ -1,0 +1,66 @@
+¡Excelente, Mauri! Vamos a darle un diseño profesional a ese login.html para que los colores de Casino Fénix se vean desde el primer segundo.
+
+Copiá este código en tu archivo public/login.html. Tiene un diseño oscuro estilo "casino" con los campos listos para enviar los datos al servidor:
+
+HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Casino Fénix</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: #ffd700;
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .login-card {
+            background-color: #2d2d2d;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            text-align: center;
+            width: 300px;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            border: 1px solid #555;
+            background: #444;
+            color: white;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #ffd700;
+            border: none;
+            border-radius: 5px;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover { background-color: #e6c200; }
+    </style>
+</head>
+<body>
+    <div class="login-card">
+        <h2>Casino Fénix</h2>
+        <p>Acceso Administrativo</p>
+        <form action="/login" method="POST">
+            <input type="text" name="username" placeholder="Usuario" required>
+            <input type="password" name="password" placeholder="Contraseña" required>
+            <button type="submit">INGRESAR</button>
+        </form>
+    </div>
+</body>
+</html>
