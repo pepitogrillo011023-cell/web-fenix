@@ -21,7 +21,7 @@ app.use(session({
     secret: 'CasinoFenix2026_Seguro',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 }
+    cookie: { maxAge: 1000 * 60 * 60 } // Sesión por 1 hora
 }));
 
 // --- MIDDLEWARE DE PROTECCIÓN ---
@@ -49,12 +49,13 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
+// --- RUTA PROTEGIDA PARA ADMIN ---
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(__dirname + '/public/admin.html');
 });
 
 // --------------------------------------------------------
-// 🤖 BOT INVISIBLE CON CAMUFLAJE STEALTH
+// 🤖 BOT INVISIBLE CON RADAR DE RAYOS X
 // --------------------------------------------------------
 async function operarGanamosNet(usuarioJugador, monto) {
     let browser;
@@ -72,21 +73,23 @@ async function operarGanamosNet(usuarioJugador, monto) {
         
         const page = await browser.newPage();
         
-        // 2. IR AL LOGIN (El plugin Stealth ya hace todo el trabajo de evadir Cloudflare)
-        await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'networkidle2', timeout: 30000 });
+        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
+        
+        // Cambiamos 'networkidle2' por 'domcontentloaded' para evitar bloqueos por anuncios
+        await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'domcontentloaded', timeout: 30000 });
         
         // --- LOGIN ---
-        await page.waitForSelector('input[placeholder="Nombre"]', { timeout: 15000 }); 
-        await page.type('input[placeholder="Nombre"]', process.env.GANAMOS_USER || 'Fenix80');
+        await page.waitForSelector('input[placeholder="Nombre"], input[type="text"]', { timeout: 15000 }); 
+        await page.type('input[placeholder="Nombre"], input[type="text"]', process.env.GANAMOS_USER || 'Fenix80');
         
         await page.waitForSelector('input[type="password"]');
         await page.type('input[type="password"]', process.env.GANAMOS_PASS || 'Cipriano123');
         
         await page.keyboard.press('Enter');
-        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 });
+        await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 });
         
         // 3. IR A LA SECCIÓN DE USUARIOS
-        await page.goto('https://agents.ganamosnet.org/users/all', { waitUntil: 'networkidle2' });
+        await page.goto('https://agents.ganamosnet.org/users/all', { waitUntil: 'domcontentloaded' });
         
         // 4. BUSCAR AL USUARIO
         await page.waitForSelector('input[placeholder="Buscar Usuario"]');
@@ -110,10 +113,18 @@ async function operarGanamosNet(usuarioJugador, monto) {
         return { exito: true };
         
     } catch (error) {
+        // --- EL RADAR DE RAYOS X ---
         if (browser) {
             const pages = await browser.pages();
             if (pages.length > 0) {
-                console.error("🔴 TÍTULO EN RADAR:", await pages[0].title());
+                console.log("========================================");
+                console.log("🔴 REPORTE DE INTELIGENCIA DEL BOT 🔴");
+                console.log("URL ACTUAL:", pages[0].url());
+                console.log("TÍTULO:", await pages[0].title());
+                const html = await pages[0].content();
+                console.log("LO QUE VE EL BOT EN LA PANTALLA:");
+                console.log(html.substring(0, 600)); // Imprimimos los primeros 600 caracteres de la web
+                console.log("========================================");
             }
             await browser.close();
         }
@@ -125,9 +136,12 @@ async function operarGanamosNet(usuarioJugador, monto) {
 // --- RUTA PARA QUE TU PANEL LE ORDENE AL BOT CARGAR FICHAS ---
 app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     const { usuario, monto } = req.body;
+    
+    // Disparamos el bot invisible
     const resultado = await operarGanamosNet(usuario, monto);
     
     if (resultado.exito) {
+        // Le sumamos el saldo en tu MongoDB local
         await Cliente.updateOne(
             { usuarioCasino: usuario }, 
             { $inc: { saldo: monto } }
