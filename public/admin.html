@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Administración Avanzado - Club Zeus</title>
+    <title>Panel de Administración Avanzado - Club Fenix</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
         
         /* BARRA LATERAL */
-        .sidebar { width: 240px; background-color: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
+        .sidebar { width: 240px; background-color: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
         .sidebar h2 { color: #f8fafc; font-size: 18px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
         .menu-category { font-size: 11px; font-weight: bold; color: #4b5563; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
         
@@ -17,11 +17,11 @@
         .nav-btn.active-nav { color: #38bdf8; background-color: #1f2937; box-shadow: inset 4px 0 0 #38bdf8; }
         .nav-btn:hover { background-color: #1f2937; color: white; }
 
-/* MODAL DE IMPORTACIÓN */
-        .modal-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); z-index:2000; }
-        .modal-content { position:absolute; top:20%; left:35%; width:400px; background:#111827; padding:25px; border-radius:12px; border:1px solid #38bdf8; }
-        .modal-content h3 { color:#38bdf8; margin-top:0; }
-        .modal-content textarea { width: 100%; height: 150px; background:#1f2937; color:white; border:1px solid #374151; padding:10px; border-radius:6px; box-sizing:border-box; margin-bottom:15px; }
+        /* MODAL DE IMPORTACIÓN */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
+        .modal-content { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 450px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #38bdf8; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .modal-content h3 { color: #38bdf8; margin-top: 0; }
+        .modal-content textarea { width: 100%; height: 150px; background: #0f172a; color: white; border: 1px solid #374151; padding: 10px; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px; font-family: monospace; }
 
         /* CONTENIDO PRINCIPAL */
         .main-content { flex: 1; display: flex; flex-direction: column; background-color: #0f172a; }
@@ -44,7 +44,7 @@
         .btn-action-table { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; border: none; cursor: pointer; margin-right: 5px; }
         .btn-edit { background-color: #e2e8f0; color: #1e293b; }
         .btn-delete { background-color: #ef4444; color: white; }
-        .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; margin-top: 15px; }
+        .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; margin-top: 15px; transition: background 0.2s; }
         .btn-save:hover { background-color: #1d4ed8; }
 
         /* CHATS EN VIVO */
@@ -67,7 +67,8 @@
         .read-receipt { font-size: 10px; color: #64748b; align-self: flex-start; margin-left: 5px; margin-top: 4px; font-weight: bold; }
         .read-receipt.seen { color: #38bdf8; }
         .monitor-input-area { padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; display: flex; gap: 10px; }
-        .admin-chat-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 12px; color: white; }
+        .admin-chat-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 12px; color: white; outline: none; }
+        .admin-chat-input:focus { border-color: #38bdf8; }
 
         /* MENÚ HORIZONTAL DE EVENTOS */
         .event-tabs-header { display: flex; gap: 10px; background-color: #111827; padding: 10px; border-radius: 10px; border: 1px solid #1f2937; margin-bottom: 20px; }
@@ -76,13 +77,13 @@
         .event-subview { display: none; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
         .event-subview.active-subview { display: flex; flex-direction: column; }
         
-        /* DISEÑO DE LA RULETA */
-        .ruleta-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-        .ruleta-table th { background-color: #1f2937; color: #38bdf8; padding: 12px; text-align: left; font-size: 13px; }
-        .ruleta-table td { padding: 12px; border-bottom: 1px solid #1f2937; color: white; }
-        .input-ruleta-text { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 8px; border-radius: 6px; width: 150px; font-size: 13px; }
-        .input-ruleta-val { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 8px; border-radius: 6px; width: 90px; font-size: 13px; }
-        .prob-input { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-weight: bold; font-size: 13px; }
+        /* DISEÑO DE LA RULETA - LLAMATIVO */
+        .ruleta-table { width: 100%; border-collapse: separate; border-spacing: 0; margin-top: 15px; border-radius: 8px; overflow: hidden; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15); border: 1px solid #ffaa00; }
+        .ruleta-table th { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; padding: 14px; text-align: left; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
+        .ruleta-table td { padding: 12px; border-bottom: 1px solid #1f2937; color: white; background-color: #0b0f19; }
+        .input-ruleta-text { background-color: #1f2937; border: 1px solid #ffaa00; color: #ffaa00; font-weight: bold; padding: 8px; border-radius: 6px; width: 150px; font-size: 13px; }
+        .input-ruleta-val { background-color: #1f2937; border: 1px solid #38bdf8; color: #38bdf8; font-weight: bold; padding: 8px; border-radius: 6px; width: 90px; font-size: 13px; }
+        .prob-input { background-color: #1f2937; border: 1px solid #10b981; color: #10b981; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-weight: bold; font-size: 13px; }
 
         /* NOTIFICACIONES PUSH AVANZADAS */
         .push-layout { display: flex; gap: 25px; }
@@ -122,7 +123,6 @@
 </head>
 <body>
 
-    <!-- MENÚ LATERAL -->
     <div class="sidebar">
         <h2>⚡ Club Fenix</h2>
         
@@ -144,46 +144,32 @@
         
         <div class="menu-category">Sistema</div>
         <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
-
-<div id="modalImportador" class="modal-overlay">
-        <div class="modal-content">
-            <h3>Importar de Ganamos.net</h3>
-            <textarea id="dataPaste" placeholder="Pegá aquí la tabla copiada..."></textarea>
-            <button class="btn-save" onclick="procesarDatos()">Procesar Datos</button>
-            <button onclick="cerrarImportador()" style="background:none; border:none; color:#94a3b8; cursor:pointer; margin-left:10px;">Cerrar</button>
-        </div>
+        
+        <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar de Ganamos.net</button>
     </div>
-<div id="import-panel" style="margin-top: 20px; border: 1px solid #ffd700; padding: 20px;">
-    <h3>Importar usuarios desde Ganamos.net</h3>
-    <textarea id="dataPaste" rows="5" style="width: 100%;" placeholder="Pegá aquí el contenido de la tabla..."></textarea>
-    <button onclick="procesarDatos()">Actualizar Base de Datos</button>
-</div>
 
-    <!-- PÁGINA CENTRAL DE TRABAJO -->
     <div class="main-content">
         <div class="top-bar" id="panel-title">Panel de Control - Chats en Vivo</div>
         
         <div class="workspace">
             
-            <!-- SECCIÓN 1: MONITOR DE CHATS -->
-            <div id="section-chats" class="view-section active-view" style="flex-direction: row;">
+            <div id="section-chats" class="view-section active-view" style="flex-direction: row; padding: 0;">
                 <div class="chats-sidebar">
                     <div class="chats-header">Usuarios Activos</div>
                     <div class="user-list" id="lista-usuarios"></div>
                 </div>
                 <div class="live-chat-monitor">
-                    <div class="monitor-header" id="active-chat-username">Ningún usuario seleccionado</div>
+                    <div class="monitor-header" id="active-chat-username" style="padding: 15px; border-bottom: 1px solid #1f2937; background: #111827; font-weight: bold;">Ningún usuario seleccionado</div>
                     <div class="monitor-messages" id="active-chat-messages">
                         <div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div>
                     </div>
                     <div class="monitor-input-area">
                         <input type="text" id="admin-message-input" class="admin-chat-input" placeholder="Escribí un mensaje..." disabled>
-                        <button class="btn-send-admin" id="btn-enviar-msg" onclick="enviarMensajeManual()" disabled>Enviar</button>
+                        <button class="btn-save" id="btn-enviar-msg" onclick="enviarMensajeManual()" style="margin-top: 0;" disabled>Enviar</button>
                     </div>
                 </div>
             </div>
 
-            <!-- SECCIÓN 2: USUARIOS OPERADORES -->
             <div id="section-usuarios" class="view-section">
                 <div class="panel-inside">
                     <div class="stats-grid">
@@ -192,13 +178,12 @@
                     </div>
                     <h3 style="color:white; margin-bottom:15px;">Listado de Operadores Internos</h3>
                     <table class="data-table">
-                        <thead><tr><th>#</th><th>Nombre</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th></tr></thead>
-                        <tbody><tr><td>1</td><td>Admin clubzeus</td><td>admin</td><td>admin@clubzeus.local</td><td><span style="color:#a855f7; font-weight:bold;">Master</span></td><td><span class="badge" style="background-color:#10b981;">Activo</span></td></tr></tbody>
+                        <thead><tr><th>#</th><th>Nombre</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+                        <tbody><tr><td>1</td><td>Admin clubzeus</td><td>admin</td><td>admin@clubzeus.local</td><td><span style="color:#a855f7; font-weight:bold;">Master</span></td><td><span class="badge" style="background-color:#10b981;">Activo</span></td><td><button class="btn-action-table btn-edit">Editar</button></td></tr></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- SECCIÓN 3: BASE DE CLIENTES -->
             <div id="section-clientes" class="view-section">
                 <div class="panel-inside">
                     <div class="stats-grid">
@@ -207,35 +192,32 @@
                     </div>
                     <table class="data-table">
                         <thead><tr><th>ID</th><th>Nombre Plataforma</th><th>Usuario Casino</th><th>Fichas / Saldo</th><th>Wager</th><th>Estado</th><th>Push</th></tr></thead>
-                        <tbody><tr><td>2475</td><td>nicolas211150</td><td>nicolas211150</td><td><strong>$0</strong></td><td>$0</td><td><span style="color:#10b981;">● Activo</span></td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr></tbody>
+                        <tbody><tr><td>2475</td><td>Central</td><td>nicolas211150</td><td style="color:#10b981; font-weight:bold;">$0</td><td>$0</td><td><span style="color:#10b981;">● Activo</span></td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- SECCIÓN 4: AUDITORÍA DE RETIROS -->
             <div id="section-retiros" class="view-section">
                 <div class="panel-inside">
                     <h3 style="color:white; margin-bottom:15px;">Solicitudes de Retiro Recientes</h3>
                     <table class="data-table">
-                        <thead><tr><th># ID</th><th>Fecha</th><th>Cliente</th><th>Monto</th><th>CBU / Alias</th><th>Titular</th><th>Estado</th></tr></thead>
-                        <tbody><tr><td>1674</td><td>15/05, 19:03</td><td>yanina21667</td><td style="color:#3b82f6; font-weight:bold;">$30.900,00</td><td>0000013000032318656943</td><td>YANINA PATRICIA GALLARDO</td><td><span class="badge" style="background-color:#10b981;">Aprobado</span></td></tr></tbody>
+                        <thead><tr><th># ID</th><th>Fecha</th><th>Cliente</th><th>Monto</th><th>CBU / Alias</th><th>Titular</th><th>Estado</th><th>Procesado</th></tr></thead>
+                        <tbody><tr><td>1674</td><td>15/05, 19:03</td><td>yanina21667</td><td style="color:#3b82f6; font-weight:bold;">$30.900,00</td><td>0000013000032318656943</td><td>YANINA PATRICIA GALLARDO</td><td><span class="badge" style="background-color:#10b981;">Aprobado</span></td><td>Automático</td></tr></tbody>
                     </table>
                 </div>
             </div>
 
-            <!-- SECCIÓN 5: BILLETERA PASARELA -->
             <div id="section-billetera" class="view-section">
                 <div class="panel-inside">
                     <div class="stats-grid">
                         <div class="stat-card" style="grid-column: span 2; text-align: left; border-left: 5px solid #10b981;">
                             <div class="wallet-status">🟢 HG Cash Conectada</div>
-                            <div class="num" style="font-size:32px; color:#10b981; margin-top:10px;">$1.342,823.47 ARS</div>
+                            <div class="num" style="font-size:32px; color:#10b981; margin-top:10px;">$1.342.823,47 ARS</div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- SECCIÓN 6: PUSH Y MARKETING MASIVO -->
             <div id="section-push" class="view-section">
                 <div class="panel-inside">
                     <div class="stats-grid" style="margin-bottom:20px;">
@@ -261,7 +243,6 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN 7: AUTOMATIZACIÓN DE RETENCIÓN -->
             <div id="section-retencion" class="view-section">
                 <div class="panel-inside">
                     <div class="panel-title-text" style="font-size: 20px;">Reglas por Inactividad</div>
@@ -293,7 +274,6 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN 8: CONSOLA DE MINIJUEGOS Y RULETA -->
             <div id="section-eventos" class="view-section">
                 <div class="panel-inside">
                     <div class="event-tabs-header">
@@ -319,29 +299,26 @@
                                 <tr><td># 2</td><td><input type="text" class="input-ruleta-text" value="⭐ Premio Medio"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="5000"></td><td><input type="text" class="prob-input" value="12"> %</td></tr>
                                 <tr><td># 3</td><td><input type="text" class="input-ruleta-text" value="🍀 Premio Chico"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="2000"></td><td><input type="text" class="prob-input" value="18"> %</td></tr>
                                 <tr><td># 4</td><td><input type="text" class="input-ruleta-text" value="✨ Consolación"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="500"></td><td><input type="text" class="prob-input" value="20"> %</td></tr>
-                                <tr><td># 5</td><td><input type="text" class="input-ruleta-text" value="❌ Siga Participando"></td><td>Ninguno</td><td><input type="text" class="input-ruleta-val" value="0"></td><td><input type="text" class="prob-input" value="40"> %</td></tr>
+                                <tr><td># 5</td><td><input type="text" class="input-ruleta-text" value="🎁 Sorpresa"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="100"></td><td><input type="text" class="prob-input" value="40"> %</td></tr>
                             </tbody>
                         </table>
+                        <button class="btn-save" onclick="alert('¡Configuraciones de la ruleta guardadas!')">Guardar Configuración Evento</button>
                     </div>
 
-                    <!-- PESTAÑAS SECUNDARIAS EVENTOS -->
                     <div id="subview-sorteo" class="event-subview"><h4>Crear Nuevo Sorteo</h4></div>
                     <div id="subview-raspa" class="event-subview"><h4>Raspa y Gana Digital</h4></div>
                     <div id="subview-slots" class="event-subview"><h4>Configurar Tragamonedas (Slots)</h4></div>
                     <div id="subview-cofre" class="event-subview"><h4>Crear Cofre del Tesoro</h4></div>
                     <div id="subview-rojo" class="event-subview"><h4>Minijuego Rojo o Negro</h4></div>
 
-                    <button class="btn-save" onclick="alert('¡Configuraciones guardadas!')">Guardar Configuración Evento</button>
                 </div>
             </div>
 
-            <!-- SECCIÓN 9: INTEGRACIÓN APIS RESTAURADAS COMPLETAS -->
             <div id="section-apis" class="view-section">
                 <div class="panel-inside">
                     <div class="panel-title-text" style="font-size: 20px; margin-bottom: 20px;">Integraciones y Llaves de API</div>
                     
                     <div class="api-grid">
-                        <!-- Columna Casino -->
                         <div class="api-card">
                             <div class="api-card-header">🎰 API Sincronización Casino</div>
                             <div class="form-row"><label>URL Panel Servidor Casino</label><input type="text" class="input-text-adv" value="https://admin.clubzeus.vip/"></div>
@@ -350,7 +327,6 @@
                             <p style="font-size:11px; color:#64748b; margin:0;">Vinculado para importar automáticamente datos, saldos y wager de clientes desde tu base central.</p>
                         </div>
 
-                        <!-- Columna Inteligencia Artificial -->
                         <div class="api-card">
                             <div class="api-card-header">🧠 API OpenAI Vision (OCR)</div>
                             <div class="form-row"><label>OpenAI Secret API Key</label><input type="password" class="input-text-adv" value="••••••••••••••••••••••••••••••••"></div>
@@ -358,7 +334,6 @@
                             <p style="font-size:11px; color:#64748b; margin:0;">Utilizada para escanear y validar de forma automática los montos e IDs de las capturas de transferencias.</p>
                         </div>
 
-                        <!-- Columna Pasarela Lambda -->
                         <div class="api-card">
                             <div class="api-card-header">⚡ Webhooks Billetera Lambda</div>
                             <div class="form-row" style="flex-direction:row; justify-content:space-between; align-items:center;"><label>Integración Activa</label><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
@@ -375,96 +350,51 @@
         </div>
     </div>
 
-    <!-- CONTROLADORES JAVASCRIPT INTEGRADOS -->
+    <div id="modalImportador" class="modal-overlay">
+        <div class="modal-content">
+            <h3>📥 Importar datos desde Ganamos.net</h3>
+            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Pegá a continuación la tabla de usuarios copiada directamente desde la plataforma.</p>
+            <textarea id="dataPaste" placeholder="Pegá aquí la tabla..."></textarea>
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button onclick="cerrarImportador()" style="background: none; border: 1px solid #374151; color: #cbd5e1; padding: 10px 15px; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                <button onclick="procesarDatos()" class="btn-save" style="margin-top: 0;">Actualizar Base de Datos</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         let usuarioSeleccionadoActivo = null;
 
-        socket.emit('identificar_admin');
-// NUEVO: Recibir los datos reales de MongoDB y pintarlos en tus tablas del panel
-        socket.on('cargar_datos_tablas', (datos) => {
-            // 1. Renderizar pestaña Clientes
-            if (datos.clientes) {
-                const tbodyClientes = document.querySelector('#section-clientes .data-table tbody');
-                if (tbodyClientes) {
-                    tbodyClientes.innerHTML = '';
-                    datos.clientes.forEach(c => {
-                        tbodyClientes.innerHTML += `
-                            <tr>
-                                <td>${c._id.toString().substring(18)}</td>
-                                <td>Plataforma Central</td>
-                                <td>${c.usuarioCasino}</td>
-                                <td style="color:#10b981; font-weight:bold;">$${c.saldo.toLocaleString('es-AR')}</td>
-                                <td>$${c.wager.toLocaleString('es-AR')}</td>
-                                <td><span style="color:#10b981;">● ${c.estado}</span></td>
-                                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
-                            </tr>
-                        `;
-                    });
-                }
-            }
-function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
-        function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; }
+        // 1. FUNCIONES DEL IMPORTADOR (Globales para que los botones las encuentren)
+        function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
+        function cerrarImportador() { 
+            document.getElementById('modalImportador').style.display = 'none'; 
+            document.getElementById('dataPaste').value = ''; // Limpiar el texto al cerrar
+        }
         
         async function procesarDatos() {
             const texto = document.getElementById('dataPaste').value;
-            const res = await fetch('/importar-datos', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ datosCrudos: texto })
-            });
-            const result = await res.json();
-            alert(result.mensaje);
-            cerrarImportador();
+            if (!texto.trim()) {
+                alert("Por favor, pegá los datos antes de procesar.");
+                return;
+            }
+            try {
+                const res = await fetch('/importar-datos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ datosCrudos: texto })
+                });
+                const result = await res.json();
+                alert(result.mensaje);
+                cerrarImportador();
+            } catch (error) {
+                alert("Hubo un error al conectar con el servidor.");
+            }
         }
 
-            // 2. Renderizar pestaña Retiros
-            if (datos.retiros) {
-                const tbodyRetiros = document.querySelector('#section-retiros .data-table tbody');
-                if (tbodyRetiros) {
-                    tbodyRetiros.innerHTML = '';
-                    datos.retiros.forEach(r => {
-                        let colorMonto = r.estado.includes('Rechazado') ? '#ef4444' : '#3b82f6';
-                        let colorBadge = r.estado.includes('Rechazado') ? '#ef4444' : '#10b981';
-                        tbodyRetiros.innerHTML += `
-                            <tr>
-                                <td># ${r._id.toString().substring(18)}</td>
-                                <td>${r.fecha}</td>
-                                <td>${r.cliente}</td>
-                                <td style="color:${colorMonto}; font-weight:bold;">$${r.monto.toLocaleString('es-AR')},00</td>
-                                <td>${r.cbuAlias}</td>
-                                <td>${r.titular}</td>
-                                <td><span class="badge" style="background-color:${colorBadge}">${r.estado}</span></td>
-                                <td>${r.procesadoPor}</td>
-                            </tr>
-                        `;
-                    });
-                }
-            }
-
-            // 3. Renderizar pestaña Usuarios Internos
-            if (datos.usuariosInternos) {
-                const tbodyInternos = document.querySelector('#section-usuarios .data-table tbody');
-                if (tbodyInternos) {
-                    tbodyInternos.innerHTML = '';
-                    datos.usuariosInternos.forEach((u, index) => {
-                        let colorRol = u.rol === 'Master' ? '#a855f7' : '#cbd5e1';
-                        tbodyInternos.innerHTML += `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${u.nombre}</td>
-                                <td>${u.usuario}</td>
-                                <td>${u.email}</td>
-                                <td><span style="color:${colorRol}; font-weight:bold;">${u.rol}</span></td>
-                                <td><span class="badge" style="background-color:#10b981;">${u.estado}</span></td>
-                                <td><button class="btn-action-table btn-edit">Editar</button></td>
-                            </tr>
-                        `;
-                    });
-                }
-            }
-        });
-
+        // 2. FUNCIONES DE NAVEGACIÓN
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
@@ -496,6 +426,78 @@ function abrirImportador() { document.getElementById('modalImportador').style.di
             document.getElementById('subview-' + juego).classList.add('active-subview');
             document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
         }
+
+        // 3. FUNCIONES DE SOCKETS Y CHAT
+        socket.emit('identificar_admin');
+
+        socket.on('cargar_datos_tablas', (datos) => {
+            // Renderizar Clientes
+            if (datos.clientes) {
+                const tbodyClientes = document.querySelector('#section-clientes .data-table tbody');
+                if (tbodyClientes) {
+                    tbodyClientes.innerHTML = '';
+                    datos.clientes.forEach(c => {
+                        tbodyClientes.innerHTML += `
+                            <tr>
+                                <td>${c._id.toString().substring(18)}</td>
+                                <td>Plataforma Central</td>
+                                <td>${c.usuarioCasino}</td>
+                                <td style="color:#10b981; font-weight:bold;">$${c.saldo.toLocaleString('es-AR')}</td>
+                                <td>$${c.wager.toLocaleString('es-AR')}</td>
+                                <td><span style="color:#10b981;">● ${c.estado}</span></td>
+                                <td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+
+            // Renderizar Retiros
+            if (datos.retiros) {
+                const tbodyRetiros = document.querySelector('#section-retiros .data-table tbody');
+                if (tbodyRetiros) {
+                    tbodyRetiros.innerHTML = '';
+                    datos.retiros.forEach(r => {
+                        let colorMonto = r.estado.includes('Rechazado') ? '#ef4444' : '#3b82f6';
+                        let colorBadge = r.estado.includes('Rechazado') ? '#ef4444' : '#10b981';
+                        tbodyRetiros.innerHTML += `
+                            <tr>
+                                <td># ${r._id.toString().substring(18)}</td>
+                                <td>${r.fecha}</td>
+                                <td>${r.cliente}</td>
+                                <td style="color:${colorMonto}; font-weight:bold;">$${r.monto.toLocaleString('es-AR')},00</td>
+                                <td>${r.cbuAlias}</td>
+                                <td>${r.titular}</td>
+                                <td><span class="badge" style="background-color:${colorBadge}">${r.estado}</span></td>
+                                <td>${r.procesadoPor}</td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+
+            // Renderizar Usuarios Internos
+            if (datos.usuariosInternos) {
+                const tbodyInternos = document.querySelector('#section-usuarios .data-table tbody');
+                if (tbodyInternos) {
+                    tbodyInternos.innerHTML = '';
+                    datos.usuariosInternos.forEach((u, index) => {
+                        let colorRol = u.rol === 'Master' ? '#a855f7' : '#cbd5e1';
+                        tbodyInternos.innerHTML += `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${u.nombre}</td>
+                                <td>${u.usuario}</td>
+                                <td>${u.email}</td>
+                                <td><span style="color:${colorRol}; font-weight:bold;">${u.rol}</span></td>
+                                <td><span class="badge" style="background-color:#10b981;">${u.estado}</span></td>
+                                <td><button class="btn-action-table btn-edit">Editar</button></td>
+                            </tr>
+                        `;
+                    });
+                }
+            }
+        });
 
         socket.on('lista_usuarios_actualizada', (usuarios) => {
             const listaDiv = document.getElementById('lista-usuarios');
