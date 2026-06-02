@@ -574,7 +574,25 @@
                 document.getElementById('active-chat-messages').innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear.</div>';
                 document.getElementById('admin-message-input').disabled = true;
                 document.getElementById('btn-enviar-msg').disabled = true;
+                
             }
+            async function cargarFichas(usuario) {
+    const monto = prompt(`¿Cuántas fichas querés cargarle a ${usuario}?`);
+    if (!monto || isNaN(monto)) return;
+
+    alert(`⏳ El bot está entrando a Ganamos.net para cargar $${monto}... Esto tarda un par de segundos.`);
+    
+    const res = await fetch('/api/cargar-saldo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ usuario: usuario, monto: Number(monto) })
+    });
+    
+    const result = await res.json();
+    alert(result.mensaje);
+    // Para ver los cambios visuales enseguida
+    if(result.exito) window.location.reload(); 
+}
         });
     </script>
 </body>
