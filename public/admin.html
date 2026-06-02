@@ -537,5 +537,11 @@
             }
         });
     </script>
+    <script>
+    // Este código destruye la sesión si el usuario actualiza la página
+    window.addEventListener('beforeunload', function () {
+        navigator.sendBeacon('/logout');
+    });
+</script>
 </body>
 </html>
