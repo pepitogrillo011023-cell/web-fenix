@@ -303,4 +303,66 @@ io.on('connection', (socket) => {
             let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
 
             if (datos.mensajeCliente) { usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); }
-            if (datos.mensajeBot) { usuario.historial
+            if (datos.mensajeBot) { usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); }
+
+            await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
+
+            if (adminSocketId) {
+                io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+                io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+            }
+            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
+        }
+    });
+
+    socket.on('cliente_envia_mensaje_libre', async (datos) => {
+        let usuario = usuariosConectados.find(u => u.nombre === socket.username);
+        if (usuario) {
+            let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
+            usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensaje, leido: estaMirandome });
+
+            await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
+
+            if (adminSocketId) {
+                io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+                io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+            }
+            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
+        }
+    });
+
+    socket.on('admin_envia_mensaje', async (datos) => {
+        let usuario = usuariosConectados.find(u => u.nombre === datos.paraUsuario);
+        if (usuario) {
+            usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true });
+            
+            await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
+
+            io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
+            socket.emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+        }
+    });
+
+    socket.on('disconnect', () => {
+        if (socket.username) {
+            let usuario = usuariosConectados.find(u => u.nombre === socket.username);
+            if (usuario) { usuario.id = null; }
+            if (usuarioSeleccionadoActivoAdmin === socket.username) usuarioSeleccionadoActivoAdmin = null;
+            if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+        }
+    });
+});
+
+async function inicializarDatosDePrueba() {
+    const countCl = await Cliente.countDocuments();
+    if(countCl === 0) {
+        await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save();
+    }
+}
+
+const PUERTO = process.env.PUERTO || 3000;
+server.listen(PUERTO, () => {
+    console.log('=============================================');
+    console.log(`🚀 SERVIDOR VINCULADO AL PANEL EN PUERTO ${PUERTO}`);
+    console.log('=============================================');
+});
