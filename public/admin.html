@@ -197,6 +197,15 @@
                     </table>
                 </div>
             </div>
+        <!-- Ventana flotante (oculta por defecto) -->
+<div id="modalImportador" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999;">
+    <div style="width:400px; background:#111827; margin:100px auto; padding:25px; border-radius:12px; border:1px solid #374151; color:white;">
+        <h3 style="color:#38bdf8; margin-top:0;">Importar datos</h3>
+        <textarea id="dataPaste" style="width:100%; height:150px; background:#0f172a; color:#cbd5e1; border:1px solid #374151; padding:10px; border-radius:6px; box-sizing:border-box;"></textarea>
+        <button onclick="procesarDatos()" style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; cursor:pointer; margin-top:15px;">Actualizar Base de Datos</button>
+        <button onclick="cerrarImportador()" style="background:none; border:none; color:#64748b; cursor:pointer; margin-left:15px;">Cancelar</button>
+    </div>
+</div>
 
             <!-- SECCIÓN 3: BASE DE CLIENTES -->
             <div id="section-clientes" class="view-section">
@@ -570,5 +579,22 @@ function abrirImportador() { document.getElementById('modalImportador').style.di
             }
         });
     </script>
+
+<script>
+    function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
+    function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; }
+    
+    async function procesarDatos() {
+        const texto = document.getElementById('dataPaste').value;
+        const res = await fetch('/importar-datos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ datosCrudos: texto })
+        });
+        const result = await res.json();
+        alert(result.mensaje);
+        cerrarImportador();
+    }
+</script>
 </body>
 </html>
