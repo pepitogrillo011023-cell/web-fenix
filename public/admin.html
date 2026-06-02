@@ -153,11 +153,7 @@
             <button onclick="cerrarImportador()" style="background:none; border:none; color:#94a3b8; cursor:pointer; margin-left:10px;">Cerrar</button>
         </div>
     </div>
-<div id="import-panel" style="margin-top: 20px; border: 1px solid #ffd700; padding: 20px;">
-    <h3>Importar usuarios desde Ganamos.net</h3>
-    <textarea id="dataPaste" rows="5" style="width: 100%;" placeholder="Pegá aquí el contenido de la tabla..."></textarea>
-    <button onclick="procesarDatos()">Actualizar Base de Datos</button>
-</div>
+
 
     <!-- PÁGINA CENTRAL DE TRABAJO -->
     <div class="main-content">
@@ -378,6 +374,7 @@
                     </div>
 
                     <button class="btn-save" onclick="alert('¡Conexiones API guardadas! Credenciales encriptadas y sincronizadas.')">Guardar Conexiones</button>
+                    <button class="nav-btn" onclick="abrirImportador()">📥 Importar Ganamos.net</button>
                 </div>
             </div>
 
