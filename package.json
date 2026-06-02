@@ -11,6 +11,8 @@
     "express-session": "^1.17.3",
     "mongoose": "^7.0.3",
     "puppeteer": "^22.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
     "socket.io": "^4.6.1"
   }
 }
