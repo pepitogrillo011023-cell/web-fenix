@@ -394,6 +394,31 @@
             }
         }
 
+        // --- SOLUCIÓN: LA FUNCIÓN ESTÁ AHORA LIBRE EN EL ÁMBITO GLOBAL ---
+        async function cargarFichas(usuario) {
+            const monto = prompt(`¿Cuántas fichas querés cargarle a ${usuario}?`);
+            if (!monto || isNaN(monto)) return;
+
+            alert(`⏳ El bot está entrando a Ganamos.net para cargar $${monto}... Esto tarda un par de segundos.`);
+            
+            try {
+                const res = await fetch('/api/cargar-saldo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ usuario: usuario, monto: Number(monto) })
+                });
+                
+                const result = await res.json();
+                alert(result.mensaje);
+                
+                if(result.exito) {
+                    window.location.reload(); 
+                }
+            } catch (error) {
+                alert("Error técnico al intentar conectar con el bot invisible.");
+            }
+        }
+
         // 2. FUNCIONES DE NAVEGACIÓN
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
@@ -446,11 +471,11 @@
                                 <td>$${c.wager.toLocaleString('es-AR')}</td>
                                 <td><span style="color:#10b981;">● ${c.estado}</span></td>
                                 <td>
-    <button style="background: #2563eb; border: none; padding: 5px 10px; color: white; border-radius: 4px; cursor: pointer;" 
-            onclick="cargarFichas('${c.usuarioCasino}')">
-        💰 Cargar Fichas
-    </button>
-</td>
+                                    <button style="background: #2563eb; border: none; padding: 6px 12px; font-weight: bold; color: white; border-radius: 6px; cursor: pointer;" 
+                                            onclick="cargarFichas('${c.usuarioCasino}')">
+                                        💰 Cargar Fichas
+                                    </button>
+                                </td>
                             </tr>
                         `;
                     });
@@ -574,25 +599,7 @@
                 document.getElementById('active-chat-messages').innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear.</div>';
                 document.getElementById('admin-message-input').disabled = true;
                 document.getElementById('btn-enviar-msg').disabled = true;
-                
             }
-            async function cargarFichas(usuario) {
-    const monto = prompt(`¿Cuántas fichas querés cargarle a ${usuario}?`);
-    if (!monto || isNaN(monto)) return;
-
-    alert(`⏳ El bot está entrando a Ganamos.net para cargar $${monto}... Esto tarda un par de segundos.`);
-    
-    const res = await fetch('/api/cargar-saldo', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuario: usuario, monto: Number(monto) })
-    });
-    
-    const result = await res.json();
-    alert(result.mensaje);
-    // Para ver los cambios visuales enseguida
-    if(result.exito) window.location.reload(); 
-}
         });
     </script>
 </body>
