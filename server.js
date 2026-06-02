@@ -4,7 +4,11 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session'); 
-const puppeteer = require('puppeteer'); // Librería del Bot Invisible
+
+// --- LA ARTILLERÍA PESADA: PUPPETEER STEALTH ---
+const puppeteer = require('puppeteer-extra');
+const StealthPlugin = require('puppeteer-extra-plugin-stealth');
+puppeteer.use(StealthPlugin()); // Activamos el camuflaje antibloqueos
 
 const app = express();
 const server = http.createServer(app);
@@ -17,7 +21,7 @@ app.use(session({
     secret: 'CasinoFenix2026_Seguro',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 } // Sesión por 1 hora
+    cookie: { maxAge: 1000 * 60 * 60 }
 }));
 
 // --- MIDDLEWARE DE PROTECCIÓN ---
@@ -45,13 +49,12 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
-// --- RUTA PROTEGIDA PARA ADMIN ---
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(__dirname + '/public/admin.html');
 });
 
 // --------------------------------------------------------
-// 🤖 BOT INVISIBLE: CONEXIÓN EN TIEMPO REAL CON GANAMOS.NET
+// 🤖 BOT INVISIBLE CON CAMUFLAJE STEALTH
 // --------------------------------------------------------
 async function operarGanamosNet(usuarioJugador, monto) {
     let browser;
@@ -69,28 +72,17 @@ async function operarGanamosNet(usuarioJugador, monto) {
         
         const page = await browser.newPage();
         
-        // --- EVADIR DETECCIÓN DE BOT ---
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36');
-        await page.evaluateOnNewDocument(() => {
-            Object.defineProperty(navigator, 'webdriver', { get: () => false });
-        });
+        // 2. IR AL LOGIN (El plugin Stealth ya hace todo el trabajo de evadir Cloudflare)
+        await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'networkidle2', timeout: 30000 });
         
-        // 2. IR AL LOGIN
-        await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'networkidle2' });
+        // --- LOGIN ---
+        await page.waitForSelector('input[placeholder="Nombre"]', { timeout: 15000 }); 
+        await page.type('input[placeholder="Nombre"]', process.env.GANAMOS_USER || 'Fenix80');
         
-        // --- ESTRATEGIA INFALIBLE: Buscar por tipo de casillero (y le damos 15 segundos) ---
-        // Busca cualquier casillero de texto o email, sin importar cómo se llame internamente
-        await page.waitForSelector('input[type="text"], input[type="email"], input:not([type])', { timeout: 15000 }); 
-        await page.type('input[type="text"], input[type="email"], input:not([type])', process.env.GANAMOS_USER || 'Fenix80');
-        
-        // Input de contraseña por su tipo
         await page.waitForSelector('input[type="password"]');
         await page.type('input[type="password"]', process.env.GANAMOS_PASS || 'Cipriano123');
         
-        // Presionamos Enter para acceder
         await page.keyboard.press('Enter');
-        
-        // Le damos más tiempo de carga por las dudas
         await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 });
         
         // 3. IR A LA SECCIÓN DE USUARIOS
@@ -99,7 +91,6 @@ async function operarGanamosNet(usuarioJugador, monto) {
         // 4. BUSCAR AL USUARIO
         await page.waitForSelector('input[placeholder="Buscar Usuario"]');
         await page.type('input[placeholder="Buscar Usuario"]', usuarioJugador);
-        
         await new Promise(r => setTimeout(r, 2000));
         
         // 5. HACER CLIC EN DEPOSITAR
@@ -115,16 +106,14 @@ async function operarGanamosNet(usuarioJugador, monto) {
         await page.click('button[type="submit"]');
         
         await new Promise(r => setTimeout(r, 2000));
-        
         await browser.close();
         return { exito: true };
         
     } catch (error) {
-        // --- EL RADAR: Si falla, vemos en qué página se quedó ---
         if (browser) {
             const pages = await browser.pages();
             if (pages.length > 0) {
-                console.error("🔴 TÍTULO DE LA PÁGINA DONDE SE TRABÓ:", await pages[0].title());
+                console.error("🔴 TÍTULO EN RADAR:", await pages[0].title());
             }
             await browser.close();
         }
@@ -136,12 +125,9 @@ async function operarGanamosNet(usuarioJugador, monto) {
 // --- RUTA PARA QUE TU PANEL LE ORDENE AL BOT CARGAR FICHAS ---
 app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     const { usuario, monto } = req.body;
-    
-    // Disparamos el bot invisible
     const resultado = await operarGanamosNet(usuario, monto);
     
     if (resultado.exito) {
-        // Le sumamos el saldo en tu MongoDB local
         await Cliente.updateOne(
             { usuarioCasino: usuario }, 
             { $inc: { saldo: monto } }
