@@ -54,19 +54,19 @@ app.get('/admin.html', requireLogin, (req, res) => {
 // 🤖 BOT INVISIBLE: CONEXIÓN EN TIEMPO REAL CON GANAMOS.NET
 // --------------------------------------------------------
 async function operarGanamosNet(usuarioJugador, monto) {
-    // 1. Abrimos el Chrome Fantasma con perfil antibloqueo
-    const browser = await puppeteer.launch({ 
-        headless: "new",
-        args: [
-            '--no-sandbox', 
-            '--disable-setuid-sandbox',
-            '--disable-dev-shm-usage',
-            '--disable-gpu',
-            '--window-size=1920,1080'
-        ] 
-    });
-    
+    let browser;
     try {
+        browser = await puppeteer.launch({ 
+            headless: "new",
+            args: [
+                '--no-sandbox', 
+                '--disable-setuid-sandbox',
+                '--disable-dev-shm-usage',
+                '--disable-gpu',
+                '--window-size=1920,1080'
+            ] 
+        });
+        
         const page = await browser.newPage();
         
         // --- EVADIR DETECCIÓN DE BOT ---
@@ -78,9 +78,10 @@ async function operarGanamosNet(usuarioJugador, monto) {
         // 2. IR AL LOGIN
         await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'networkidle2' });
         
-        // --- LOGIN CON PLACEHOLDER "Nombre" ---
-        await page.waitForSelector('input[placeholder="Nombre"]', { timeout: 10000 }); 
-        await page.type('input[placeholder="Nombre"]', process.env.GANAMOS_USER || 'Fenix80');
+        // --- ESTRATEGIA INFALIBLE: Buscar por tipo de casillero (y le damos 15 segundos) ---
+        // Busca cualquier casillero de texto o email, sin importar cómo se llame internamente
+        await page.waitForSelector('input[type="text"], input[type="email"], input:not([type])', { timeout: 15000 }); 
+        await page.type('input[type="text"], input[type="email"], input:not([type])', process.env.GANAMOS_USER || 'Fenix80');
         
         // Input de contraseña por su tipo
         await page.waitForSelector('input[type="password"]');
@@ -89,8 +90,8 @@ async function operarGanamosNet(usuarioJugador, monto) {
         // Presionamos Enter para acceder
         await page.keyboard.press('Enter');
         
-        // Esperamos a que el panel principal termine de cargar
-        await page.waitForNavigation({ waitUntil: 'networkidle2' });
+        // Le damos más tiempo de carga por las dudas
+        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 20000 });
         
         // 3. IR A LA SECCIÓN DE USUARIOS
         await page.goto('https://agents.ganamosnet.org/users/all', { waitUntil: 'networkidle2' });
@@ -99,7 +100,6 @@ async function operarGanamosNet(usuarioJugador, monto) {
         await page.waitForSelector('input[placeholder="Buscar Usuario"]');
         await page.type('input[placeholder="Buscar Usuario"]', usuarioJugador);
         
-        // Esperamos 2 segundos para que la tabla filtre al usuario correcto
         await new Promise(r => setTimeout(r, 2000));
         
         // 5. HACER CLIC EN DEPOSITAR
@@ -114,15 +114,21 @@ async function operarGanamosNet(usuarioJugador, monto) {
         await page.waitForSelector('button[type="submit"]');
         await page.click('button[type="submit"]');
         
-        // Esperamos 2 segundos para que Ganamos procese la transacción
         await new Promise(r => setTimeout(r, 2000));
         
         await browser.close();
         return { exito: true };
         
     } catch (error) {
-        console.error("🔴 Error DETALLADO en el bot de Ganamos:", error);
-        await browser.close();
+        // --- EL RADAR: Si falla, vemos en qué página se quedó ---
+        if (browser) {
+            const pages = await browser.pages();
+            if (pages.length > 0) {
+                console.error("🔴 TÍTULO DE LA PÁGINA DONDE SE TRABÓ:", await pages[0].title());
+            }
+            await browser.close();
+        }
+        console.error("🔴 Error DETALLADO:", error.message);
         return { exito: false, error: error.message };
     }
 }
@@ -360,7 +366,7 @@ async function inicializarDatosDePrueba() {
     }
 }
 
-const PUERTO = process.env.PUERTO || 3000;
+const PUERTO = process.env.PORT || 3000;
 server.listen(PUERTO, () => {
     console.log('=============================================');
     console.log(`🚀 SERVIDOR VINCULADO AL PANEL EN PUERTO ${PUERTO}`);
