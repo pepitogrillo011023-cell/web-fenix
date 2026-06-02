@@ -1,12 +1,3 @@
-Aquí tienes el código completo y corregido para server.js. He asegurado que el orden de las rutas sea el correcto (seguridad primero) y que las dependencias estén bien configuradas.
-
-Pasos antes de copiar:
-
-Asegúrate de tener instalado express-session (npm install express-session en tu terminal).
-
-Verifica en tu panel de Render (pestaña Environment) que la variable MONGO_URI esté cargada correctamente.
-
-JavaScript
 const express = require('express');
 const session = require('express-session');
 const http = require('http');
