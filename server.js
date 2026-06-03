@@ -277,6 +277,7 @@ app.get('/api/resumen-cajas/:fecha', requireLogin, async (req, res) => {
     }
 });
 
+// ESTA ES LA RUTA QUE FALTABA O FALLABA
 app.get('/api/historial-cajas/:fecha', requireLogin, async (req, res) => {
     try {
         const cierres = await CierreCaja.find({ fecha: req.params.fecha });
