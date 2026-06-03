@@ -251,9 +251,9 @@
                                     <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
                                     <tr><th>Monto Esperado</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
                                     <tr>
-                                        <td><input type="number" id="cc-esperado" class="input-text-adv" readonly style="margin-bottom:0;"></td>
+                                        <td><input type="number" id="cc-esperado" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
                                         <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
-                                        <td><input type="number" id="cc-dif" class="input-text-adv" readonly style="margin-bottom:0;"></td>
+                                        <td><input type="number" id="cc-dif" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
                                     </tr>
                                 </table>
                                 <div style="display:flex; justify-content:flex-end; margin-top:10px;">
@@ -280,8 +280,11 @@
                     </div>
 
                     <table class="resumen-table">
-                        <thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead>
-                        <tbody id="res-diario"></tbody>
+                        <thead>
+                            <tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr>
+                        </thead>
+                        <tbody id="res-diario">
+                            </tbody>
                     </table>
 
                     <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:20px;">
@@ -289,6 +292,7 @@
                             <thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead>
                             <tbody id="res-mensual-salidas"></tbody>
                         </table>
+
                         <div>
                             <table class="resumen-table" style="margin-bottom:15px;">
                                 <thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead>
@@ -306,7 +310,7 @@
             <div id="section-historial" class="view-section">
                 <div class="panel-inside">
                     <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #1f2937;">
-                        <h3 style="margin:0; color:#38bdf8;">SELECCIONAR FECHA PARA HISTORIAL COMPLETO:</h3>
+                        <h3 style="margin:0; color:#38bdf8;">SELECCIONAR FECHA PARA HISTORIAL:</h3>
                         <input type="date" id="hist-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarHistorialCajas()">
                     </div>
                     
@@ -643,9 +647,12 @@
             const btn = document.getElementById('btn-spin-admin');
             btn.disabled = true;
             fetch('/api/tirar-ruleta-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
-            .then(res => res.json())
+            .then(res => {
+                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
+                return res.json();
+            })
             .then(data => {
-                if(!data.exito) { btn.disabled = false; return alert("Error."); }
+                if(!data.exito) { btn.disabled = false; return alert("Error al simular ruleta"); }
                 const winnerIndex = config.findIndex(item => item.id === data.premio.id);
                 const sliceDegree = 360 / config.length;
                 const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
@@ -656,7 +663,7 @@
                 currentRotationAdmin += needed + (360 * 4);
                 document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotationAdmin}deg)`;
                 setTimeout(() => { btn.disabled = false; document.getElementById('resultado-prueba').innerText = `Cae en: ${data.premio.premio}`; }, 5100);
-            }).catch(e => { btn.disabled = false; });
+            }).catch(e => { btn.disabled = false; console.error("Error Ruleta:", e); });
         }
 
         // CONTROL INTERACTIVO RASPA Y GANA
@@ -677,6 +684,7 @@
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
             if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
             const res = await fetch('/api/guardar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
             if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada en la base de datos!');
         }
@@ -695,7 +703,10 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ configuracion: configFull })
             })
-            .then(res => res.json())
+            .then(res => {
+                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
+                return res.json();
+            })
             .then(data => {
                 if(!data.exito) return;
                 const winner = data.premio;
@@ -720,7 +731,7 @@
                         }
                     });
                 }, 800);
-            });
+            }).catch(e => console.error("Error Raspa:", e));
         }
 
         function reiniciarTableroRaspaPrueba() {
@@ -749,7 +760,10 @@
             const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API", cierre: "Panel de Control - Cierre de Caja", resumen: "Panel de Control - Resumen Cajas", historial: "Panel de Control - Historial de Cajas" };
             document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
 
-            if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
+            // Se dibuja la ruleta si la pestaña es Eventos Especiales
+            if (seccion === 'eventos') {
+                setTimeout(dibujarRuletaAdmin, 100);
+            }
         }
 
         function cambiarSubJuego(juego) {
@@ -992,6 +1006,13 @@
             const fecha = document.getElementById('res-fecha').value;
             if(!fecha) return;
             const res = await fetch('/api/resumen-cajas/' + fecha);
+            if(res.redirected) return window.location.href = '/login.html';
+            
+            if(!res.ok) {
+                alert("Error al contactar al servidor. Revisa si server.js se actualizó bien en Render.");
+                return;
+            }
+
             const data = await res.json();
             const d = data.dia;
             const m = data.mes;
@@ -1041,6 +1062,11 @@
 
             try {
                 const res = await fetch('/api/historial-cajas/' + fecha);
+                if(res.redirected) return window.location.href = '/login.html';
+                
+                // Si la respuesta no es OK (ej. 404 porque el server no se actualizó bien)
+                if (!res.ok) throw new Error(`El servidor devolvió un error ${res.status}.`);
+
                 const cierres = await res.json();
 
                 if (cierres.length === 0) {
@@ -1103,7 +1129,13 @@
                 `).join('');
 
             } catch (error) {
-                container.innerHTML = `<p style="color:#ef4444; text-align:center;">Hubo un error al cargar el historial.</p>`;
+                console.error("Error al cargar historial:", error);
+                container.innerHTML = `
+                    <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
+                        <h4 style="color:#ef4444; margin:0 0 10px 0;">Error de Comunicación con el Servidor</h4>
+                        <p style="color:#cbd5e1; font-size:14px; margin:0;">El panel no puede encontrar la ruta de historiales. <br><br><strong>Importante:</strong> Asegurate de haber subido el archivo <code>server.js</code> y que la plataforma Render haya terminado de actualizar ("Deploy live").</p>
+                    </div>
+                `;
             }
         }
     </script>
