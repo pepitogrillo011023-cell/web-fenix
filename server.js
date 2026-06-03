@@ -20,6 +20,10 @@ app.use(session({
     cookie: { maxAge: 1000 * 60 * 60 } 
 }));
 
+// --- SERVICIO DE ARCHIVOS ESTÁTICOS CORREGIDO ---
+// Se coloca antes de las rutas protegidas para evitar conflictos de enrutamiento
+app.use(express.static(path.join(__dirname, 'public')));
+
 // --- MIDDLEWARE DE PROTECCIÓN ---
 const requireLogin = (req, res, next) => {
     if (req.session.loggedIn) {
@@ -32,7 +36,6 @@ const requireLogin = (req, res, next) => {
 // --- RUTAS DE LOGIN Y LOGOUT ---
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
-    // Credenciales de acceso al panel
     if (username === 'admin' && password === '1234') {
         req.session.loggedIn = true;
         res.redirect('/admin.html');
@@ -46,69 +49,8 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
-// Protegemos el panel de administrador para que pida login
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// 👇 LÍNEA MÁGICA REPARADA 👇
-// Permitimos que el servidor muestre el resto de los archivos libres (login.html, index.html)
-app.use(express.static('public'));
-
-// ==============================================================
-// ⚡ RECEPTOR WEBHOOK: MERCADO PAGO EN TIEMPO REAL
-// ==============================================================
-app.post('/api/webhook/billetera', async (req, res) => {
-    // Mercado Pago exige responder HTTP 200 rápido de entrada
-    res.status(200).send("OK");
-
-    try {
-        const accion = req.body?.action;
-        const tipo = req.body?.type;
-        const paymentId = req.body?.data?.id;
-
-        if ((accion === 'payment.created' || tipo === 'payment') && paymentId) {
-            const configDb = await PanelConfig.findOne({ identificador: 'global' });
-            const accessTokenMP = configDb?.apis?.pass; 
-
-            if (!accessTokenMP) {
-                console.log("🔴 Webhook recibido pero falta el Access Token de MP en el panel.");
-                return;
-            }
-
-            // Consultamos los detalles oficiales del pago a la API de Mercado Pago
-            const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${accessTokenMP}` }
-            });
-            const dataMP = await mpResponse.json();
-
-            if (dataMP.status === 'approved') {
-                const montoTransferido = dataMP.transaction_amount;
-                const saldoFormateado = `$${Number(montoTransferido).toLocaleString('es-AR')} ARS`;
-
-                // Guardamos el registro actualizado del saldo en la configuración de la billetera
-                let datosBilleteraActuales = configDb.billetera || {};
-                datosBilleteraActuales.monto = saldoFormateado;
-
-                await PanelConfig.updateOne(
-                    { identificador: 'global' },
-                    { $set: { billetera: datosBilleteraActuales } }
-                );
-
-                // Notificamos mediante Sockets al panel de administrador que esté abierto
-                if (adminSocketId) {
-                    io.to(adminSocketId).emit('billetera_actualizada_en_vivo', {
-                        saldoFormateado: saldoFormateado,
-                        montoTransferido: montoTransferido,
-                        tipoMovimiento: 'ingreso'
-                    });
-                }
-            }
-        }
-    } catch (error) {
-        console.error("🔴 Error procesando el Webhook de Mercado Pago:", error);
-    }
 });
 
 // --- VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
@@ -165,6 +107,162 @@ app.post('/api/guardar-config', requireLogin, async (req, res) => {
     }
 });
 
+// ==============================================================
+// ⚡ RECEPTOR WEBHOOK: MERCADO PAGO EN TIEMPO REAL
+// ==============================================================
+app.post('/api/webhook/billetera', async (req, res) => {
+    res.status(200).send("OK");
+
+    try {
+        const accion = req.body?.action;
+        const tipo = req.body?.type;
+        const paymentId = req.body?.data?.id;
+
+        if ((accion === 'payment.created' || tipo === 'payment') && paymentId) {
+            const configDb = await PanelConfig.findOne({ identificador: 'global' });
+            const accessTokenMP = configDb?.apis?.pass; 
+
+            if (!accessTokenMP) {
+                console.log("🔴 Webhook recibido pero falta el Access Token de MP en el panel.");
+                return;
+            }
+
+            const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${accessTokenMP}` }
+            });
+            const dataMP = await mpResponse.json();
+
+            if (dataMP.status === 'approved') {
+                const montoTransferido = dataMP.transaction_amount;
+                const saldoFormateado = `$${Number(montoTransferido).toLocaleString('es-AR')} ARS`;
+
+                let datosBilleteraActuales = configDb.billetera || {};
+                datosBilleteraActuales.monto = saldoFormateado;
+
+                await PanelConfig.updateOne(
+                    { identificador: 'global' },
+                    { $set: { billetera: datosBilleteraActuales } }
+                );
+
+                if (adminSocketId) {
+                    io.to(adminSocketId).emit('billetera_actualizada_en_vivo', {
+                        saldoFormateado: saldoFormateado,
+                        montoTransferido: montoTransferido,
+                        tipoMovimiento: 'ingreso'
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error("🔴 Error procesando el Webhook de Mercado Pago:", error);
+    }
+});
+
+// --- RUTA DE SIMULACIÓN DE TEST DE PAGO ---
+app.post('/api/simular-pago-test', requireLogin, (req, res) => {
+    if (adminSocketId) {
+        io.to(adminSocketId).emit('billetera_actualizada_en_vivo', {
+            saldoFormateado: "$500,00 ARS (Simulado)",
+            montoTransferido: 500,
+            tipoMovimiento: 'ingreso'
+        });
+        res.json({ exito: true });
+    } else {
+        res.status(500).json({ exito: false, mensaje: 'No hay administrador conectado por Sockets actualmente.' });
+    }
+});
+
+// ==============================================================
+// 🔥 RUTAS DE CIERRE DE CAJA Y RESUMEN DE COMPROBACIONES
+// ==============================================================
+app.post('/api/cierre-caja', requireLogin, async (req, res) => {
+    try {
+        const filtro = { fecha: req.body.fecha, turno: req.body.turno };
+        await CierreCaja.findOneAndUpdate(filtro, req.body, { upsert: true, new: true });
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/cierre-caja', requireLogin, async (req, res) => {
+    try {
+        const cierres = await CierreCaja.find().sort({ _id: -1 });
+        res.json(cierres);
+    } catch (err) {
+        res.status(500).json([]);
+    }
+});
+
+app.get('/api/resumen-cajas/:fecha', requireLogin, async (req, res) => {
+    try {
+        const fechaSelect = req.params.fecha; 
+        const mesSelect = fechaSelect.substring(0, 7); 
+
+        const cierresDia = await CierreCaja.find({ fecha: fechaSelect });
+        const cierresMes = await CierreCaja.find({ fecha: { $regex: '^' + mesSelect } });
+
+        let dia = {
+            manana: { ingreso: 0, oro: 0, ganamos: 0, retiros: 0, real: 0 },
+            tarde: { ingreso: 0, oro: 0, ganamos: 0, retiros: 0, real: 0 },
+            noche: { ingreso: 0, oro: 0, ganamos: 0, retiros: 0, real: 0 },
+            total: { ingreso: 0, oro: 0, ganamos: 0, retiros: 0, real: 0 }
+        };
+
+        cierresDia.forEach(c => {
+            let t = c.turno.toLowerCase();
+            if (t === 'mañana') t = 'manana';
+            if (dia[t]) {
+                dia[t].ingreso += (c.ingreso || 0);
+                dia[t].oro += (c.saldoOro || 0);
+                dia[t].ganamos += (c.saldoGanamos || 0);
+                dia[t].retiros += (c.egreso || 0);
+                dia[t].real += (c.montoRealFinal || 0);
+                
+                dia.total.ingreso += (c.ingreso || 0);
+                dia.total.oro += (c.saldoOro || 0);
+                dia.total.ganamos += (c.saldoGanamos || 0);
+                dia.total.retiros += (c.egreso || 0);
+                dia.total.real += (c.montoRealFinal || 0);
+            }
+        });
+
+        let mes = {
+            salidas: { lean: 0, nahue: 0, brai: 0, tati: 0 },
+            saldos: { oro: 0, ganamos: 0 },
+            fichas: { mega: 0, ganamos: 0, oro: 0 },
+            bonos: { bb: { cant: 0, monto: 0 }, br: { cant: 0, monto: 0 } }
+        };
+
+        cierresMes.forEach(c => {
+            mes.saldos.oro += (c.saldoOro || 0);
+            mes.saldos.ganamos += (c.saldoGanamos || 0);
+
+            if (c.gastos && c.gastos.length > 0) {
+                c.gastos.forEach(g => {
+                    const monto = Number(g.monto) || 0;
+                    if (g.tipo === 'Salida Lean') mes.salidas.lean += monto;
+                    if (g.tipo === 'Salida Nahue') mes.salidas.nahue += monto;
+                    if (g.tipo === 'Salida Brai') mes.salidas.brai += monto;
+                    if (g.tipo === 'Salida Tati') mes.salidas.tati += monto;
+                    
+                    if (g.tipo === 'Fichas Mega') mes.fichas.mega += monto;
+                    if (g.tipo === 'Fichas Ganamos') mes.fichas.ganamos += monto;
+                    if (g.tipo === 'Fichas Oro') mes.fichas.oro += monto;
+
+                    if (g.tipo === 'BB') { mes.bonos.bb.cant += 1; mes.bonos.bb.monto += monto; }
+                    if (g.tipo === 'BR') { mes.bonos.br.cant += 1; mes.bonos.br.monto += monto; }
+                });
+            }
+        });
+
+        res.json({ dia, mes });
+    } catch (e) {
+        res.status(500).json({ error: e.message });
+    }
+});
+
 // --- RUTAS DE LA RULETA ---
 app.post('/api/guardar-ruleta', requireLogin, async (req, res) => {
     try {
@@ -189,7 +287,7 @@ app.get('/api/ruleta-config', async (req, res) => {
 app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
     try {
         const { configuracion } = req.body;
-        if (!configuracion || configuracion.length === 0) return res.json({ exito: false });
+        if (!configuracion || configuracion.length === 0) return res.json({ exito: false, mensaje: 'Configuración vacía.' });
 
         const rand = Math.random() * 100;
         let sum = 0;
@@ -248,11 +346,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
             usuarioExistente.historial = cliente.historialChat;
             if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
         }
-        if (adminSocketId) {
-            const clientesDB = await Cliente.find();
-            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
-        }
-
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
     } catch (error) {
         res.status(500).json({ exito: false });
@@ -336,17 +429,6 @@ app.post('/api/tirar-raspa', async (req, res) => {
         const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!<br>Premio obtenido: <b>${premioGanado.premio}</b>.<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu balance.`;
         cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
         await cliente.save();
-
-        const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
-        if (usuarioExistente) {
-            usuarioExistente.historial = cliente.historialChat;
-            if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
-        }
-        if (adminSocketId) {
-            const clientesDB = await Cliente.find();
-            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
-        }
-
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
     } catch (error) {
         res.status(500).json({ exito: false });
@@ -429,6 +511,14 @@ const panelConfigSchema = new mongoose.Schema({
 });
 const PanelConfig = mongoose.model('PanelConfig', panelConfigSchema);
 
+const c_cajaSchema = new mongoose.Schema({
+    fecha: String, turno: String, hora: String, inicio: String, fin: String, cajero: String,
+    ingreso: Number, saldoOro: Number, saldoGanamos: Number, egreso: Number,
+    montoEsperado: Number, montoRealFinal: Number, sobranteFaltante: Number, reserva: Number,
+    gastos: Array, propinas: Array
+});
+const CierreCaja = mongoose.model('CierreCaja', c_cajaSchema);
+
 const retiroSchema = new mongoose.Schema({
     fecha: { type: String, default: () => new Date().toLocaleString('es-AR') },
     cliente: String,
@@ -441,11 +531,7 @@ const retiroSchema = new mongoose.Schema({
 const Retiro = mongoose.model('Retiro', retiroSchema);
 
 const usuarioInternoSchema = new mongoose.Schema({
-    nombre: String,
-    usuario: String,
-    email: String,
-    rol: String,
-    estado: { type: String, default: 'Activo' }
+    nombre: String, usuario: String, email: String, rol: String, estado: { type: String, default: 'Activo' }
 });
 const UsuarioInterno = mongoose.model('UsuarioInterno', usuarioInternoSchema);
 
@@ -457,26 +543,24 @@ let adminSocketId = null;
 let usuarioSeleccionadoActivoAdmin = null;
 
 io.on('connection', (socket) => {
-    
     socket.on('identificar_admin', async () => {
         adminSocketId = socket.id;
         socket.emit('lista_usuarios_actualizada', usuariosConectados);
-        
         try {
             const clientesDB = await Cliente.find();
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
             const ruletaDB = await Ruleta.findOne();
-            const raspaDB = await Raspa.findOne(); 
-            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); 
-            
+            const raspaDB = await Raspa.findOne();
+            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' });
+
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
                 retiros: retirosDB,
                 usuariosInternos: internosDB,
                 ruleta: ruletaDB ? ruletaDB.configuracion : [],
                 raspa: raspaDB ? raspaDB.configuracion : [],
-                panelConfig: panelConfigDB 
+                panelConfig: panelConfigDB
             });
         } catch (e) { console.log(e); }
     });
@@ -497,7 +581,6 @@ io.on('connection', (socket) => {
     socket.on('identificar_usuario', async (datos) => {
         socket.username = datos.usuario;
         let clienteDB = await Cliente.findOne({ usuarioCasino: datos.usuario });
-        
         if (!clienteDB) {
             clienteDB = new Cliente({
                 usuarioCasino: datos.usuario,
@@ -505,26 +588,15 @@ io.on('connection', (socket) => {
             });
             await clienteDB.save();
         }
-
         let usuarioExistente = usuariosConectados.find(u => u.nombre === datos.usuario);
         if (!usuarioExistente) {
-            usuariosConectados.push({ 
-                id: socket.id, 
-                nombre: datos.usuario, 
-                estado: 'Menú',
-                historial: clienteDB.historialChat
-            });
+            usuariosConectados.push({ id: socket.id, nombre: datos.usuario, estado: 'Menú', historial: clienteDB.historialChat });
         } else {
             usuarioExistente.id = socket.id; 
             usuarioExistente.historial = clienteDB.historialChat; 
         }
-        
         socket.emit('resultado_validacion', { exito: true, usuario: datos.usuario, historial: clienteDB.historialChat });
-        if (adminSocketId) {
-            io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
-            const clientesDB = await Cliente.find();
-            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
-        }
+        if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
     });
 
     socket.on('cliente_accion', async (datos) => {
@@ -532,17 +604,13 @@ io.on('connection', (socket) => {
         if (usuario) {
             usuario.estado = datos.estado;
             let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
-
             if (datos.mensajeCliente) { usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); }
             if (datos.mensajeBot) { usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); }
-
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
-
             if (adminSocketId) {
                 io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
                 io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
             }
-            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
     });
 
@@ -551,14 +619,11 @@ io.on('connection', (socket) => {
         if (usuario) {
             let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
             usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensaje, leido: estaMirandome });
-
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
-
             if (adminSocketId) {
                 io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
                 io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
             }
-            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
     });
 
@@ -567,7 +632,7 @@ io.on('connection', (socket) => {
         if (usuario) {
             usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true });
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
-            io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
+            if(usuario.id) io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
             socket.emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
         }
     });
@@ -576,7 +641,6 @@ io.on('connection', (socket) => {
         if (socket.username) {
             let usuario = usuariosConectados.find(u => u.nombre === socket.username);
             if (usuario) { usuario.id = null; }
-            if (usuarioSeleccionadoActivoAdmin === socket.username) usuarioSeleccionadoActivoAdmin = null;
             if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
         }
     });
@@ -587,7 +651,6 @@ async function inicializarDatosDePrueba() {
     if(countCl === 0) {
         await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save();
     }
-    
     const countRuleta = await Ruleta.countDocuments();
     if (countRuleta === 0) {
         await new Ruleta({ configuracion: [
@@ -599,7 +662,6 @@ async function inicializarDatosDePrueba() {
             { id: 5, premio: '🎁 Sorpresa', valor: 100, probabilidad: 40 }
         ]}).save();
     }
-
     const countRaspa = await Raspa.countDocuments();
     if (countRaspa === 0) {
         await new Raspa({ configuracion: [
@@ -607,11 +669,10 @@ async function inicializarDatosDePrueba() {
             { id: 1, premio: '👑 Premio Alto', valor: 15000, probabilidad: 7 },
             { id: 2, premio: '💵 Premio Intermedio', valor: 4000, probabilidad: 15 },
             { id: 3, premio: '📦 Premio Base', valor: 1500, probabilidad: 25 },
-            { id: 4, grid_column: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 },
+            { id: 4, premio: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 },
             { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
         ]}).save();
     }
-
     const countPanel = await PanelConfig.countDocuments();
     if (countPanel === 0) {
         await new PanelConfig({ identificador: 'global' }).save();
@@ -619,8 +680,4 @@ async function inicializarDatosDePrueba() {
 }
 
 const PUERTO = process.env.PORT || 3000;
-server.listen(PUERTO, () => {
-    console.log('=============================================');
-    console.log(`🚀 SERVIDOR VINCULADO AL PANEL EN PUERTO ${PUERTO}`);
-    console.log('=============================================');
-});
+server.listen(PUERTO, () => console.log(`🚀 SERVIDOR CORRIENDO EN PUERTO ${PUERTO}`));
