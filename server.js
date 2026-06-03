@@ -10,7 +10,66 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// --- CONFIGURACIÓN DE SESIÓN Y MIDDLEWARES ---
+// ==============================================================
+// 📝 1. MODELOS DE DATOS (SIEMPRE VAN ARRIBA PARA EVITAR ERRORES)
+// ==============================================================
+const Cliente = mongoose.model('Cliente', new mongoose.Schema({
+    usuarioCasino: { type: String, required: true, unique: true },
+    password: { type: String, default: '1234' },
+    saldo: { type: Number, default: 0 },
+    wager: { type: Number, default: 0 },
+    estado: { type: String, default: 'Activo' },
+    historialChat: { type: Array, default: [] },
+    ultimaConexion: { type: Date, default: Date.now },
+    ultimaRuleta: { type: Date, default: null },
+    ultimaRaspa: { type: Date, default: null } 
+}));
+
+const Ruleta = mongoose.model('Ruleta', new mongoose.Schema({ configuracion: Array }));
+const Raspa = mongoose.model('Raspa', new mongoose.Schema({ configuracion: Array }));
+
+const PanelConfig = mongoose.model('PanelConfig', new mongoose.Schema({
+    identificador: { type: String, default: 'global', unique: true },
+    retencion: { type: Array, default: [] },
+    apis: { type: Object, default: {} },
+    push: { type: Object, default: {} },
+    billetera: { type: Object, default: {} }
+}));
+
+const CierreCaja = mongoose.model('CierreCaja', new mongoose.Schema({
+    fecha: String, hora: String, inicio: String, fin: String, turno: String, cajero: String,
+    ingreso: Number, saldoOro: Number, saldoGanamos: Number, egreso: Number,
+    montoEsperado: Number, montoRealFinal: Number, sobranteFaltante: Number, reserva: Number,
+    gastos: Array, propinas: Array
+}));
+
+const Retiro = mongoose.model('Retiro', new mongoose.Schema({
+    fecha: { type: String, default: () => new Date().toLocaleString('es-AR') },
+    cliente: String, monto: Number, cbuAlias: String, titular: String,
+    estado: { type: String, default: 'Aprobado (Enviado)' },
+    procesadoPor: { type: String, default: 'Lambda (Automático)' }
+}));
+
+const UsuarioInterno = mongoose.model('UsuarioInterno', new mongoose.Schema({
+    nombre: String, usuario: String, email: String, rol: String, estado: { type: String, default: 'Activo' }
+}));
+
+// ==============================================================
+// 🟢 2. CONEXIÓN A MONGODB
+// ==============================================================
+if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONGODB') {
+    mongoose.connect(process.env.MONGO_URI, { family: 4 })
+        .then(async () => {
+            console.log('🟢 CONECTADO A MONGODB');
+            await inicializarDatosDePrueba();
+        })
+        .catch(err => console.log('🔴 ERROR DE MONGODB:', err));
+}
+
+// ==============================================================
+// ⚙️ 3. MIDDLEWARES Y ARCHIVOS ESTÁTICOS
+// ==============================================================
+app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); 
 app.use(session({
@@ -20,7 +79,6 @@ app.use(session({
     cookie: { maxAge: 1000 * 60 * 60 } 
 }));
 
-// --- MIDDLEWARE DE PROTECCIÓN ---
 const requireLogin = (req, res, next) => {
     if (req.session.loggedIn) {
         next();
@@ -29,7 +87,9 @@ const requireLogin = (req, res, next) => {
     }
 };
 
-// --- RUTAS DE LOGIN Y LOGOUT ---
+// ==============================================================
+// 🔐 4. RUTAS DE ACCESO (LOGIN / LOGOUT)
+// ==============================================================
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (username === 'admin' && password === '1234') {
@@ -45,19 +105,16 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
-// Protegemos el panel de administrador
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// Archivos estáticos
-app.use(express.static('public'));
-
 // ==============================================================
-// ⚡ RECEPTOR WEBHOOK: MERCADO PAGO EN TIEMPO REAL
+// 💳 5. BILLETERA WEBHOOK Y SALDOS
 // ==============================================================
 app.post('/api/webhook/billetera', async (req, res) => {
     res.status(200).send("OK");
+
     try {
         const accion = req.body?.action;
         const tipo = req.body?.type;
@@ -117,29 +174,6 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
     }
 });
 
-// --- VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
-app.post('/api/validar-cliente', async (req, res) => {
-    try {
-        const { usuario, password } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        if (cliente) {
-            const claveReal = cliente.password ? cliente.password : '1234';
-            if (password === claveReal) {
-                if (!cliente.password) {
-                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
-                }
-                res.json({ exito: true });
-            } else {
-                res.json({ exito: false }); 
-            }
-        } else {
-            res.json({ exito: false }); 
-        }
-    } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
-    }
-});
-
 app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     const { usuario, monto } = req.body;
     try {
@@ -153,22 +187,8 @@ app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     }
 });
 
-app.post('/api/guardar-config', requireLogin, async (req, res) => {
-    try {
-        const { seccion, datos } = req.body;
-        await PanelConfig.updateOne(
-            { identificador: 'global' },
-            { $set: { [seccion]: datos } },
-            { upsert: true }
-        );
-        res.json({ exito: true });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
-
 // ==============================================================
-// 🔥 RUTAS DE CIERRE DE CAJA Y RESÚMENES
+// 📊 6. RUTAS DE CIERRE DE CAJA Y RESÚMENES
 // ==============================================================
 app.post('/api/cierre-caja', requireLogin, async (req, res) => {
     try {
@@ -257,7 +277,6 @@ app.get('/api/resumen-cajas/:fecha', requireLogin, async (req, res) => {
     }
 });
 
-// NUEVA RUTA: Obtener el historial completo por fecha
 app.get('/api/historial-cajas/:fecha', requireLogin, async (req, res) => {
     try {
         const cierres = await CierreCaja.find({ fecha: req.params.fecha });
@@ -267,7 +286,9 @@ app.get('/api/historial-cajas/:fecha', requireLogin, async (req, res) => {
     }
 });
 
-// --- RUTAS DE LA RULETA ---
+// ==============================================================
+// 🎲 7. RUTAS DE EVENTOS (RULETA / RASPA)
+// ==============================================================
 app.post('/api/guardar-ruleta', requireLogin, async (req, res) => {
     try {
         await Ruleta.deleteMany({});
@@ -361,7 +382,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
     }
 });
 
-// --- RUTAS DEL RASPA Y GANA ---
 app.post('/api/guardar-raspa', requireLogin, async (req, res) => {
     try {
         await Raspa.deleteMany({});
@@ -455,7 +475,46 @@ app.post('/api/tirar-raspa', async (req, res) => {
     }
 });
 
-// --- IMPORTADOR DE DATOS ---
+// ==============================================================
+// 🛠 8. OTRAS RUTAS API (CONFIG / VALIDAR CLIENTE / IMPORTADOR)
+// ==============================================================
+app.post('/api/validar-cliente', async (req, res) => {
+    try {
+        const { usuario, password } = req.body;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        
+        if (cliente) {
+            const claveReal = cliente.password ? cliente.password : '1234';
+            if (password === claveReal) {
+                if (!cliente.password) {
+                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
+                }
+                res.json({ exito: true });
+            } else {
+                res.json({ exito: false }); 
+            }
+        } else {
+            res.json({ exito: false }); 
+        }
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
+    }
+});
+
+app.post('/api/guardar-config', requireLogin, async (req, res) => {
+    try {
+        const { seccion, datos } = req.body;
+        await PanelConfig.updateOne(
+            { identificador: 'global' },
+            { $set: { [seccion]: datos } },
+            { upsert: true }
+        );
+        res.json({ exito: true });
+    } catch (error) {
+        res.status(500).json({ exito: false });
+    }
+});
+
 app.post('/importar-datos', requireLogin, async (req, res) => {
     try {
         const { datosCrudos } = req.body;
@@ -488,31 +547,9 @@ app.post('/importar-datos', requireLogin, async (req, res) => {
     }
 });
 
-// --------------------------------------------------------
-// 🟢 CONEXIÓN A MONGODB
-// --------------------------------------------------------
-if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONGODB') {
-    mongoose.connect(process.env.MONGO_URI, { family: 4 })
-        .then(async () => {
-            console.log('🟢 CONECTADO A MONGODB');
-            await inicializarDatosDePrueba();
-        })
-        .catch(err => console.log('🔴 ERROR DE MONGODB:', err));
-}
-
-// --------------------------------------------------------
-// 📝 MODELOS DE DATOS DE MONGODB (Restantes)
-// --------------------------------------------------------
-const CierreCaja = mongoose.model('CierreCaja', new mongoose.Schema({
-    fecha: String, hora: String, inicio: String, fin: String, turno: String, cajero: String,
-    ingreso: Number, saldoOro: Number, saldoGanamos: Number, egreso: Number,
-    montoEsperado: Number, montoRealFinal: Number, sobranteFaltante: Number, reserva: Number,
-    gastos: Array, propinas: Array
-}));
-
-// --------------------------------------------------------
-// VARIABLES EN VIVO PARA SOCKETS
-// --------------------------------------------------------
+// ==============================================================
+// 🔌 9. COMUNICACIÓN EN VIVO (SOCKETS)
+// ==============================================================
 let usuariosConectados = []; 
 let adminSocketId = null;
 let usuarioSeleccionadoActivoAdmin = null;
@@ -628,7 +665,7 @@ io.on('connection', (socket) => {
         if (usuario) {
             usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true });
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
-            io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
+            if(usuario.id) io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
             socket.emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
         }
     });
