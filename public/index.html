@@ -14,14 +14,12 @@
         .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
         .active { display: flex; }
         
-        /* Contenedor corregido para evitar solapamientos */
         .bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 14px; width: 100%; position: relative; }
         .bubble { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; word-wrap: break-word; box-sizing: border-box; }
         .bubble.bot { background-color: #1f2937; color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #374151; }
         .bubble.admin { background-color: #1e3a8a; color: #ffffff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #2563eb; }
         .bubble.cliente { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
 
-        /* Estilo del visto corregido posicionado abajo de la burbuja */
         .status-text { font-size: 10px; color: #64748b; align-self: flex-end; margin-right: 5px; margin-top: 4px; font-weight: bold; display: block; }
         .status-text.visto { color: #38bdf8; }
 
@@ -45,9 +43,10 @@
         <div class="chat-body" id="chat-flow-container">
             
             <div id="screen-login" class="screen active" style="justify-content: center; align-items: center; height: 100%;">
-                <h2 style="color:white; margin-bottom: 5px;">Identificación</h2>
-                <input type="text" id="username" class="login-input" placeholder="Tu usuario de casino...">
-                <button class="btn-general" onclick="conectarAlChat()">Entra aquí</button>
+                <h2 style="color:white; margin-bottom: 15px; font-size: 18px; text-align: center;">Acceso de Clientes</h2>
+                <input type="text" id="username" class="login-input" placeholder="Tu usuario de casino..." style="margin-bottom: 10px;">
+                <input type="password" id="password" class="login-input" placeholder="Tu contraseña..." style="margin-bottom: 20px;">
+                <button id="btn-login" class="btn-general" onclick="validarAcceso()">Ingresar al Chat</button>
             </div>
 
             <div id="screen-conversation" class="screen" style="height: 100%;">
@@ -79,11 +78,50 @@
         const socket = io();
         const msgArea = document.getElementById('messages-area');
 
-        function conectarAlChat() {
+        // FUNCIÓN NUEVA: ENVÍA EL USUARIO Y PASS AL SERVIDOR PARA VALIDAR
+        function validarAcceso() {
             const usuarioInput = document.getElementById('username').value.trim();
-            if (usuarioInput === '') return;
-            socket.emit('identificar_usuario', { usuario: usuarioInput });
+            const passwordInput = document.getElementById('password').value.trim();
+            
+            if (usuarioInput === '' || passwordInput === '') {
+                alert('Por favor, ingresá tu usuario y contraseña.');
+                return;
+            }
+
+            const btn = document.getElementById('btn-login');
+            btn.innerText = 'Validando...';
+            btn.disabled = true;
+
+            fetch('/api/validar-cliente', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: usuarioInput, password: passwordInput })
+            })
+            .then(res => res.json())
+            .then(data => {
+                btn.innerText = 'Ingresar al Chat';
+                btn.disabled = false;
+
+                if(data.exito) {
+                    // Si el servidor aprueba la clave, recién acá se conecta el chat
+                    socket.emit('identificar_usuario', { usuario: usuarioInput });
+                } else {
+                    alert('Usuario o contraseña incorrectos. Consultá con soporte.');
+                }
+            })
+            .catch(err => {
+                btn.innerText = 'Ingresar al Chat';
+                btn.disabled = false;
+                alert('Hubo un error al conectar con el servidor.');
+            });
         }
+
+        // Permite loguearse apretando Enter
+        document.getElementById('password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                validarAcceso();
+            }
+        });
 
         socket.on('resultado_validacion', (respuesta) => {
             if (respuesta.exito) {
@@ -113,7 +151,6 @@
                 document.getElementById('container-deposit-options').style.display = 'grid';
                 let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><b>Titular:</b> BAIRES LOGISTICAS AUDIOVISUALES S.A.<br><br>Realizá la transferencia y enviá el comprobante 📄`;
                 
-                // Inicialmente sale dinámico, el servidor nos responderá si lo vió al instante
                 msgArea.innerHTML += `
                     <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
                     <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
@@ -165,13 +202,19 @@
             input.value = '';
         }
 
+        // Permite enviar mensajes del chat con Enter
+        document.getElementById('client-raw-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                enviarMensajeLibreCliente();
+            }
+        });
+
         socket.on('recibir_mensaje_admin', (datos) => {
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${datos.mensaje}</div></div>`;
             marcarMensajesLocalesComoVistos();
             msgArea.scrollTop = msgArea.scrollHeight;
         });
 
-        // Evento REAL cuando el admin abre nuestra ventana
         socket.on('tus_mensajes_fueron_leidos', () => {
             marcarMensajesLocalesComoVistos();
         });
