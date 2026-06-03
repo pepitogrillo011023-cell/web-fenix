@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // ==============================================================
-// 📝 1. MODELOS DE DATOS (SIEMPRE VAN ARRIBA PARA EVITAR ERRORES)
+// 📝 1. MODELOS DE DATOS
 // ==============================================================
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
@@ -188,7 +188,7 @@ app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
 });
 
 // ==============================================================
-// 📊 6. RUTAS DE CIERRE DE CAJA Y RESÚMENES
+// 📊 6. RUTAS DE CIERRE DE CAJA, RESÚMENES E HISTORIAL
 // ==============================================================
 app.post('/api/cierre-caja', requireLogin, async (req, res) => {
     try {
