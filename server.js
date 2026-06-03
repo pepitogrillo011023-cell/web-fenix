@@ -138,6 +138,25 @@ async function operarGanamosNet(usuarioJugador, monto) {
     }
 }
 
+// --- NUEVA RUTA: VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
+app.post('/api/validar-cliente', async (req, res) => {
+    try {
+        const { usuario, password } = req.body;
+        
+        // Buscamos si el usuario existe y coincide la contraseña en la base de datos
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario, password: password });
+        
+        if (cliente) {
+            res.json({ exito: true });
+        } else {
+            res.json({ exito: false });
+        }
+    } catch (error) {
+        console.error("🔴 Error al validar las credenciales del cliente:", error);
+        res.status(500).json({ exito: false, mensaje: 'Error en el proceso de inicio de sesión.' });
+    }
+});
+
 // --- RUTA PARA QUE TU PANEL LE ORDENE AL BOT CARGAR FICHAS ---
 app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     const { usuario, monto } = req.body;
@@ -203,6 +222,7 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 // --------------------------------------------------------
 const clienteSchema = new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
+    password: { type: String, default: '1234' }, // Agregado para el control de accesos de tus clientes
     saldo: { type: Number, default: 0 },
     wager: { type: Number, default: 0 },
     estado: { type: String, default: 'Activo' },
