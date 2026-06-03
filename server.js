@@ -48,57 +48,114 @@ app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(__dirname + '/public/admin.html');
 });
 
-// --- NUEVA RUTA: VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
+// --- VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
 app.post('/api/validar-cliente', async (req, res) => {
     try {
         const { usuario, password } = req.body;
-        
-        // Buscamos al cliente solo por su nombre de usuario
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         
         if (cliente) {
-            // Si es un cliente viejo y no tiene password en la BD, asumimos que es 1234
             const claveReal = cliente.password ? cliente.password : '1234';
-            
             if (password === claveReal) {
-                // Si entró con éxito y no tenía clave, se la guardamos para la próxima
                 if (!cliente.password) {
                     await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
                 }
                 res.json({ exito: true });
             } else {
-                res.json({ exito: false }); // Contraseña mal ingresada
+                res.json({ exito: false }); 
             }
         } else {
-            res.json({ exito: false }); // El usuario no existe
+            res.json({ exito: false }); 
         }
     } catch (error) {
-        console.error("🔴 Error al validar las credenciales del cliente:", error);
-        res.status(500).json({ exito: false, mensaje: 'Error en el proceso de inicio de sesión.' });
+        console.error("🔴 Error al validar credenciales:", error);
+        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
     }
 });
 
-// --- RUTA DE GESTIÓN DE SALDOS (VERSIÓN LIMPIA - SIN BOT) ---
+// --- RUTA DE GESTIÓN DE SALDOS ---
 app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     const { usuario, monto } = req.body;
-    
     try {
-        // Actualizamos el saldo únicamente en tu panel para mantener tu contabilidad
         await Cliente.updateOne(
             { usuarioCasino: usuario }, 
             { $inc: { saldo: monto } }
         );
-        res.json({ 
-            exito: true, 
-            mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.\n\n(Recordá impactar esta carga de forma manual en Ganamos.net)` 
-        });
+        res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.` });
     } catch (error) {
-        console.error("🔴 Error al actualizar el saldo en la base de datos:", error);
         res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
     }
 });
 
-// --- RUTA DE IMPORTACIÓN DE DATOS MASIVA ---
+// --- RUTAS DE LA RULETA ---
+app.post('/api/guardar-ruleta', requireLogin, async (req, res) => {
+    try {
+        await Ruleta.deleteMany({}); // Borramos la confi vieja
+        await new Ruleta({ configuracion: req.body.configuracion }).save(); // Guardamos la nueva
+        res.json({ exito: true });
+    } catch (error) {
+        res.json({ exito: false });
+    }
+});
+
+app.post('/api/tirar-ruleta', async (req, res) => {
+    try {
+        const { usuario } = req.body;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
+
+        // Verificamos si ya tiró hoy
+        const hoy = new Date();
+        const ultima = cliente.ultimaRuleta;
+        if (ultima && ultima.getDate() === hoy.getDate() && ultima.getMonth() === hoy.getMonth() && ultima.getFullYear() === hoy.getFullYear()) {
+            return res.json({ exito: false, mensaje: '❌ Ya usaste tu tiro diario. ¡Volvé mañana con más suerte!' });
+        }
+
+        const ruletaDb = await Ruleta.findOne();
+        const config = ruletaDb ? ruletaDb.configuracion : [];
+        if (config.length === 0) return res.json({ exito: false, mensaje: 'La ruleta está en mantenimiento.' });
+
+        // Cálculo de probabilidad matemática
+        const rand = Math.random() * 100;
+        let sum = 0;
+        let premioGanado = config[config.length - 1]; // Por defecto cae en el último si hay error decimal
+
+        for (let item of config) {
+            sum += item.probabilidad;
+            if (rand <= sum) {
+                premioGanado = item;
+                break;
+            }
+        }
+
+        // Sumamos el premio, guardamos la fecha y lo metemos al historial de chat
+        cliente.saldo += premioGanado.valor;
+        cliente.ultimaRuleta = hoy;
+        
+        const msgBot = `🎰 ¡La ruleta giró y ganaste <b>${premioGanado.premio}</b>!<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu cuenta.`;
+        cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
+        
+        await cliente.save();
+
+        // Actualizamos en vivo el panel del admin si está mirando el chat
+        const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
+        if (usuarioExistente) {
+            usuarioExistente.historial = cliente.historialChat;
+            if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
+        }
+        if (adminSocketId) {
+            const clientesDB = await Cliente.find();
+            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
+
+        res.json({ exito: true, mensaje: msgBot });
+
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: 'Error al girar la ruleta.' });
+    }
+});
+
+// --- IMPORTADOR DE DATOS ---
 app.post('/importar-datos', requireLogin, async (req, res) => {
     try {
         const { datosCrudos } = req.body;
@@ -116,7 +173,7 @@ app.post('/importar-datos', requireLogin, async (req, res) => {
                             { usuarioCasino: usuario }, 
                             { 
                                 $set: { saldo: saldoNumerico, estado: 'Activo' },
-                                $setOnInsert: { password: '1234' } // Si es un usuario nuevo, le clava el 1234
+                                $setOnInsert: { password: '1234' }
                             }, 
                             { upsert: true }
                         );
@@ -125,7 +182,7 @@ app.post('/importar-datos', requireLogin, async (req, res) => {
                 }
             }
         }
-        res.json({ mensaje: `¡Se actualizaron ${actualizados} usuarios de Casino Fénix!` });
+        res.json({ mensaje: `¡Se actualizaron ${actualizados} usuarios!` });
     } catch (error) {
         res.status(500).json({ mensaje: 'Hubo un error en el servidor.' });
     }
@@ -155,9 +212,15 @@ const clienteSchema = new mongoose.Schema({
     wager: { type: Number, default: 0 },
     estado: { type: String, default: 'Activo' },
     historialChat: { type: Array, default: [] },
-    ultimaConexion: { type: Date, default: Date.now }
+    ultimaConexion: { type: Date, default: Date.now },
+    ultimaRuleta: { type: Date, default: null } // NUEVO CAMPO DE FECHA
 });
 const Cliente = mongoose.model('Cliente', clienteSchema);
+
+const ruletaSchema = new mongoose.Schema({
+    configuracion: Array // NUEVA TABLA PARA GUARDAR LA CONFIG DE LA RULETA
+});
+const Ruleta = mongoose.model('Ruleta', ruletaSchema);
 
 const retiroSchema = new mongoose.Schema({
     fecha: { type: String, default: () => new Date().toLocaleString('es-AR') },
@@ -196,18 +259,19 @@ io.on('connection', (socket) => {
             const clientesDB = await Cliente.find();
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
+            const ruletaDB = await Ruleta.findOne(); // Cargamos la ruleta para enviarla
             
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
                 retiros: retirosDB,
-                usuariosInternos: internosDB
+                usuariosInternos: internosDB,
+                ruleta: ruletaDB ? ruletaDB.configuracion : []
             });
         } catch (e) { console.log(e); }
     });
 
     socket.on('admin_cambio_chat_activo', async (datos) => {
         usuarioSeleccionadoActivoAdmin = datos.usuario;
-        
         if (usuarioSeleccionadoActivoAdmin) {
             let usuario = usuariosConectados.find(u => u.nombre === usuarioSeleccionadoActivoAdmin);
             if (usuario) {
@@ -291,9 +355,7 @@ io.on('connection', (socket) => {
         let usuario = usuariosConectados.find(u => u.nombre === datos.paraUsuario);
         if (usuario) {
             usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true });
-            
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
-
             io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
             socket.emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
         }
@@ -313,6 +375,19 @@ async function inicializarDatosDePrueba() {
     const countCl = await Cliente.countDocuments();
     if(countCl === 0) {
         await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save();
+    }
+    
+    // Inicia una ruleta de prueba si no existe ninguna
+    const countRuleta = await Ruleta.countDocuments();
+    if (countRuleta === 0) {
+        await new Ruleta({ configuracion: [
+            { id: 0, premio: '🏆 JACKPOT', valor: 50000, probabilidad: 2 },
+            { id: 1, premio: '🔥 Premio Mayor', valor: 10000, probabilidad: 8 },
+            { id: 2, premio: '⭐ Premio Medio', valor: 5000, probabilidad: 12 },
+            { id: 3, premio: '🍀 Premio Chico', valor: 2000, probabilidad: 18 },
+            { id: 4, premio: '✨ Consolación', valor: 500, probabilidad: 20 },
+            { id: 5, premio: '🎁 Sorpresa', valor: 100, probabilidad: 40 }
+        ]}).save();
     }
 }
 
