@@ -116,7 +116,7 @@
         input:checked + .slider { background-color: #10b981; }
         input:checked + .slider:before { transform: translateX(22px); }
 
-        /* NUEVOS ESTILOS PARA CIERRE DE CAJA / EXCEL */
+        /* CIERRE CAJA / EXCEL STYLES */
         .excel-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
         .excel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .table-custom { width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid #1f2937; }
@@ -126,7 +126,7 @@
         .btn-add { background-color: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .btn-remove { background-color: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
-        /* NUEVOS ESTILOS PARA RESUMEN DE CAJAS */
+        /* RESUMEN CAJAS STYLES */
         .resumen-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; text-align: center; }
         .resumen-table th { background-color: #4c0519; color: #facc15; padding: 12px; font-size: 13px; border: 1px solid #1f2937; }
         .resumen-table th.col-m { background-color: #fde047; color: #4c0519; }
@@ -251,9 +251,9 @@
                                     <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
                                     <tr><th>Monto Esperado</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
                                     <tr>
-                                        <td><input type="number" id="cc-esperado" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
+                                        <td><input type="number" id="cc-esperado" class="input-text-adv" readonly style="margin-bottom:0;"></td>
                                         <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
-                                        <td><input type="number" id="cc-dif" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
+                                        <td><input type="number" id="cc-dif" class="input-text-adv" readonly style="margin-bottom:0;"></td>
                                     </tr>
                                 </table>
                                 <div style="display:flex; justify-content:flex-end; margin-top:10px;">
@@ -280,9 +280,7 @@
                     </div>
 
                     <table class="resumen-table">
-                        <thead>
-                            <tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr>
-                        </thead>
+                        <thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead>
                         <tbody id="res-diario"></tbody>
                     </table>
 
@@ -291,7 +289,6 @@
                             <thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead>
                             <tbody id="res-mensual-salidas"></tbody>
                         </table>
-
                         <div>
                             <table class="resumen-table" style="margin-bottom:15px;">
                                 <thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead>
@@ -491,7 +488,7 @@
 
         socket.emit('identificar_admin');
 
-        // BILLETERA WEBHOOKS
+        // ESCUCHADOR EN VIVO PARA MERCADO PAGO VIA WEBHOOKS + SOCKETS
         socket.on('billetera_actualizada_en_vivo', (datos) => {
             const inputMonto = document.getElementById('wallet-monto');
             if(inputMonto) {
@@ -507,7 +504,7 @@
         
         async function simularPago() { await fetch('/api/simular-pago-test', { method: 'POST' }); }
 
-        // CONFIGURACIONES GLOBALES
+        // CONTROL ACCIONES DE GUARDADO
         async function guardarConfig(seccion) {
             let datosParaGuardar = {};
 
@@ -532,22 +529,29 @@
                 };
             }
             else if (seccion === 'push') {
-                datosParaGuardar = { titulo: document.getElementById('push-titulo').value, mensaje: document.getElementById('push-mensaje').value };
+                datosParaGuardar = {
+                    titulo: document.getElementById('push-titulo').value,
+                    mensaje: document.getElementById('push-mensaje').value
+                };
             }
             else if (seccion === 'billetera') {
-                datosParaGuardar = { monto: document.getElementById('wallet-monto').value };
+                datosParaGuardar = {
+                    monto: document.getElementById('wallet-monto').value
+                };
             }
 
             try {
                 const res = await fetch('/api/guardar-config', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ seccion: seccion, datos: datosParaGuardar })
                 });
-                if(res.redirected) return window.location.href = '/login.html';
                 const result = await res.json();
                 if (result.exito) alert('✅ ¡Los cambios se guardaron permanentemente en la base de datos!');
                 else alert('Error al intentar guardar los datos.');
-            } catch (error) { alert('Error de conexión.'); }
+            } catch (error) {
+                alert('Error de conexión.');
+            }
         }
 
         // IMPORTADOR Y FICHAS
@@ -559,7 +563,6 @@
             if (!texto.trim()) return alert("Pegá datos válidos.");
             try {
                 const res = await fetch('/importar-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datosCrudos: texto }) });
-                if(res.redirected) return window.location.href = '/login.html';
                 const result = await res.json();
                 alert(result.mensaje);
                 cerrarImportador();
@@ -571,13 +574,12 @@
             if (!monto || isNaN(monto)) return;
             try {
                 const res = await fetch('/api/cargar-saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuario, monto: Number(monto) }) });
-                if(res.redirected) return window.location.href = '/login.html';
                 const result = await res.json();
                 alert(result.mensaje);
             } catch (error) { alert("Error técnico."); }
         }
 
-        // RULETA
+        // CONTROL INTERACTIVO RULETA
         function getRuletaConfigFromDOM() {
             const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
             const configuracion = [];
@@ -629,7 +631,6 @@
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
             if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
             const res = await fetch('/api/guardar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
-            if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
             if(data.exito) alert('✅ ¡Ruleta guardada con éxito!');
         }
@@ -642,12 +643,9 @@
             const btn = document.getElementById('btn-spin-admin');
             btn.disabled = true;
             fetch('/api/tirar-ruleta-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
-            .then(res => {
-                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
-                if(!data.exito) { btn.disabled = false; return alert("Error al simular ruleta"); }
+                if(!data.exito) { btn.disabled = false; return alert("Error."); }
                 const winnerIndex = config.findIndex(item => item.id === data.premio.id);
                 const sliceDegree = 360 / config.length;
                 const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
@@ -658,10 +656,10 @@
                 currentRotationAdmin += needed + (360 * 4);
                 document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotationAdmin}deg)`;
                 setTimeout(() => { btn.disabled = false; document.getElementById('resultado-prueba').innerText = `Cae en: ${data.premio.premio}`; }, 5100);
-            }).catch(e => { btn.disabled = false; console.error("Error Ruleta:", e); });
+            }).catch(e => { btn.disabled = false; });
         }
 
-        // RASPA Y GANA
+        // CONTROL INTERACTIVO RASPA Y GANA
         function getRaspaConfigFromDOM() {
             const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
             const configuracion = [];
@@ -679,9 +677,8 @@
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
             if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
             const res = await fetch('/api/guardar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
-            if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
-            if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada!');
+            if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada en la base de datos!');
         }
 
         function rasparCasilleroSimulado(indexClickeado) {
@@ -694,13 +691,11 @@
             const casillerosDOM = document.querySelectorAll('.raspa-block-card');
             
             fetch('/api/tirar-raspa-prueba', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ configuracion: configFull })
             })
-            .then(res => {
-                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
-                return res.json();
-            })
+            .then(res => res.json())
             .then(data => {
                 if(!data.exito) return;
                 const winner = data.premio;
@@ -725,7 +720,7 @@
                         }
                     });
                 }, 800);
-            }).catch(e => console.error("Error Raspa:", e));
+            });
         }
 
         function reiniciarTableroRaspaPrueba() {
@@ -742,7 +737,7 @@
             `;
         }
 
-        // ENRUTAMIENTO DE SECCIONES
+        // ENRUTADOR SECCIONES
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
@@ -754,10 +749,7 @@
             const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API", cierre: "Panel de Control - Cierre de Caja", resumen: "Panel de Control - Resumen Cajas", historial: "Panel de Control - Historial de Cajas" };
             document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
 
-            // Retraso para que el canvas asimile el tamaño antes de dibujar
-            if (seccion === 'eventos') {
-                setTimeout(dibujarRuletaAdmin, 300);
-            }
+            if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
         }
 
         function cambiarSubJuego(juego) {
@@ -769,7 +761,6 @@
             if (juego === 'ruleta') setTimeout(dibujarRuletaAdmin, 100);
         }
 
-        // RECEPCIÓN DE DATOS INICIALES
         socket.on('cargar_datos_tablas', (datos) => {
             if (datos.clientes) {
                 const tbody = document.querySelector('#section-clientes .data-table tbody');
@@ -897,7 +888,7 @@
         });
 
         // ==========================================
-        // LÓGICA DEL CIERRE DE CAJA Y RESÚMENES
+        // LÓGICA DEL CIERRE DE CAJA (FRONTEND)
         // ==========================================
         const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
         
@@ -949,28 +940,40 @@
             
             const gastos = [];
             document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => {
-                gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 });
+                gastos.push({
+                    tipo: tr.querySelector('.gt').value,
+                    usuario: tr.querySelector('.gu').value,
+                    monto: Number(tr.querySelector('.gm').value) || 0
+                });
             });
 
             const propinas = [];
             document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => {
-                propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 });
+                propinas.push({
+                    usuario: tr.querySelector('.pu').value,
+                    monto: Number(tr.querySelector('.pm').value) || 0
+                });
             });
 
             const payload = {
-                fecha: document.getElementById('cc-fecha').value, hora: document.getElementById('cc-hora').value,
-                inicio: document.getElementById('cc-inicio').value, fin: document.getElementById('cc-fin').value,
-                turno: document.getElementById('cc-turno').value, cajero: document.getElementById('cc-cajero').value,
-                ingreso: Number(document.getElementById('cc-ingreso').value) || 0, saldoOro: Number(document.getElementById('cc-oro').value) || 0,
-                saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0, egreso: Number(document.getElementById('cc-egreso').value) || 0,
-                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0, montoRealFinal: Number(document.getElementById('cc-real').value) || 0,
-                sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0, reserva: Number(document.getElementById('cc-reserva').value) || 0,
+                fecha: document.getElementById('cc-fecha').value,
+                hora: document.getElementById('cc-hora').value,
+                inicio: document.getElementById('cc-inicio').value,
+                fin: document.getElementById('cc-fin').value,
+                turno: document.getElementById('cc-turno').value,
+                cajero: document.getElementById('cc-cajero').value,
+                ingreso: Number(document.getElementById('cc-ingreso').value) || 0,
+                saldoOro: Number(document.getElementById('cc-oro').value) || 0,
+                saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0,
+                egreso: Number(document.getElementById('cc-egreso').value) || 0,
+                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0,
+                montoRealFinal: Number(document.getElementById('cc-real').value) || 0,
+                sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0,
+                reserva: Number(document.getElementById('cc-reserva').value) || 0,
                 gastos, propinas
             };
 
             const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            if(res.redirected) return window.location.href = '/login.html';
-            
             if(res.ok) {
                 alert("✅ Cierre Guardado en la Base de Datos!");
                 if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen();
@@ -980,16 +983,20 @@
         addGastoRow(); addPropinaRow();
         document.getElementById('cc-fecha').valueAsDate = new Date();
 
+        // ==========================================
+        // LÓGICA DE RESUMEN DE CAJAS
+        // ==========================================
         const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
         async function buscarResumen() {
             const fecha = document.getElementById('res-fecha').value;
             if(!fecha) return;
             const res = await fetch('/api/resumen-cajas/' + fecha);
-            if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
-            const d = data.dia; const m = data.mes;
+            const d = data.dia;
+            const m = data.mes;
 
+            // DIARIO
             document.getElementById('res-diario').innerHTML = `
                 <tr><td class="header-row">Ingreso Inicial</td><td>${f.format(d.manana.ingreso)}</td><td>${f.format(d.tarde.ingreso)}</td><td>${f.format(d.noche.ingreso)}</td><td style="color:#9ca3af">${f.format(d.total.ingreso)}</td></tr>
                 <tr><td class="header-row">Saldo Oro</td><td>${f.format(d.manana.oro)}</td><td>${f.format(d.tarde.oro)}</td><td>${f.format(d.noche.oro)}</td><td style="color:#9ca3af">${f.format(d.total.oro)}</td></tr>
@@ -998,6 +1005,7 @@
                 <tr><td class="header-row">Monto Real Final</td><td>${f.format(d.manana.real)}</td><td>${f.format(d.tarde.real)}</td><td>${f.format(d.noche.real)}</td><td style="color:#9ca3af">${f.format(d.total.real)}</td></tr>
             `;
 
+            // MENSUAL - SALIDAS
             const totSalidas = m.salidas.lean + m.salidas.nahue + m.salidas.brai + m.salidas.tati;
             document.getElementById('res-salida-tot').innerText = f.format(totSalidas);
             document.getElementById('res-mensual-salidas').innerHTML = `
@@ -1009,12 +1017,14 @@
                 <tr><td class="header-row" style="background:#1d4ed8;">TOTAL SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.ganamos)}</td></tr>
             `;
 
+            // MENSUAL - FICHAS
             document.getElementById('res-mensual-fichas').innerHTML = `
                 <tr><td class="header-row">MEGAFARAON</td><td>${f.format(m.fichas.mega)}</td></tr>
                 <tr><td class="header-row">GANAMOS</td><td>${f.format(m.fichas.ganamos)}</td></tr>
                 <tr><td class="header-row">ORO</td><td>${f.format(m.fichas.oro)}</td></tr>
             `;
 
+            // MENSUAL - BONOS
             document.getElementById('res-mensual-bonos').innerHTML = `
                 <tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr>
                 <tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>
@@ -1031,7 +1041,6 @@
 
             try {
                 const res = await fetch('/api/historial-cajas/' + fecha);
-                if(res.redirected) return window.location.href = '/login.html';
                 const cierres = await res.json();
 
                 if (cierres.length === 0) {
