@@ -2,69 +2,125 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Panel Casino Fénix - Administración</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración Avanzado - Club Fenix</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; background: #0b0f19; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
-        .sidebar { width: 240px; background: #111827; border-right: 1px solid #1f2937; padding: 20px; flex-shrink: 0; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-        .sidebar h2 { color: #f8fafc; font-size: 18px; margin: 0 0 10px 0; }
-        .nav-btn { background: none; border: none; color: #94a3b8; padding: 12px; font-weight: 600; cursor: pointer; width: 100%; text-align: left; transition: 0.3s; border-radius: 6px; }
-        .nav-btn:hover { background: #1f2937; color: white; }
-        .nav-btn.active-nav { color: #38bdf8; background: #1f2937; box-shadow: inset 4px 0 0 #38bdf8; }
+        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
         
-        .main-content { flex: 1; display: flex; flex-direction: column; background: #0f172a; overflow: hidden; }
-        .view-section { display: none; padding: 30px; height: 100%; overflow-y: auto; box-sizing: border-box; }
-        .view-section.active-view { display: block; animation: fadeIn 0.3s; }
+        .sidebar { width: 240px; background-color: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
+        .sidebar h2 { color: #f8fafc; font-size: 18px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
+        .menu-category { font-size: 11px; font-weight: bold; color: #4b5563; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
+        
+        .nav-btn { background: none; border: none; color: #94a3b8; text-align: left; padding: 10px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+        .nav-btn.active-nav { color: #38bdf8; background-color: #1f2937; box-shadow: inset 4px 0 0 #38bdf8; }
+        .nav-btn:hover { background-color: #1f2937; color: white; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
+        .modal-content { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 450px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #38bdf8; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+        .modal-content h3 { color: #38bdf8; margin-top: 0; }
+        .modal-content textarea { width: 100%; height: 150px; background: #0f172a; color: white; border: 1px solid #374151; padding: 10px; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px; font-family: monospace; }
+
+        .main-content { flex: 1; display: flex; flex-direction: column; background-color: #0f172a; }
+        .top-bar { height: 60px; background-color: #111827; border-bottom: 1px solid #1f2937; display: flex; align-items: center; padding: 0 30px; font-weight: bold; color: #f8fafc; justify-content: space-between; }
+        
+        .workspace { flex: 1; display: flex; overflow: hidden; position: relative; }
+        .view-section { display: none; width: 100%; height: 100%; flex-direction: column; overflow-y:auto; padding: 30px; box-sizing: border-box;}
+        .view-section.active-view { display: flex; animation: fadeIn 0.3s;}
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-        .input-text-adv { background: #1f2937; border: 1px solid #374151; padding: 10px; color: white; width: 100%; box-sizing: border-box; border-radius: 4px; margin-bottom: 5px; }
-        .btn-save { background: #2563eb; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-top: 10px; width: 100%; }
+        #section-chats { padding: 0; flex-direction: row; }
+
+        .panel-inside { flex: 1; }
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
+        .stat-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; text-align: center; }
+        .stat-card .num { font-size: 26px; font-weight: bold; color: white; margin-top: 5px; }
+
+        .data-table { width: 100%; border-collapse: collapse; background-color: #111827; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; }
+        .data-table th { background-color: #1f2937; color: #38bdf8; padding: 14px; text-align: left; font-size: 13px; }
+        .data-table td { padding: 14px; border-bottom: 1px solid #1f2937; color: white; font-size: 13px; }
+        
+        .btn-action-table { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; border: none; cursor: pointer; margin-right: 5px; }
+        .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; margin-top: 15px; transition: background 0.2s; }
         .btn-add { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
         .btn-remove { background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
-        /* CHATS */
-        .chats-container { display: flex; height: calc(100vh - 100px); gap: 20px; }
-        .user-list { width: 250px; background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 10px; overflow-y: auto; }
-        .user-item { padding: 12px; background: #1f2937; border-radius: 6px; margin-bottom: 8px; cursor: pointer; border: 1px solid transparent; }
-        .user-item.selected-user { border-color: #2563eb; }
-        .chat-monitor { flex: 1; background: #111827; border: 1px solid #1f2937; border-radius: 8px; display: flex; flex-direction: column; }
-        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; }
-        .admin-bubble { max-width: 75%; padding: 10px; border-radius: 8px; margin-bottom: 10px; font-size: 13px; }
-        .b-cliente { background: #2563eb; color: white; align-self: flex-start; }
-        .b-admin { background: #1e3a8a; color: white; align-self: flex-end; }
-        .b-bot { background: #374151; color: #94a3b8; align-self: flex-start; }
+        .chats-sidebar { width: 300px; background-color: #111827; border-right: 1px solid #1f2937; display: flex; flex-direction: column; }
+        .chats-header { padding: 15px; font-weight: 600; border-bottom: 1px solid #1f2937; background-color: #1f2937; color: white; }
+        .user-list { flex: 1; overflow-y: auto; padding: 10px; }
+        .user-item { padding: 12px; background-color: #111827; border-radius: 8px; margin-bottom: 8px; border: 1px solid #374151; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+        .user-item.selected-user { border-color: #2563eb; background-color: #1e293b; }
+        .user-item.unread-chat { border-left: 4px solid #38bdf8; background-color: #1a2236; }
+        .unread-indicator { width: 8px; height: 8px; background-color: #38bdf8; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .badge { color: white; font-size: 11px; padding: 4px 8px; border-radius: 10px; font-weight: bold; }
 
-        /* EVENTOS */
-        .event-tabs-header { display: flex; gap: 10px; margin-bottom: 20px; }
-        .event-tab-btn { background: #111827; border: 1px solid #1f2937; color: #94a3b8; padding: 10px 16px; font-weight: bold; cursor: pointer; border-radius: 6px; }
-        .event-tab-btn.active-event-tab { background: #1f2937; color: #38bdf8; border-color: #374151; }
-        .event-subview { display: none; }
-        .event-subview.active-subview { display: block; }
+        .live-chat-monitor { flex: 1; display: flex; flex-direction: column; background-color: #0b1329; }
+        .monitor-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
+        .admin-bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 15px; width: 100%; }
+        .admin-bubble { max-width: 75%; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+        .admin-bubble.b-bot { background-color: #1f2937; color: #94a3b8; align-self: flex-start; }
+        .admin-bubble.b-admin { background-color: #1e3a8a; color: white; align-self: flex-end; }
+        .admin-bubble.b-cliente { background-color: #2563eb; color: white; align-self: flex-start; font-weight: 600; }
+        .read-receipt { font-size: 10px; color: #64748b; align-self: flex-start; margin-left: 5px; margin-top: 4px; font-weight: bold; }
+        .read-receipt.seen { color: #38bdf8; }
+        .monitor-input-area { padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; display: flex; gap: 10px; }
+        .admin-chat-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 12px; color: white; outline: none; }
+
+        .event-tabs-header { display: flex; gap: 10px; background-color: #111827; padding: 10px; border-radius: 10px; border: 1px solid #1f2937; margin-bottom: 20px; }
+        .event-tab-btn { background: none; border: none; color: #94a3b8; padding: 10px 16px; font-weight: bold; font-size: 13px; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .event-tab-btn.active-event-tab { background-color: #1f2937; color: #38bdf8; border: 1px solid #374151; }
+        .event-subview { display: none; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
+        .event-subview.active-subview { display: flex; flex-direction: column; }
         
-        .ruleta-table { width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid #1f2937; }
-        .ruleta-table th { background: #1f2937; color: #ffaa00; padding: 10px; text-transform: uppercase; font-size: 12px; }
-        .ruleta-table td { padding: 8px; border-bottom: 1px solid #1f2937; background: #111827; }
-        
+        .ruleta-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; border: 1px solid #ffaa00; margin-bottom: 10px; }
+        .ruleta-table th { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; padding: 14px; text-align: left; font-size: 14px; text-transform: uppercase; }
+        .ruleta-table td { padding: 12px; border-bottom: 1px solid #1f2937; color: white; background-color: #0b0f19; }
+        .input-ruleta-text { background-color: #1f2937; border: 1px solid #ffaa00; color: #ffaa00; font-weight: bold; padding: 8px; border-radius: 6px; width: 150px; font-size: 13px; outline: none; }
+        .input-ruleta-val { background-color: #1f2937; border: 1px solid #38bdf8; color: #38bdf8; font-weight: bold; padding: 8px; border-radius: 6px; width: 90px; font-size: 13px; outline: none; }
+        .prob-input { background-color: #1f2937; border: 1px solid #10b981; color: #10b981; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-weight: bold; font-size: 13px; outline: none; }
+
         .ruleta-container { position: relative; width: 240px; height: 240px; margin: 0 auto; }
-        .ruleta-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 35px; color: #ffaa00; }
-        #ruleta-admin-canvas { transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1f2937; }
-
+        .ruleta-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 35px; color: #ffaa00; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        #ruleta-admin-canvas { transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1f2937; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        
         .raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 320px; margin: 15px auto; }
-        .raspa-block-card { width: 100px; height: 85px; background: #1f2937; border: 2px dashed #ffaa00; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; }
-        .raspa-block-card.scratched { background: #0b0f19; border-color: #2563eb; border-style: solid; }
-        .raspa-block-card.others-revealed { background: #111827; border-color: #374151; opacity: 0.75; border-style: solid; }
-        .raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #4b5563, #1f2937); display: flex; justify-content: center; align-items: center; font-size: 20px; font-weight: bold; transition: 0.4s; z-index: 2; }
-        .raspa-prize-text { font-size: 11px; font-weight: bold; color: white; text-align: center; }
-        .raspa-value-text { font-size: 12px; font-weight: bold; color: #38bdf8; }
+        .raspa-block-card { width: 100px; height: 85px; background-color: #1f2937; border: 2px dashed #ffaa00; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; }
+        .raspa-block-card.scratched { background-color: #0b0f19; border-color: #2563eb; border-style: solid;}
+        .raspa-block-card.others-revealed { background-color: #111827; border-color: #374151; opacity: 0.75; border-style: solid;}
+        .raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #4b5563, #1f2937); display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold; font-size: 20px; transition: opacity 0.4s; z-index: 2; }
+        .raspa-prize-text { font-size: 11px; font-weight: bold; color: white; text-align: center; padding: 4px; }
+        .raspa-value-text { font-size: 12px; font-weight: bold; color: #38bdf8; margin-top: 2px; }
 
-        /* CIERRE CAJA / EXCEL */
+        .push-layout { display: flex; gap: 25px; }
+        .push-form-card { flex: 1.2; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; }
+        .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+        .form-row label { font-size: 12px; font-weight: 600; color: #94a3b8; }
+        .input-text-adv { background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; margin-top:4px;}
+
+        .retencion-container { display: flex; flex-direction: column; gap: 20px; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
+        .retencion-block { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px solid #1f2937; padding-bottom: 15px; }
+        .retencion-header-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #38bdf8; }
+        .input-retencion-large { background-color: #0f172a; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; max-width: 600px; margin-top: 4px; }
+
+        .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .api-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .api-card-header { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 15px; color: white; border-bottom: 1px solid #1f2937; padding-bottom: 12px; margin-bottom: 5px; }
+        
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(22px); }
+
+        /* NUEVOS ESTILOS CIERRE CAJA (EXCEL) */
         .excel-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
         .excel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .table-custom { width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid #1f2937; }
         .table-custom th { background: #002b5e; color: #38bdf8; padding: 10px; text-transform: uppercase; font-size: 12px; border: 1px solid #1f2937; }
         .table-custom td { padding: 6px; border: 1px solid #1f2937; background: #1e293b; }
 
-        /* RESUMEN CAJAS */
+        /* NUEVOS ESTILOS RESUMEN */
         .resumen-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; text-align: center; }
         .resumen-table th { background: #4c0519; color: #facc15; padding: 12px; font-size: 13px; border: 1px solid #1f2937; }
         .resumen-table th.col-m { background: #fde047; color: #4c0519; }
@@ -77,436 +133,682 @@
 </head>
 <body>
 
-<div class="sidebar">
-    <h2>⚡ Fénix Admin</h2>
-    <button class="nav-btn active-nav" onclick="show('chats')">💬 Chats en Vivo</button>
-    <button class="nav-btn" onclick="show('billetera')">💳 Billetera API</button>
-    <button class="nav-btn" onclick="show('eventos')">🎁 Minijuegos</button>
-    <button class="nav-btn" onclick="show('cierre')">📊 Cierre de Caja</button>
-    <button class="nav-btn" onclick="show('resumen')">📈 Resumen Cajas</button>
-</div>
-
-<div class="main-content">
-    
-    <!-- CHATS -->
-    <div id="chats" class="view-section active-view">
-        <h3 style="margin-top:0;">Monitoreo de Chats</h3>
-        <div class="chats-container">
-            <div class="user-list" id="lista-usuarios"></div>
-            <div class="chat-monitor">
-                <div class="chat-messages" id="active-chat-messages" style="display:flex; flex-direction:column;"></div>
-                <div style="padding:15px; background:#1f2937; display:flex; gap:10px;">
-                    <input type="text" id="admin-message-input" class="input-text-adv" style="margin:0;" placeholder="Responder...">
-                    <button class="btn-save" style="margin:0; width:auto;" onclick="enviarMensajeManual()">Enviar</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- BILLETERA -->
-    <div id="billetera" class="view-section">
-        <h3 style="margin-top:0;">Gestión de Billetera y Webhooks</h3>
-        <div class="excel-card">
-            <label>Mercado Pago Access Token</label>
-            <input type="password" id="api-pass" class="input-text-adv" placeholder="APP_USR-...">
-            <button class="btn-save" onclick="guardarConfig('apis')">Guardar Llaves</button>
-            <hr style="border-color:#1f2937; margin:20px 0;">
-            <label>Saldo Mercado Pago Detectado</label>
-            <input type="text" id="wallet-monto" class="input-text-adv" value="$0,00 ARS" readonly style="font-size: 24px; color: #10b981; font-weight: bold; background: transparent; border:none;">
-            <button class="btn-save" style="background:#10b981;" onclick="simularPago()">Simular Pago MP (Prueba)</button>
-        </div>
-    </div>
-
-    <!-- EVENTOS -->
-    <div id="eventos" class="view-section">
-        <div class="event-tabs-header">
-            <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯 Ruleta</button>
-            <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫 Raspa/Gana</button>
-        </div>
-
-        <!-- RULETA -->
-        <div id="subview-ruleta" class="event-subview active-subview">
-            <div style="display:flex; gap:30px;">
-                <div style="flex:1;">
-                    <table class="ruleta-table" id="tabla-config-ruleta">
-                        <thead><tr><th>Premio</th><th>Fichas</th><th>Probabilidad (%)</th></tr></thead>
-                        <tbody>
-                            <tr><td><input type="text" class="input-text-adv rul-txt" value="🏆 JACKPOT" oninput="dibujarRuletaAdmin()"></td><td><input type="number" class="input-text-adv rul-val" value="50000"></td><td><input type="number" class="input-text-adv rul-prob" value="2" oninput="dibujarRuletaAdmin()"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rul-txt" value="🔥 Premio Mayor" oninput="dibujarRuletaAdmin()"></td><td><input type="number" class="input-text-adv rul-val" value="10000"></td><td><input type="number" class="input-text-adv rul-prob" value="8" oninput="dibujarRuletaAdmin()"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rul-txt" value="⭐ Premio Medio" oninput="dibujarRuletaAdmin()"></td><td><input type="number" class="input-text-adv rul-val" value="5000"></td><td><input type="number" class="input-text-adv rul-prob" value="12" oninput="dibujarRuletaAdmin()"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rul-txt" value="🍀 Premio Chico" oninput="dibujarRuletaAdmin()"></td><td><input type="number" class="input-text-adv rul-val" value="2000"></td><td><input type="number" class="input-text-adv rul-prob" value="18" oninput="dibujarRuletaAdmin()"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rul-txt" value="✨ Consolación" oninput="dibujarRuletaAdmin()"></td><td><input type="number" class="input-text-adv rul-val" value="500"></td><td><input type="number" class="input-text-adv rul-prob" value="20" oninput="dibujarRuletaAdmin()"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rul-txt" value="🎁 Sorpresa" oninput="dibujarRuletaAdmin()"></td><td><input type="number" class="input-text-adv rul-val" value="100"></td><td><input type="number" class="input-text-adv rul-prob" value="40" oninput="dibujarRuletaAdmin()"></td></tr>
-                        </tbody>
-                    </table>
-                    <button class="btn-save" onclick="guardarRuleta()">Guardar Configuración Ruleta</button>
-                </div>
-                <div style="width:280px; text-align:center;">
-                    <div class="ruleta-container">
-                        <div class="ruleta-pointer">▼</div>
-                        <canvas id="ruleta-admin-canvas" width="240" height="240"></canvas>
-                    </div>
-                    <button class="btn-save" style="background:#ffaa00; color:black;" onclick="iniciarGiroPrueba()">🎲 Simular Tiro</button>
-                    <div id="resultado-prueba" style="margin-top:10px; color:#ffaa00; font-weight:bold;"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- RASPA -->
-        <div id="subview-raspa" class="event-subview">
-            <div style="display:flex; gap:30px;">
-                <div style="flex:1;">
-                    <table class="ruleta-table" id="tabla-config-raspa">
-                        <thead><tr><th>Premio</th><th>Fichas</th><th>Probabilidad (%)</th></tr></thead>
-                        <tbody>
-                            <tr><td><input type="text" class="input-text-adv rasp-txt" value="💎 MEGA BONO"></td><td><input type="number" class="input-text-adv rasp-val" value="30000"></td><td><input type="number" class="input-text-adv rasp-prob" value="3"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rasp-txt" value="👑 Premio Alto"></td><td><input type="number" class="input-text-adv rasp-val" value="15000"></td><td><input type="number" class="input-text-adv rasp-prob" value="7"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rasp-txt" value="💵 Intermedio"></td><td><input type="number" class="input-text-adv rasp-val" value="4000"></td><td><input type="number" class="input-text-adv rasp-prob" value="15"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rasp-txt" value="📦 Base"></td><td><input type="number" class="input-text-adv rasp-val" value="1500"></td><td><input type="number" class="input-text-adv rasp-prob" value="25"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rasp-txt" value="🪙 Menor"></td><td><input type="number" class="input-text-adv rasp-val" value="600"></td><td><input type="number" class="input-text-adv rasp-prob" value="20"></td></tr>
-                            <tr><td><input type="text" class="input-text-adv rasp-txt" value="🎈 Suerte Loca"></td><td><input type="number" class="input-text-adv rasp-val" value="200"></td><td><input type="number" class="input-text-adv rasp-prob" value="30"></td></tr>
-                        </tbody>
-                    </table>
-                    <button class="btn-save" onclick="guardarRaspa()">Guardar Configuración Raspa</button>
-                </div>
-                <div style="width:320px; background:#111827; padding:20px; border-radius:8px; border:1px solid #ffaa00; text-align:center;">
-                    <h4 style="margin:0; color:#ffaa00;">Simulador Tarjeta</h4>
-                    <div class="raspa-grid-board" id="tablero-prueba-raspa">
-                        <div class="raspa-block-card" onclick="rasparCasilleroSimulado(0)"><div class="raspa-cover-layer">?</div></div>
-                        <div class="raspa-block-card" onclick="rasparCasilleroSimulado(1)"><div class="raspa-cover-layer">?</div></div>
-                        <div class="raspa-block-card" onclick="rasparCasilleroSimulado(2)"><div class="raspa-cover-layer">?</div></div>
-                        <div class="raspa-block-card" onclick="rasparCasilleroSimulado(3)"><div class="raspa-cover-layer">?</div></div>
-                        <div class="raspa-block-card" onclick="rasparCasilleroSimulado(4)"><div class="raspa-cover-layer">?</div></div>
-                        <div class="raspa-block-card" onclick="rasparCasilleroSimulado(5)"><div class="raspa-cover-layer">?</div></div>
-                    </div>
-                    <button class="btn-save" style="background:#1f2937;" onclick="reiniciarTableroRaspaPrueba()">🔄 Limpiar Tablero</button>
-                    <div id="resultado-raspa-prueba" style="margin-top:10px; color:#38bdf8; font-weight:bold;"></div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- CIERRE DE CAJA -->
-    <div id="cierre" class="view-section">
-        <h3 style="margin-top:0;">Registro Operativo - Cierre de Caja</h3>
-        <div class="excel-card">
-            <div class="excel-grid">
-                <!-- IZQ -->
-                <div>
-                    <table class="table-custom">
-                        <tr><th>Fecha</th><td><input type="date" id="cc-fecha" class="input-text-adv"></td><th>Inicio</th><td><input type="time" id="cc-inicio" class="input-text-adv"></td></tr>
-                        <tr><th>Hora</th><td><input type="time" id="cc-hora" class="input-text-adv"></td><th>Fin</th><td><input type="time" id="cc-fin" class="input-text-adv"></td></tr>
-                        <tr><th colspan="2">Cajero</th><td colspan="2"><input type="text" id="cc-cajero" class="input-text-adv"></td></tr>
-                        <tr><th colspan="2">Turno</th><td colspan="2">
-                            <select id="cc-turno" class="input-text-adv"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select>
-                        </td></tr>
-                    </table>
-                    <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">GASTOS JORNADA</h4>
-                    <table class="table-custom" id="tabla-gastos"><thead><tr><th>Tipo</th><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <button class="btn-add" onclick="addGastoRow()">+ Agregar Gasto</button>
-                        <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-gastos">0.00</span></div>
-                    </div>
-                </div>
-                <!-- DER -->
-                <div>
-                    <table class="table-custom">
-                        <tr><th>Ingreso</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>EGRESO</th></tr>
-                        <tr>
-                            <td><input type="number" id="cc-ingreso" class="input-text-adv val-num" oninput="calcCierre()"></td>
-                            <td><input type="number" id="cc-oro" class="input-text-adv val-num" oninput="calcCierre()"></td>
-                            <td><input type="number" id="cc-ganamos" class="input-text-adv val-num" oninput="calcCierre()"></td>
-                            <td><input type="number" id="cc-egreso" class="input-text-adv val-num" readonly style="color:#ef4444; font-weight:bold;"></td>
-                        </tr>
-                        <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
-                        <tr><th>Monto Esperado</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
-                        <tr>
-                            <td><input type="number" id="cc-esperado" class="input-text-adv" readonly></td>
-                            <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" oninput="calcCierre()"></td>
-                            <td><input type="number" id="cc-dif" class="input-text-adv" readonly></td>
-                        </tr>
-                    </table>
-                    <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-                        <table class="table-custom" style="width:150px;"><tr><th style="background:#a3e635; color:black;">RESERVA</th></tr><tr><td><input type="number" id="cc-reserva" value="400000" class="input-text-adv val-num"></td></tr></table>
-                    </div>
-                    <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">PROPINAS JORNADA</h4>
-                    <table class="table-custom" id="tabla-propinas"><thead><tr><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                        <button class="btn-add" onclick="addPropinaRow()">+ Agregar Propina</button>
-                        <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-propinas">0.00</span></div>
-                    </div>
-                </div>
-            </div>
-            <button class="btn-save" onclick="guardarCierreDB()">💾 GUARDAR CIERRE DE CAJA OFICIAL</button>
-        </div>
-    </div>
-
-    <!-- RESUMEN CAJAS -->
-    <div id="resumen" class="view-section">
-        <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #1f2937;">
-            <h3 style="margin:0; color:#38bdf8;">INGRESAR FECHA:</h3>
-            <input type="date" id="res-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarResumen()">
-        </div>
-
-        <table class="resumen-table">
-            <thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead>
-            <tbody id="res-diario"></tbody>
-        </table>
-
-        <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:20px;">
-            <table class="resumen-table">
-                <thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead>
-                <tbody id="res-mensual-salidas"></tbody>
-            </table>
-            <div>
-                <table class="resumen-table" style="margin-bottom:15px;">
-                    <thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead>
-                    <tbody id="res-mensual-fichas"></tbody>
-                </table>
-                <table class="resumen-table">
-                    <thead><tr><th style="background:#4c0519;">BONOS</th><th style="background:#701a35;">NUEVOS (BB)</th><th style="background:#b45309;">RECOMENDADOS (BR)</th></tr></thead>
-                    <tbody id="res-mensual-bonos"></tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
-</div>
-
-<script>
-    const socket = io();
-    socket.emit('identificar_admin');
-
-    // NAVEGACIÓN Y TABS
-    function show(id) {
-        document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
-        document.getElementById(id).classList.add('active-view');
-        event.currentTarget.classList.add('active-nav');
-        if(id === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
-    }
-    function cambiarSubJuego(juego) {
-        document.querySelectorAll('.event-subview').forEach(s => s.classList.remove('active-subview'));
-        document.querySelectorAll('.event-tab-btn').forEach(b => b.classList.remove('active-event-tab'));
-        document.getElementById('subview-' + juego).classList.add('active-subview');
-        document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
-        if(juego === 'ruleta') setTimeout(dibujarRuletaAdmin, 100);
-    }
-
-    // CHATS
-    let usuarioSeleccionadoActivo = null;
-    socket.on('lista_usuarios_actualizada', (usuarios) => {
-        const listaDiv = document.getElementById('lista-usuarios');
-        listaDiv.innerHTML = '';
-        usuarios.forEach(user => {
-            const item = document.createElement('div');
-            item.className = `user-item ${usuarioSeleccionadoActivo === user.nombre ? 'selected-user' : ''}`;
-            item.innerHTML = `<div>👤 ${user.nombre}</div><div style="font-size:10px; color:#38bdf8;">${user.estado}</div>`;
-            item.onclick = () => {
-                usuarioSeleccionadoActivo = user.nombre;
-                socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
-                renderizarHistorial(user.historial);
-                document.querySelectorAll('.user-item').forEach(el => el.classList.remove('selected-user'));
-                item.classList.add('selected-user');
-            };
-            listaDiv.appendChild(item);
-            if (usuarioSeleccionadoActivo === user.nombre) renderizarHistorial(user.historial);
-        });
-    });
-    socket.on('actualizar_chat_activo', (datos) => {
-        if(datos.nombre === usuarioSeleccionadoActivo) renderizarHistorial(datos.historial);
-    });
-    function renderizarHistorial(historial) {
-        const areaMsg = document.getElementById('active-chat-messages');
-        areaMsg.innerHTML = ''; 
-        historial.forEach(h => {
-            const b = document.createElement('div');
-            if (h.emisor === 'bot') { b.className = 'admin-bubble b-bot'; b.innerHTML = `🤖 ${h.mensaje}`; }
-            if (h.emisor === 'admin') { b.className = 'admin-bubble b-admin'; b.innerHTML = `👨‍💼 ${h.mensaje}`; }
-            if (h.emisor === 'cliente') { b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 ${h.mensaje}`; }
-            areaMsg.appendChild(b);
-        });
-        areaMsg.scrollTop = areaMsg.scrollHeight;
-    }
-    function enviarMensajeManual() {
-        const input = document.getElementById('admin-message-input');
-        if (!input.value.trim() || !usuarioSeleccionadoActivo) return;
-        socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: input.value });
-        input.value = '';
-    }
-
-    // BILLETERA
-    async function simularPago() { await fetch('/api/simular-pago-test', { method: 'POST' }); }
-    socket.on('billetera_actualizada_en_vivo', (d) => {
-        document.getElementById('wallet-monto').value = d.saldoFormateado;
-    });
-    socket.on('cargar_datos_tablas', (datos) => {
-        if(datos.panelConfig && datos.panelConfig.apis) document.getElementById('api-pass').value = datos.panelConfig.apis.pass || '';
-        if(datos.panelConfig && datos.panelConfig.billetera) document.getElementById('wallet-monto').value = datos.panelConfig.billetera.monto || '$0,00 ARS';
+    <div class="sidebar">
+        <h2>⚡ Club Fenix</h2>
         
-        if(datos.ruleta && datos.ruleta.length > 0) {
-            const rows = document.querySelectorAll('#tabla-config-ruleta tbody tr');
-            datos.ruleta.forEach((item, i) => {
-                if(rows[i]) {
-                    rows[i].querySelector('.rul-txt').value = item.premio;
-                    rows[i].querySelector('.rul-val').value = item.valor;
-                    rows[i].querySelector('.rul-prob').value = item.probabilidad;
-                }
-            });
-            setTimeout(dibujarRuletaAdmin, 500);
-        }
-        if(datos.raspa && datos.raspa.length > 0) {
-            const rows = document.querySelectorAll('#tabla-config-raspa tbody tr');
-            datos.raspa.forEach((item, i) => {
-                if(rows[i]) {
-                    rows[i].querySelector('.rasp-txt').value = item.premio;
-                    rows[i].querySelector('.rasp-val').value = item.valor;
-                    rows[i].querySelector('.rasp-prob').value = item.probabilidad;
-                }
-            });
-        }
-    });
-    async function guardarConfig(seccion) {
-        const datos = { pass: document.getElementById('api-pass').value, monto: document.getElementById('wallet-monto').value };
-        await fetch('/api/guardar-config', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ seccion, datos }) });
-        alert("✅ Guardado.");
-    }
+        <div class="menu-category">Soporte</div>
+        <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')">💬 Chats en Vivo</button>
+        
+        <div class="menu-category">Control Personal</div>
+        <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
+        <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Datos de Clientes</button>
+        
+        <div class="menu-category">Finanzas</div>
+        <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')">💸 Control de Retiros</button>
+        <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
+        <button id="btn-nav-cierre" class="nav-btn" onclick="cambiarSeccion('cierre')" style="color:#a3e635;">📊 Cierre de Caja</button>
+        <button id="btn-nav-resumen" class="nav-btn" onclick="cambiarSeccion('resumen')" style="color:#a3e635;">📈 Resumen Cajas</button>
+        
+        <div class="menu-category">Marketing</div>
+        <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
+        <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
+        <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
+        
+        <div class="menu-category">Sistema</div>
+        <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
+        <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar de Ganamos.net</button>
+    </div>
 
-    // EVENTOS - RULETA
-    let currentRotAdmin = 0;
-    function getRuletaCfg() {
-        return Array.from(document.querySelectorAll('#tabla-config-ruleta tbody tr')).map((r, i) => ({
-            id: i, premio: r.querySelector('.rul-txt').value, valor: Number(r.querySelector('.rul-val').value), probabilidad: Number(r.querySelector('.rul-prob').value)
-        }));
-    }
-    function dibujarRuletaAdmin() {
-        const cv = document.getElementById('ruleta-admin-canvas');
-        if(!cv) return;
-        const config = getRuletaCfg();
-        const ctx = cv.getContext('2d');
-        const c = cv.width/2; const rad = c-2; const slice = (2*Math.PI)/(config.length||1);
-        const colors = ['#ff007f','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'];
-        ctx.clearRect(0,0,cv.width,cv.height);
-        for(let i=0; i<config.length; i++) {
-            const a = i*slice;
-            ctx.beginPath(); ctx.fillStyle = colors[i%colors.length];
-            ctx.moveTo(c,c); ctx.arc(c,c,rad,a,a+slice); ctx.fill(); ctx.stroke();
-            ctx.save(); ctx.translate(c,c); ctx.rotate(a+slice/2); ctx.textAlign="right";
-            ctx.fillStyle="white"; ctx.font="bold 11px sans-serif";
-            ctx.fillText(config[i].premio.substring(0,12), rad-10, 5); ctx.restore();
+    <div class="main-content">
+        <div class="top-bar" id="panel-title">Panel de Control - Chats en Vivo</div>
+        
+        <div class="workspace">
+            
+            <div id="section-chats" class="view-section active-view">
+                <div class="chats-sidebar">
+                    <div class="chats-header">Usuarios Activos</div>
+                    <div class="user-list" id="lista-usuarios"></div>
+                </div>
+                <div class="live-chat-monitor">
+                    <div class="monitor-header" id="active-chat-username" style="padding: 15px; border-bottom: 1px solid #1f2937; background: #111827; font-weight: bold;">Ningún usuario seleccionado</div>
+                    <div class="monitor-messages" id="active-chat-messages"><div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div></div>
+                    <div class="monitor-input-area">
+                        <input type="text" id="admin-message-input" class="admin-chat-input" placeholder="Escribí un mensaje..." disabled>
+                        <button class="btn-save" id="btn-enviar-msg" onclick="enviarMensajeManual()" style="margin-top: 0;" disabled>Enviar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-usuarios" class="view-section">
+                <div class="panel-inside"><h3 style="color:white; margin-bottom:15px;">Operadores Internos</h3><table class="data-table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th></tr></thead><tbody><tr><td>Admin</td><td>admin</td><td>Master</td><td><span class="badge" style="background-color:#10b981;">Activo</span></td></tr></tbody></table></div>
+            </div>
+            
+            <div id="section-clientes" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white; margin-bottom:15px;">Base de Clientes</h3>
+                    <table class="data-table">
+                        <thead><tr><th>Usuario Casino</th><th>Saldo Panel</th><th>Wager</th><th>Estado</th><th>Acción</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="section-retiros" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white; margin-bottom:15px;">Auditoría de Retiros</h3>
+                    <table class="data-table">
+                        <thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>CBU/Alias</th><th>Estado</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div id="section-billetera" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white;">Gestión de Billetera y Webhooks</h3>
+                    <div class="excel-card" style="max-width: 500px;">
+                        <label style="color:#94a3b8; font-size:12px; font-weight:bold;">Saldo Mercado Pago Detectado</label><br>
+                        <input type="text" id="wallet-monto" class="input-text-adv" value="$0,00 ARS" readonly style="font-size: 32px; color: #10b981; font-weight: bold; background: transparent; border:none; padding-left:0; margin-top:5px;">
+                        <hr style="border-color:#1f2937; margin:20px 0;">
+                        <button class="btn-save" style="background:#10b981; width:auto; float:left; margin-top:0;" onclick="simularPago()">Simular Pago MP (Prueba)</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-cierre" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white; margin-top:0;">Registro Operativo - Cierre de Caja</h3>
+                    
+                    <div class="excel-card">
+                        <div class="excel-grid">
+                            <div>
+                                <table class="table-custom">
+                                    <tr><th>Fecha</th><td><input type="date" id="cc-fecha" class="input-text-adv"></td><th>Inicio</th><td><input type="time" id="cc-inicio" class="input-text-adv"></td></tr>
+                                    <tr><th>Hora</th><td><input type="time" id="cc-hora" class="input-text-adv"></td><th>Fin</th><td><input type="time" id="cc-fin" class="input-text-adv"></td></tr>
+                                    <tr><th colspan="2">Cajero</th><td colspan="2"><input type="text" id="cc-cajero" class="input-text-adv"></td></tr>
+                                    <tr><th colspan="2">Turno</th><td colspan="2">
+                                        <select id="cc-turno" class="input-text-adv"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select>
+                                    </td></tr>
+                                </table>
+                                <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">GASTOS JORNADA</h4>
+                                <table class="table-custom" id="tabla-gastos"><thead><tr><th>Tipo</th><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <button class="btn-add" onclick="addGastoRow()">+ Agregar Gasto</button>
+                                    <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-gastos">0.00</span></div>
+                                </div>
+                            </div>
+                            <div>
+                                <table class="table-custom">
+                                    <tr><th>Ingreso</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>EGRESO</th></tr>
+                                    <tr>
+                                        <td><input type="number" id="cc-ingreso" class="input-text-adv val-num" oninput="calcCierre()"></td>
+                                        <td><input type="number" id="cc-oro" class="input-text-adv val-num" oninput="calcCierre()"></td>
+                                        <td><input type="number" id="cc-ganamos" class="input-text-adv val-num" oninput="calcCierre()"></td>
+                                        <td><input type="number" id="cc-egreso" class="input-text-adv val-num" readonly style="color:#ef4444; font-weight:bold;"></td>
+                                    </tr>
+                                    <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
+                                    <tr><th>Monto Esperado</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
+                                    <tr>
+                                        <td><input type="number" id="cc-esperado" class="input-text-adv" readonly></td>
+                                        <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" oninput="calcCierre()"></td>
+                                        <td><input type="number" id="cc-dif" class="input-text-adv" readonly></td>
+                                    </tr>
+                                </table>
+                                <div style="display:flex; justify-content:flex-end; margin-top:10px;">
+                                    <table class="table-custom" style="width:150px;"><tr><th style="background:#a3e635; color:black;">RESERVA</th></tr><tr><td><input type="number" id="cc-reserva" value="400000" class="input-text-adv val-num"></td></tr></table>
+                                </div>
+                                <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">PROPINAS JORNADA</h4>
+                                <table class="table-custom" id="tabla-propinas"><thead><tr><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
+                                <div style="display:flex; justify-content:space-between; align-items:center;">
+                                    <button class="btn-add" onclick="addPropinaRow()">+ Agregar Propina</button>
+                                    <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-propinas">0.00</span></div>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn-save" onclick="guardarCierreDB()">💾 GUARDAR CIERRE DE CAJA OFICIAL</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-resumen" class="view-section">
+                <div class="panel-inside">
+                    <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #1f2937;">
+                        <h3 style="margin:0; color:#38bdf8;">INGRESAR FECHA:</h3>
+                        <input type="date" id="res-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarResumen()">
+                    </div>
+
+                    <table class="resumen-table">
+                        <thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead>
+                        <tbody id="res-diario"></tbody>
+                    </table>
+
+                    <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:20px;">
+                        <table class="resumen-table">
+                            <thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead>
+                            <tbody id="res-mensual-salidas"></tbody>
+                        </table>
+                        <div>
+                            <table class="resumen-table" style="margin-bottom:15px;">
+                                <thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead>
+                                <tbody id="res-mensual-fichas"></tbody>
+                            </table>
+                            <table class="resumen-table">
+                                <thead><tr><th style="background:#4c0519;">BONOS</th><th style="background:#701a35;">NUEVOS (BB)</th><th style="background:#b45309;">RECOMENDADOS (BR)</th></tr></thead>
+                                <tbody id="res-mensual-bonos"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="section-push" class="view-section">
+                <div class="panel-inside">
+                    <div class="push-layout">
+                        <div class="push-form-card">
+                            <h4 style="margin:0; color:white;">Lanzador de Notificaciones</h4>
+                            <div class="form-row"><label>Título</label><input type="text" id="push-titulo" class="input-text-adv" value="Casino 463 - Bono Especial!"></div>
+                            <div class="form-row"><label>Mensaje Masivo</label><textarea id="push-mensaje" class="input-text-adv" rows="3" style="resize:none;">Tenés un bono del 200% esperándote...</textarea></div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-save" style="margin:0; background-color: #374151;" onclick="guardarConfig('push')">💾 Guardar Borrador</button>
+                                <button class="btn-save" style="margin:0;" onclick="alert('Push lanzado')">🚀 Enviar Push Masivo</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="section-retencion" class="view-section">
+                <div class="panel-inside">
+                    <h4 style="color:white; font-size: 20px; margin: 0 0 5px 0;">Automatización de Retención</h4>
+                    <p style="color: #64748b; font-size:13.5px; margin: 0 0 20px 0;">Activá las alertas por inactividad. Estos cambios se guardarán permanentemente.</p>
+                    <div class="retencion-container">
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-0" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div>
+                            <input type="text" id="ret-txt-0" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-1" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div>
+                            <input type="text" id="ret-txt-1" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-2" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div>
+                            <input type="text" id="ret-txt-2" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-3"><span class="slider"></span></label><span>Inactivo 15 días</span></div>
+                            <input type="text" id="ret-txt-3" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-4"><span class="slider"></span></label><span>Inactivo 30 días</span></div>
+                            <input type="text" id="ret-txt-4" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy.">
+                        </div>
+                    </div>
+                    <button class="btn-save" onclick="guardarConfig('retencion')">Guardar Reglas</button>
+                </div>
+            </div>
+
+            <div id="section-eventos" class="view-section">
+                <div class="panel-inside">
+                    <div class="event-tabs-header">
+                        <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯 Ruleta</button>
+                        <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫 Raspa/Gana</button>
+                    </div>
+
+                    <div id="subview-ruleta" class="event-subview active-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Ruleta Diaria</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-ruleta">
+                                    <thead><tr><th>Premio / Segmento</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td><input type="text" class="input-ruleta-text rul-txt" oninput="dibujarRuletaAdmin()" value="🏆 JACKPOT"></td><td><input type="number" class="input-ruleta-val rul-val" value="50000"></td><td><input type="number" class="prob-input rul-prob" oninput="dibujarRuletaAdmin()" value="2"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rul-txt" oninput="dibujarRuletaAdmin()" value="🔥 Premio Mayor"></td><td><input type="number" class="input-ruleta-val rul-val" value="10000"></td><td><input type="number" class="prob-input rul-prob" oninput="dibujarRuletaAdmin()" value="8"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rul-txt" oninput="dibujarRuletaAdmin()" value="⭐ Premio Medio"></td><td><input type="number" class="input-ruleta-val rul-val" value="5000"></td><td><input type="number" class="prob-input rul-prob" oninput="dibujarRuletaAdmin()" value="12"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rul-txt" oninput="dibujarRuletaAdmin()" value="🍀 Premio Chico"></td><td><input type="number" class="input-ruleta-val rul-val" value="2000"></td><td><input type="number" class="prob-input rul-prob" oninput="dibujarRuletaAdmin()" value="18"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rul-txt" oninput="dibujarRuletaAdmin()" value="✨ Consolación"></td><td><input type="number" class="input-ruleta-val rul-val" value="500"></td><td><input type="number" class="prob-input rul-prob" oninput="dibujarRuletaAdmin()" value="20"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rul-txt" oninput="dibujarRuletaAdmin()" value="🎁 Sorpresa"></td><td><input type="number" class="input-ruleta-val rul-val" value="100"></td><td><input type="number" class="prob-input rul-prob" oninput="dibujarRuletaAdmin()" value="40"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarRuleta()">Guardar Configuración Ruleta</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="ruleta-container">
+                                    <div class="ruleta-pointer">▼</div>
+                                    <canvas id="ruleta-admin-canvas" width="240" height="240"></canvas>
+                                </div>
+                                <button class="btn-save" style="background:#ffaa00; color:black;" onclick="iniciarGiroPrueba()">🎲 Simular Tiro Ruleta</button>
+                                <div id="resultado-prueba" style="margin-top:10px; color:#ffaa00; font-weight:bold; font-size:13px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-raspa" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Raspa y Gana Diario</h4>
+                        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-raspa">
+                                    <thead><tr><th>Premio / Tarjeta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td><input type="text" class="input-ruleta-text rasp-txt" value="💎 MEGA BONO"></td><td><input type="number" class="input-ruleta-val rasp-val" value="30000"></td><td><input type="number" class="prob-input rasp-prob" value="3"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rasp-txt" value="👑 Premio Alto"></td><td><input type="number" class="input-ruleta-val rasp-val" value="15000"></td><td><input type="number" class="prob-input rasp-prob" value="7"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rasp-txt" value="💵 Premio Intermedio"></td><td><input type="number" class="input-ruleta-val rasp-val" value="4000"></td><td><input type="number" class="prob-input rasp-prob" value="15"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rasp-txt" value="📦 Premio Base"></td><td><input type="number" class="input-ruleta-val rasp-val" value="1500"></td><td><input type="number" class="prob-input rasp-prob" value="25"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rasp-txt" value="🪙 Recompensa Menor"></td><td><input type="number" class="input-ruleta-val rasp-val" value="600"></td><td><input type="number" class="prob-input rasp-prob" value="20"> %</td></tr>
+                                        <tr><td><input type="text" class="input-ruleta-text rasp-txt" value="🎈 Suerte Loca"></td><td><input type="number" class="input-ruleta-val rasp-val" value="200"></td><td><input type="number" class="prob-input rasp-prob" value="30"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarRaspa()">Guardar Configuración Raspa</button>
+                            </div>
+
+                            <div style="width: 320px; background-color: #0b0f19; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; border-color: #ffaa00;">
+                                <h4 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 14px;">Simulador Tarjeta de Pruebas</h4>
+                                <div class="raspa-grid-board" id="tablero-prueba-raspa">
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(0)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(1)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(2)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(3)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(4)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(5)"><div class="raspa-cover-layer">?</div></div>
+                                </div>
+                                <button class="btn-save" style="background: #1f2937; border: 1px solid #374151; color: white;" onclick="reiniciarTableroRaspaPrueba()">🔄 Limpiar y Volver a Probar</button>
+                                <div id="resultado-raspa-prueba" style="margin-top: 15px; color: #38bdf8; font-weight: bold; text-align: center; min-height: 35px; font-size:12px;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-apis" class="view-section">
+                <div class="panel-inside">
+                    <h4 style="color:white; font-size: 20px; margin: 0 0 20px 0;">Integraciones y Llaves de API</h4>
+                    <div class="api-grid">
+                        <div class="api-card">
+                            <div class="api-card-header">🎰 API Sincronización Casino</div>
+                            <div class="form-row"><label>URL Panel Servidor</label><input type="text" id="api-url" class="input-text-adv" value="https://admin.clubzeus.vip/"></div>
+                            <div class="form-row"><label>Usuario Agente API</label><input type="text" id="api-user" class="input-text-adv" value="CHATZEUS"></div>
+                            <div class="form-row"><label>Mercado Pago Access Token</label><input type="password" id="api-pass" class="input-text-adv" value=""></div>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🧠 API OpenAI Vision (OCR)</div>
+                            <div class="form-row"><label>OpenAI Secret API Key</label><input type="password" id="api-openai" class="input-text-adv" value=""></div>
+                            <div class="form-row"><label>Modelo AI</label>
+                                <select id="api-model" class="input-text-adv">
+                                    <option value="gpt-4o">gpt-4o (Más veloz y preciso)</option>
+                                    <option value="gpt-4-vision">gpt-4-vision-preview</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="btn-save" onclick="guardarConfig('apis')">Guardar Conexiones Permanentemente</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modalImportador" class="modal-overlay">
+        <div class="modal-content">
+            <h3>📥 Importar de Ganamos.net</h3>
+            <textarea id="dataPaste" placeholder="Pegá la tabla completa aquí..."></textarea>
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button class="btn-save" style="background:transparent; border:1px solid #374151;" onclick="cerrarImportador()">Cancelar</button>
+                <button class="btn-save" onclick="procesarDatos()">Actualizar Base</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const socket = io();
+        let usuarioSeleccionadoActivo = null;
+        let raspaYaJugadaAdmin = false;
+
+        socket.emit('identificar_admin');
+
+        // NAVEGACIÓN
+        function cambiarSeccion(seccion) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            const targetSection = document.getElementById('section-' + seccion);
+            const targetBtn = document.getElementById('btn-nav-' + seccion);
+            if(targetSection) targetSection.classList.add('active-view');
+            if(targetBtn) targetBtn.classList.add('active-nav');
+            
+            const titulos = { chats: "Chats en Vivo", usuarios: "Operadores Internos", clientes: "Base de Clientes Casino", retiros: "Auditoría de Retiros", billetera: "Pasarela y Saldos", cierre: "Cierre de Caja", resumen: "Resumen Operativo", push: "Notificaciones Masivas", retencion: "Automatización de Retención", eventos: "Consola de Minijuegos", apis: "Integraciones API" };
+            document.getElementById('panel-title').innerText = "Panel de Control - " + (titulos[seccion] || "");
+
+            if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
         }
-    }
-    async function guardarRuleta() {
-        const cfg = getRuletaCfg();
-        if(cfg.reduce((a,c)=>a+c.probabilidad,0)!==100) return alert("Suma debe ser 100%");
-        await fetch('/api/guardar-ruleta', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({configuracion:cfg}) });
-        alert("Ruleta guardada.");
-    }
-    function iniciarGiroPrueba() {
-        const cfg = getRuletaCfg();
-        fetch('/api/tirar-ruleta-prueba', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({configuracion:cfg}) })
-        .then(r=>r.json()).then(d=>{
-            const idx = cfg.findIndex(x=>x.id===d.premio.id);
-            const deg = 360/cfg.length;
-            const target = 270 - ((idx*deg)+(deg/2));
-            let needed = target - (currentRotAdmin%360);
-            if(needed<0) needed+=360;
-            currentRotAdmin += needed + (360*4);
-            document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotAdmin}deg)`;
-            setTimeout(()=> document.getElementById('resultado-prueba').innerText = "Cae en: " + d.premio.premio, 5000);
+
+        function cambiarSubJuego(juego) {
+            document.querySelectorAll('.event-subview').forEach(s => s.classList.remove('active-subview'));
+            document.querySelectorAll('.event-tab-btn').forEach(b => b.classList.remove('active-event-tab'));
+            document.getElementById('subview-' + juego).classList.add('active-subview');
+            document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
+            if (juego === 'ruleta') setTimeout(dibujarRuletaAdmin, 100);
+        }
+
+        // BILLETERA WEBHOOK
+        socket.on('billetera_actualizada_en_vivo', (datos) => {
+            const inputMonto = document.getElementById('wallet-monto');
+            if(inputMonto) {
+                inputMonto.value = datos.saldoFormateado;
+                inputMonto.style.transition = 'text-shadow 0.3s, color 0.3s';
+                inputMonto.style.textShadow = '0 0 25px #10b981';
+                setTimeout(() => { inputMonto.style.textShadow = 'none'; }, 1200);
+            }
+            if(datos.montoTransferido) {
+                alert(`💸 ¡MERCADO PAGO EN VIVO!\nIngresó un pago aprobado de $${datos.montoTransferido}.\nSaldo reflejado: ${datos.saldoFormateado}`);
+            }
         });
-    }
+        async function simularPago() { await fetch('/api/simular-pago-test', { method: 'POST' }); }
 
-    // EVENTOS - RASPA
-    let raspaJug = false;
-    function getRaspaCfg() {
-        return Array.from(document.querySelectorAll('#tabla-config-raspa tbody tr')).map((r, i) => ({
-            id: i, premio: r.querySelector('.rasp-txt').value, valor: Number(r.querySelector('.rasp-val').value), probabilidad: Number(r.querySelector('.rasp-prob').value)
-        }));
-    }
-    async function guardarRaspa() {
-        const cfg = getRaspaCfg();
-        if(cfg.reduce((a,c)=>a+c.probabilidad,0)!==100) return alert("Suma debe ser 100%");
-        await fetch('/api/guardar-raspa', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({configuracion:cfg}) });
-        alert("Raspa guardado.");
-    }
-    function rasparCasilleroSimulado(idx) {
-        if(raspaJug) return; raspaJug = true;
-        const cfg = getRaspaCfg(); const cards = document.querySelectorAll('.raspa-block-card');
-        fetch('/api/tirar-raspa-prueba', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({configuracion:cfg}) })
-        .then(r=>r.json()).then(d=>{
-            const win = d.premio; const pool = cfg.filter(x=>x.id!==win.id).sort(()=>Math.random()-0.5);
-            cards[idx].classList.add('scratched'); cards[idx].querySelector('.raspa-cover-layer').style.opacity='0';
-            cards[idx].innerHTML += `<div class="raspa-prize-text">${win.premio}</div><div class="raspa-value-text">$${win.valor}</div>`;
-            document.getElementById('resultado-raspa-prueba').innerHTML = `Ganaste: <span style="color:#ffaa00;">${win.premio}</span>`;
-            setTimeout(()=>{
-                let pIdx=0;
-                cards.forEach((c,i)=>{
-                    if(i!==idx){
-                        c.classList.add('others-revealed'); c.querySelector('.raspa-cover-layer').style.opacity='0';
-                        c.innerHTML += `<div class="raspa-prize-text">${pool[pIdx].premio}</div><div class="raspa-value-text">$${pool[pIdx].valor}</div>`; pIdx++;
+        // CARGA GENERAL DE DATOS
+        socket.on('cargar_datos_tablas', (datos) => {
+            if (datos.clientes) {
+                const tbody = document.querySelector('#section-clientes .data-table tbody');
+                tbody.innerHTML = '';
+                datos.clientes.forEach(c => {
+                    tbody.innerHTML += `<tr><td>${c.usuarioCasino}</td><td style="color:#10b981;font-weight:bold;">$${c.saldo}</td><td>$${c.wager}</td><td>● Activo</td><td><button class="btn-save" style="margin:0; padding: 6px 12px; font-size:12px;" onclick="cargarFichas('${c.usuarioCasino}')">💰 Cargar</button></td></tr>`;
+                });
+            }
+            if (datos.retiros) {
+                const tbody = document.querySelector('#section-retiros .data-table tbody');
+                tbody.innerHTML = '';
+                datos.retiros.forEach(r => {
+                    tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`;
+                });
+            }
+            if (datos.ruleta && datos.ruleta.length > 0) {
+                const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
+                datos.ruleta.forEach((item, idx) => {
+                    if(filas[idx]) {
+                        filas[idx].querySelector('.rul-txt').value = item.premio;
+                        filas[idx].querySelector('.rul-val').value = item.valor;
+                        filas[idx].querySelector('.rul-prob').value = item.probabilidad;
                     }
                 });
-            }, 800);
+                setTimeout(dibujarRuletaAdmin, 500);
+            }
+            if (datos.raspa && datos.raspa.length > 0) {
+                const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
+                datos.raspa.forEach((item, idx) => {
+                    if(filas[idx]) {
+                        filas[idx].querySelector('.rasp-txt').value = item.premio;
+                        filas[idx].querySelector('.rasp-val').value = item.valor;
+                        filas[idx].querySelector('.rasp-prob').value = item.probabilidad;
+                    }
+                });
+            }
+            if (datos.panelConfig) {
+                const c = datos.panelConfig;
+                if (c.retencion && c.retencion.length === 5) {
+                    for(let i=0; i<5; i++) {
+                        const chk = document.getElementById('ret-chk-'+i); const txt = document.getElementById('ret-txt-'+i);
+                        if (chk) chk.checked = c.retencion[i].activo; if (txt) txt.value = c.retencion[i].mensaje;
+                    }
+                }
+                if (c.apis) {
+                    if(document.getElementById('api-url') && c.apis.url) document.getElementById('api-url').value = c.apis.url;
+                    if(document.getElementById('api-user') && c.apis.user) document.getElementById('api-user').value = c.apis.user;
+                    if(document.getElementById('api-pass') && c.apis.pass) document.getElementById('api-pass').value = c.apis.pass;
+                    if(document.getElementById('api-openai') && c.apis.openai) document.getElementById('api-openai').value = c.apis.openai;
+                    if(document.getElementById('api-model') && c.apis.model) document.getElementById('api-model').value = c.apis.model;
+                }
+                if (c.push) {
+                    if(document.getElementById('push-titulo') && c.push.titulo) document.getElementById('push-titulo').value = c.push.titulo;
+                    if(document.getElementById('push-mensaje') && c.push.mensaje) document.getElementById('push-mensaje').value = c.push.mensaje;
+                }
+                if (c.billetera && document.getElementById('wallet-monto') && c.billetera.monto) {
+                    document.getElementById('wallet-monto').value = c.billetera.monto;
+                }
+            }
         });
-    }
-    function reiniciarTableroRaspaPrueba() {
-        raspaJug = false; document.getElementById('resultado-raspa-prueba').innerText = "";
-        document.getElementById('tablero-prueba-raspa').innerHTML = Array(6).fill(`<div class="raspa-block-card" onclick="rasparCasilleroSimulado(this.dataset.i)"><div class="raspa-cover-layer">?</div></div>`).map((c,i)=>c.replace('this.dataset.i',i)).join('');
-    }
 
-    // CIERRE DE CAJA
-    const opGastos = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
-    function addGastoRow() {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td><select class="input-text-adv gt" onchange="calcCierre()">${opGastos.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></td><td><input type="text" class="input-text-adv gu"></td><td><input type="number" class="input-text-adv gm" oninput="calcCierre()"></td><td><button class="btn-remove" onclick="this.closest('tr').remove(); calcCierre()">X</button></td>`;
-        document.querySelector('#tabla-gastos tbody').appendChild(tr);
-    }
-    function addPropinaRow() {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td><input type="text" class="input-text-adv pu"></td><td><input type="number" class="input-text-adv pm" oninput="calcCierre()"></td><td><button class="btn-remove" onclick="this.closest('tr').remove(); calcCierre()">X</button></td>`;
-        document.querySelector('#tabla-propinas tbody').appendChild(tr);
-    }
-    function calcCierre() {
-        let tg=0; document.querySelectorAll('.gm').forEach(i=>tg+=Number(i.value)||0); document.getElementById('tot-gastos').innerText = tg.toFixed(2); document.getElementById('cc-egreso').value = tg;
-        let tp=0; document.querySelectorAll('.pm').forEach(i=>tp+=Number(i.value)||0); document.getElementById('tot-propinas').innerText = tp.toFixed(2);
-        const in_ = Number(document.getElementById('cc-ingreso').value)||0; const re_ = Number(document.getElementById('cc-real').value)||0;
-        const esp = in_ - tg; document.getElementById('cc-esperado').value = esp;
-        const dif = re_ - esp; document.getElementById('cc-dif').value = dif; document.getElementById('cc-dif').style.color = dif<0 ? '#ef4444' : '#10b981';
-    }
-    async function guardarCierreDB() {
-        if(!document.getElementById('cc-fecha').value) return alert("Falta fecha.");
-        const gastos = Array.from(document.querySelectorAll('#tabla-gastos tbody tr')).map(tr=>({tipo:tr.querySelector('.gt').value, usuario:tr.querySelector('.gu').value, monto:Number(tr.querySelector('.gm').value)||0}));
-        const propinas = Array.from(document.querySelectorAll('#tabla-propinas tbody tr')).map(tr=>({usuario:tr.querySelector('.pu').value, monto:Number(tr.querySelector('.pm').value)||0}));
-        const payload = {
-            fecha: document.getElementById('cc-fecha').value, hora: document.getElementById('cc-hora').value, inicio: document.getElementById('cc-inicio').value, fin: document.getElementById('cc-fin').value, turno: document.getElementById('cc-turno').value, cajero: document.getElementById('cc-cajero').value,
-            ingreso: Number(document.getElementById('cc-ingreso').value)||0, saldoOro: Number(document.getElementById('cc-oro').value)||0, saldoGanamos: Number(document.getElementById('cc-ganamos').value)||0, egreso: Number(document.getElementById('cc-egreso').value)||0,
-            montoEsperado: Number(document.getElementById('cc-esperado').value)||0, montoRealFinal: Number(document.getElementById('cc-real').value)||0, sobranteFaltante: Number(document.getElementById('cc-dif').value)||0, reserva: Number(document.getElementById('cc-reserva').value)||0,
-            gastos, propinas
-        };
-        await fetch('/api/cierre-caja', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
-        alert("✅ Cierre Guardado!");
-        if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen();
-    }
-    addGastoRow(); addPropinaRow(); document.getElementById('cc-fecha').valueAsDate = new Date();
+        // CHATS Y COMUNICACION
+        socket.on('lista_usuarios_actualizada', (usuarios) => {
+            const listaDiv = document.getElementById('lista-usuarios');
+            if (!listaDiv) return;
+            listaDiv.innerHTML = '';
+            usuarios.forEach(user => {
+                let tieneMensajesSinLeer = user.historial.some(h => h.emisor === 'cliente' && h.leido === false);
+                let claseNoLeido = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? 'unread-chat' : '';
+                let dotVisual = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? '<span class="unread-indicator"></span>' : '';
+                
+                const item = document.createElement('div');
+                item.className = `user-item ${usuarioSeleccionadoActivo === user.nombre ? 'selected-user' : ''} ${claseNoLeido}`;
+                item.innerHTML = `<div>👤 ${dotVisual}${user.nombre}</div><div class="badge" style="background:#2563eb">${user.estado}</div>`;
+                item.onclick = () => {
+                    usuarioSeleccionadoActivo = user.nombre;
+                    document.getElementById('active-chat-username').innerText = "Monitoreando a: " + user.nombre;
+                    document.getElementById('admin-message-input').disabled = false;
+                    document.getElementById('btn-enviar-msg').disabled = false;
+                    socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
+                    renderizarHistorialChat(user.historial);
+                };
+                listaDiv.appendChild(item);
+                if (usuarioSeleccionadoActivo === user.nombre) renderizarHistorialChat(user.historial);
+            });
+        });
 
-    // RESUMEN
-    const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
-    async function buscarResumen() {
-        const fecha = document.getElementById('res-fecha').value; if(!fecha) return;
-        const res = await fetch('/api/resumen-cajas/' + fecha); const data = await res.json();
-        const d = data.dia; const m = data.mes;
-        document.getElementById('res-diario').innerHTML = `
-            <tr><td class="header-row">Ingreso Inicial</td><td>${fmt.format(d.manana.ingreso)}</td><td>${fmt.format(d.tarde.ingreso)}</td><td>${fmt.format(d.noche.ingreso)}</td><td style="color:#9ca3af">${fmt.format(d.total.ingreso)}</td></tr>
-            <tr><td class="header-row">Saldo Oro</td><td>${fmt.format(d.manana.oro)}</td><td>${fmt.format(d.tarde.oro)}</td><td>${fmt.format(d.noche.oro)}</td><td style="color:#9ca3af">${fmt.format(d.total.oro)}</td></tr>
-            <tr><td class="header-row">Saldo Ganamos</td><td>${fmt.format(d.manana.ganamos)}</td><td>${fmt.format(d.tarde.ganamos)}</td><td>${fmt.format(d.noche.ganamos)}</td><td style="color:#9ca3af">${fmt.format(d.total.ganamos)}</td></tr>
-            <tr><td class="header-row">Total Retiros (Egresos)</td><td>${fmt.format(d.manana.retiros)}</td><td>${fmt.format(d.tarde.retiros)}</td><td>${fmt.format(d.noche.retiros)}</td><td style="color:#9ca3af">${fmt.format(d.total.retiros)}</td></tr>
-            <tr><td class="header-row">Monto Real Final</td><td>${fmt.format(d.manana.real)}</td><td>${fmt.format(d.tarde.real)}</td><td>${fmt.format(d.noche.real)}</td><td style="color:#9ca3af">${fmt.format(d.total.real)}</td></tr>`;
-        document.getElementById('res-salida-tot').innerText = fmt.format(m.salidas.lean+m.salidas.nahue+m.salidas.brai+m.salidas.tati);
-        document.getElementById('res-mensual-salidas').innerHTML = `<tr><td class="header-row">TOTAL LEAN</td><td colspan="2">${fmt.format(m.salidas.lean)}</td></tr><tr><td class="header-row">TOTAL NAHUE</td><td colspan="2">${fmt.format(m.salidas.nahue)}</td></tr><tr><td class="header-row">TOTAL BRAI</td><td colspan="2">${fmt.format(m.salidas.brai)}</td></tr><tr><td class="header-row">TOTAL TATI</td><td colspan="2">${fmt.format(m.salidas.tati)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO ORO</td><td colspan="2" style="color:#38bdf8;">${fmt.format(m.saldos.oro)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${fmt.format(m.saldos.ganamos)}</td></tr>`;
-        document.getElementById('res-mensual-fichas').innerHTML = `<tr><td class="header-row">MEGAFARAON</td><td>${fmt.format(m.fichas.mega)}</td></tr><tr><td class="header-row">GANAMOS</td><td>${fmt.format(m.fichas.ganamos)}</td></tr><tr><td class="header-row">ORO</td><td>${fmt.format(m.fichas.oro)}</td></tr>`;
-        document.getElementById('res-mensual-bonos').innerHTML = `<tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr><tr><td class="header-row">MONTO</td><td>${fmt.format(m.bonos.bb.monto)}</td><td>${fmt.format(m.bonos.br.monto)}</td></tr>`;
-    }
-</script>
+        socket.on('actualizar_chat_activo', (datos) => {
+            if(datos.nombre === usuarioSeleccionadoActivo) renderizarHistorialChat(datos.historial);
+        });
+
+        function renderizarHistorialChat(historial) {
+            const areaMsg = document.getElementById('active-chat-messages');
+            if (!areaMsg) return;
+            areaMsg.innerHTML = ''; 
+            historial.forEach(h => {
+                const wrap = document.createElement('div'); wrap.className = 'admin-bubble-wrapper';
+                const b = document.createElement('div');
+                if (h.emisor === 'bot') { b.className = 'admin-bubble b-bot'; b.innerHTML = `🤖 <b>Bot:</b><br>${h.mensaje}`; wrap.appendChild(b); }
+                if (h.emisor === 'admin') { b.className = 'admin-bubble b-admin'; b.innerHTML = `👨‍💼 <b>Vos:</b><br>${h.mensaje}`; wrap.appendChild(b); }
+                if (h.emisor === 'cliente') { 
+                    let checkLectura = h.leido ? '<span class="read-receipt seen">✓ Visto</span>' : '<span class="read-receipt">✓ Enviado</span>';
+                    b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}`; wrap.appendChild(b); wrap.innerHTML += checkLectura;
+                }
+                areaMsg.appendChild(wrap);
+            });
+            areaMsg.scrollTop = areaMsg.scrollHeight;
+        }
+
+        function enviarMensajeManual() {
+            const input = document.getElementById('admin-message-input');
+            const texto = input.value.trim();
+            if (!texto || !usuarioSeleccionadoActivo) return;
+            socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto });
+            input.value = '';
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual(); });
+
+        // GUARDADO DE CONFIGURACIONES
+        async function guardarConfig(seccion) {
+            let datosParaGuardar = {};
+            if (seccion === 'retencion') {
+                datosParaGuardar = [];
+                for(let i=0; i<5; i++) {
+                    const chk = document.getElementById('ret-chk-'+i); const txt = document.getElementById('ret-txt-'+i);
+                    if(chk && txt) datosParaGuardar.push({ activo: chk.checked, mensaje: txt.value });
+                }
+            } 
+            else if (seccion === 'apis') {
+                datosParaGuardar = {
+                    url: document.getElementById('api-url').value, user: document.getElementById('api-user').value, pass: document.getElementById('api-pass').value,
+                    openai: document.getElementById('api-openai').value, model: document.getElementById('api-model').value
+                };
+            }
+            else if (seccion === 'push') { datosParaGuardar = { titulo: document.getElementById('push-titulo').value, mensaje: document.getElementById('push-mensaje').value }; }
+            else if (seccion === 'billetera') { datosParaGuardar = { monto: document.getElementById('wallet-monto').value }; }
+
+            try {
+                const res = await fetch('/api/guardar-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seccion: seccion, datos: datosParaGuardar }) });
+                const result = await res.json();
+                if (result.exito) alert('✅ ¡Los cambios se guardaron permanentemente en la base de datos!');
+            } catch (error) { alert('Error de conexión.'); }
+        }
+
+        // IMPORTADOR Y SALDOS
+        function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
+        function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; document.getElementById('dataPaste').value = ''; }
+        async function procesarDatos() {
+            const texto = document.getElementById('dataPaste').value;
+            if (!texto.trim()) return alert("Pegá datos válidos.");
+            try {
+                const res = await fetch('/importar-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datosCrudos: texto }) });
+                const result = await res.json();
+                alert(result.mensaje); cerrarImportador();
+            } catch (error) { alert("Error de comunicación."); }
+        }
+        async function cargarFichas(usuario) {
+            const monto = prompt(`Monto a cargar en balance del panel para ${usuario}:`);
+            if (!monto || isNaN(monto)) return;
+            try {
+                const res = await fetch('/api/cargar-saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuario, monto: Number(monto) }) });
+                const result = await res.json(); alert(result.mensaje);
+            } catch (error) { alert("Error técnico."); }
+        }
+
+        // RULETA
+        let currentRotationAdmin = 0;
+        function getRuletaConfigFromDOM() {
+            const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr'); const configuracion = [];
+            filas.forEach((fila, index) => {
+                configuracion.push({ id: index, premio: fila.querySelector('.rul-txt').value, valor: Number(fila.querySelector('.rul-val').value), probabilidad: Number(fila.querySelector('.rul-prob').value) });
+            });
+            return configuracion;
+        }
+        function dibujarRuletaAdmin() {
+            const canvas = document.getElementById('ruleta-admin-canvas'); if(!canvas) return;
+            const config = getRuletaConfigFromDOM(); const ctx = canvas.getContext('2d');
+            const center = canvas.width / 2; const radius = center - 5; const sliceAngle = (2 * Math.PI) / (config.length || 1);
+            const colors = ['#ff007f', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for(let i=0; i<config.length; i++) {
+                const angle = i * sliceAngle; ctx.beginPath(); ctx.fillStyle = colors[i % colors.length];
+                ctx.moveTo(center, center); ctx.arc(center, center, radius, angle, angle + sliceAngle); ctx.fill();
+                ctx.strokeStyle = "#0b0f19"; ctx.lineWidth = 2; ctx.stroke();
+                ctx.save(); ctx.translate(center, center); ctx.rotate(angle + sliceAngle / 2);
+                ctx.textAlign = "right"; ctx.fillStyle = "white"; ctx.font = "bold 11px sans-serif";
+                ctx.fillText(config[i].premio.substring(0,12), radius - 10, 5); ctx.restore();
+            }
+        }
+        async function guardarRuleta() {
+            const config = getRuletaConfigFromDOM();
+            if (config.reduce((acc, curr) => acc + curr.probabilidad, 0) !== 100) return alert("Suma debe dar 100% exacto.");
+            const res = await fetch('/api/guardar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            if((await res.json()).exito) alert('✅ ¡Ruleta guardada con éxito!');
+        }
+        function iniciarGiroPrueba() {
+            const config = getRuletaConfigFromDOM();
+            if (config.reduce((acc, curr) => acc + curr.probabilidad, 0) !== 100) return alert("Suma debe dar 100%.");
+            fetch('/api/tirar-ruleta-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
+            .then(res => res.json()).then(data => {
+                const winnerIndex = config.findIndex(item => item.id === data.premio.id);
+                const sliceDegree = 360 / config.length; const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
+                const targetRotation = 270 - centerOfWinner; const currentMod = currentRotationAdmin % 360;
+                let needed = targetRotation - currentMod; if (needed < 0) needed += 360;
+                currentRotationAdmin += needed + (360 * 4);
+                document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotationAdmin}deg)`;
+                setTimeout(() => { document.getElementById('resultado-prueba').innerText = `Cae en: ${data.premio.premio}`; }, 5100);
+            });
+        }
+
+        // RASPA
+        function getRaspaConfigFromDOM() {
+            const filas = document.querySelectorAll('#tabla-config-raspa tbody tr'); const configuracion = [];
+            filas.forEach((fila, index) => {
+                configuracion.push({ id: index, premio: fila.querySelector('.rasp-txt').value, valor: Number(fila.querySelector('.rasp-val').value), probabilidad: Number(fila.querySelector('.rasp-prob').value) });
+            });
+            return configuracion;
+        }
+        async function guardarRaspa() {
+            const config = getRaspaConfigFromDOM();
+            if (config.reduce((acc, curr) => acc + curr.probabilidad, 0) !== 100) return alert("Suma debe dar 100% exacto.");
+            const res = await fetch('/api/guardar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            if((await res.json()).exito) alert('✅ ¡Configuración guardada!');
+        }
+        function rasparCasilleroSimulado(indexClickeado) {
+            if(raspaYaJugadaAdmin) return;
+            const configFull = getRaspaConfigFromDOM();
+            if (configFull.reduce((acc, curr) => acc + curr.probabilidad, 0) !== 100) return alert("Probabilidad debe sumar 100%.");
+            raspaYaJugadaAdmin = true; const casillerosDOM = document.querySelectorAll('.raspa-block-card');
+            fetch('/api/tirar-raspa-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: configFull }) })
+            .then(res => res.json()).then(data => {
+                if(!data.exito) return;
+                const ganador = data.premio; const poolPremiosRestantes = configFull.filter(item => item.id !== ganador.id).sort(() => Math.random() - 0.5);
+                const cardGanadora = casillerosDOM[indexClickeado];
+                cardGanadora.classList.add('scratched'); cardGanadora.querySelector('.raspa-cover-layer').style.opacity = '0';
+                cardGanadora.innerHTML += `<div class="raspa-prize-text">${ganador.premio}</div><div class="raspa-value-text">$${ganador.valor}</div>`;
+                document.getElementById('resultado-raspa-prueba').innerHTML = `¡Raspada Simulada!<br>Ganaste: <span style="color:#ffaa00;">${ganador.premio} ($${ganador.valor})</span>`;
+                setTimeout(() => {
+                    let rIndex = 0;
+                    casillerosDOM.forEach((card, i) => {
+                        if(i !== indexClickeado) {
+                            card.classList.add('others-revealed'); card.querySelector('.raspa-cover-layer').style.opacity = '0';
+                            const pRelleno = poolPremiosRestantes[rIndex];
+                            card.innerHTML += `<div class="raspa-prize-text">${pRelleno.premio}</div><div class="raspa-value-text">$${pRelleno.valor}</div>`; rIndex++;
+                        }
+                    });
+                }, 800);
+            });
+        }
+        function reiniciarTableroRaspaPrueba() {
+            raspaYaJugadaAdmin = false; document.getElementById('resultado-raspa-prueba').innerText = "";
+            const tablero = document.getElementById('tablero-prueba-raspa');
+            tablero.innerHTML = Array(6).fill().map((_,i) => `<div class="raspa-block-card" onclick="rasparCasilleroSimulado(${i})"><div class="raspa-cover-layer">?</div></div>`).join('');
+        }
+
+        // CIERRE DE CAJA
+        const opGastos = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
+        function addGastoRow() {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><select class="input-text-adv gt" onchange="calcCierre()">${opGastos.map(o=>`<option value="${o}">${o}</option>`).join('')}</select></td><td><input type="text" class="input-text-adv gu"></td><td><input type="number" class="input-text-adv gm" oninput="calcCierre()"></td><td><button class="btn-remove" onclick="this.closest('tr').remove(); calcCierre()">X</button></td>`;
+            document.querySelector('#tabla-gastos tbody').appendChild(tr);
+        }
+        function addPropinaRow() {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `<td><input type="text" class="input-text-adv pu"></td><td><input type="number" class="input-text-adv pm" oninput="calcCierre()"></td><td><button class="btn-remove" onclick="this.closest('tr').remove(); calcCierre()">X</button></td>`;
+            document.querySelector('#tabla-propinas tbody').appendChild(tr);
+        }
+        function calcCierre() {
+            let tg=0; document.querySelectorAll('.gm').forEach(i=>tg+=Number(i.value)||0); document.getElementById('tot-gastos').innerText = tg.toFixed(2); document.getElementById('cc-egreso').value = tg;
+            let tp=0; document.querySelectorAll('.pm').forEach(i=>tp+=Number(i.value)||0); document.getElementById('tot-propinas').innerText = tp.toFixed(2);
+            const in_ = Number(document.getElementById('cc-ingreso').value)||0; const re_ = Number(document.getElementById('cc-real').value)||0;
+            const esp = in_ - tg; document.getElementById('cc-esperado').value = esp;
+            const dif = re_ - esp; document.getElementById('cc-dif').value = dif; document.getElementById('cc-dif').style.color = dif<0 ? '#ef4444' : '#10b981';
+        }
+        async function guardarCierreDB() {
+            if(!document.getElementById('cc-fecha').value) return alert("Falta fecha.");
+            const gastos = Array.from(document.querySelectorAll('#tabla-gastos tbody tr')).map(tr=>({tipo:tr.querySelector('.gt').value, usuario:tr.querySelector('.gu').value, monto:Number(tr.querySelector('.gm').value)||0}));
+            const propinas = Array.from(document.querySelectorAll('#tabla-propinas tbody tr')).map(tr=>({usuario:tr.querySelector('.pu').value, monto:Number(tr.querySelector('.pm').value)||0}));
+            const payload = {
+                fecha: document.getElementById('cc-fecha').value, hora: document.getElementById('cc-hora').value, inicio: document.getElementById('cc-inicio').value, fin: document.getElementById('cc-fin').value, turno: document.getElementById('cc-turno').value, cajero: document.getElementById('cc-cajero').value,
+                ingreso: Number(document.getElementById('cc-ingreso').value)||0, saldoOro: Number(document.getElementById('cc-oro').value)||0, saldoGanamos: Number(document.getElementById('cc-ganamos').value)||0, egreso: Number(document.getElementById('cc-egreso').value)||0,
+                montoEsperado: Number(document.getElementById('cc-esperado').value)||0, montoRealFinal: Number(document.getElementById('cc-real').value)||0, sobranteFaltante: Number(document.getElementById('cc-dif').value)||0, reserva: Number(document.getElementById('cc-reserva').value)||0,
+                gastos, propinas
+            };
+            await fetch('/api/cierre-caja', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            alert("✅ Cierre Guardado en la Base de Datos!");
+            if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen();
+        }
+        addGastoRow(); addPropinaRow(); document.getElementById('cc-fecha').valueAsDate = new Date();
+
+        // RESUMEN MENSUAL Y DIARIO
+        const fmt = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+        async function buscarResumen() {
+            const fecha = document.getElementById('res-fecha').value; if(!fecha) return;
+            const res = await fetch('/api/resumen-cajas/' + fecha); const data = await res.json();
+            const d = data.dia; const m = data.mes;
+            document.getElementById('res-diario').innerHTML = `
+                <tr><td class="header-row">Ingreso Inicial</td><td>${fmt.format(d.manana.ingreso)}</td><td>${fmt.format(d.tarde.ingreso)}</td><td>${fmt.format(d.noche.ingreso)}</td><td style="color:#9ca3af">${fmt.format(d.total.ingreso)}</td></tr>
+                <tr><td class="header-row">Saldo Oro</td><td>${fmt.format(d.manana.oro)}</td><td>${fmt.format(d.tarde.oro)}</td><td>${fmt.format(d.noche.oro)}</td><td style="color:#9ca3af">${fmt.format(d.total.oro)}</td></tr>
+                <tr><td class="header-row">Saldo Ganamos</td><td>${fmt.format(d.manana.ganamos)}</td><td>${fmt.format(d.tarde.ganamos)}</td><td>${fmt.format(d.noche.ganamos)}</td><td style="color:#9ca3af">${fmt.format(d.total.ganamos)}</td></tr>
+                <tr><td class="header-row">Total Retiros (Egresos)</td><td>${fmt.format(d.manana.retiros)}</td><td>${fmt.format(d.tarde.retiros)}</td><td>${fmt.format(d.noche.retiros)}</td><td style="color:#9ca3af">${fmt.format(d.total.retiros)}</td></tr>
+                <tr><td class="header-row">Monto Real Final</td><td>${fmt.format(d.manana.real)}</td><td>${fmt.format(d.tarde.real)}</td><td>${fmt.format(d.noche.real)}</td><td style="color:#9ca3af">${fmt.format(d.total.real)}</td></tr>`;
+            document.getElementById('res-salida-tot').innerText = fmt.format(m.salidas.lean+m.salidas.nahue+m.salidas.brai+m.salidas.tati);
+            document.getElementById('res-mensual-salidas').innerHTML = `<tr><td class="header-row">TOTAL SALIDAS LEAN</td><td colspan="2">${fmt.format(m.salidas.lean)}</td></tr><tr><td class="header-row">TOTAL SALIDAS NAHUE</td><td colspan="2">${fmt.format(m.salidas.nahue)}</td></tr><tr><td class="header-row">TOTAL SALIDAS BRAI</td><td colspan="2">${fmt.format(m.salidas.brai)}</td></tr><tr><td class="header-row">TOTAL SALIDAS TATI</td><td colspan="2">${fmt.format(m.salidas.tati)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">TOTAL SALDO ORO</td><td colspan="2" style="color:#38bdf8;">${fmt.format(m.saldos.oro)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">TOTAL SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${fmt.format(m.saldos.ganamos)}</td></tr>`;
+            document.getElementById('res-mensual-fichas').innerHTML = `<tr><td class="header-row">MEGAFARAON</td><td>${fmt.format(m.fichas.mega)}</td></tr><tr><td class="header-row">GANAMOS</td><td>${fmt.format(m.fichas.ganamos)}</td></tr><tr><td class="header-row">ORO</td><td>${fmt.format(m.fichas.oro)}</td></tr>`;
+            document.getElementById('res-mensual-bonos').innerHTML = `<tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr><tr><td class="header-row">MONTO</td><td>${fmt.format(m.bonos.bb.monto)}</td><td>${fmt.format(m.bonos.br.monto)}</td></tr>`;
+        }
+    </script>
 </body>
 </html>
