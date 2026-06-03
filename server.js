@@ -20,10 +20,6 @@ app.use(session({
     cookie: { maxAge: 1000 * 60 * 60 } 
 }));
 
-// --- SERVICIO DE ARCHIVOS ESTÁTICOS CORREGIDO ---
-// Se coloca antes de las rutas protegidas para evitar conflictos de enrutamiento
-app.use(express.static(path.join(__dirname, 'public')));
-
 // --- MIDDLEWARE DE PROTECCIÓN ---
 const requireLogin = (req, res, next) => {
     if (req.session.loggedIn) {
@@ -49,70 +45,19 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
+// Protegemos el panel de administrador
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// --- VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
-app.post('/api/validar-cliente', async (req, res) => {
-    try {
-        const { usuario, password } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        
-        if (cliente) {
-            const claveReal = cliente.password ? cliente.password : '1234';
-            if (password === claveReal) {
-                if (!cliente.password) {
-                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
-                }
-                res.json({ exito: true });
-            } else {
-                res.json({ exito: false }); 
-            }
-        } else {
-            res.json({ exito: false }); 
-        }
-    } catch (error) {
-        console.error("🔴 Error al validar credenciales:", error);
-        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
-    }
-});
-
-// --- RUTA DE GESTIÓN DE SALDOS PANEL ---
-app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
-    const { usuario, monto } = req.body;
-    try {
-        await Cliente.updateOne(
-            { usuarioCasino: usuario }, 
-            { $inc: { saldo: monto } }
-        );
-        res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.` });
-    } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
-    }
-});
-
-// --- RUTA DE CONFIGURACIONES GENERALES DEL PANEL ---
-app.post('/api/guardar-config', requireLogin, async (req, res) => {
-    try {
-        const { seccion, datos } = req.body;
-        await PanelConfig.updateOne(
-            { identificador: 'global' },
-            { $set: { [seccion]: datos } },
-            { upsert: true }
-        );
-        res.json({ exito: true });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
+// Archivos estáticos
+app.use(express.static('public'));
 
 // ==============================================================
 // ⚡ RECEPTOR WEBHOOK: MERCADO PAGO EN TIEMPO REAL
 // ==============================================================
 app.post('/api/webhook/billetera', async (req, res) => {
     res.status(200).send("OK");
-
     try {
         const accion = req.body?.action;
         const tipo = req.body?.type;
@@ -159,7 +104,6 @@ app.post('/api/webhook/billetera', async (req, res) => {
     }
 });
 
-// --- RUTA DE SIMULACIÓN DE TEST DE PAGO ---
 app.post('/api/simular-pago-test', requireLogin, (req, res) => {
     if (adminSocketId) {
         io.to(adminSocketId).emit('billetera_actualizada_en_vivo', {
@@ -173,8 +117,58 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
     }
 });
 
+// --- VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
+app.post('/api/validar-cliente', async (req, res) => {
+    try {
+        const { usuario, password } = req.body;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        if (cliente) {
+            const claveReal = cliente.password ? cliente.password : '1234';
+            if (password === claveReal) {
+                if (!cliente.password) {
+                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
+                }
+                res.json({ exito: true });
+            } else {
+                res.json({ exito: false }); 
+            }
+        } else {
+            res.json({ exito: false }); 
+        }
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
+    }
+});
+
+app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
+    const { usuario, monto } = req.body;
+    try {
+        await Cliente.updateOne(
+            { usuarioCasino: usuario }, 
+            { $inc: { saldo: monto } }
+        );
+        res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.` });
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
+    }
+});
+
+app.post('/api/guardar-config', requireLogin, async (req, res) => {
+    try {
+        const { seccion, datos } = req.body;
+        await PanelConfig.updateOne(
+            { identificador: 'global' },
+            { $set: { [seccion]: datos } },
+            { upsert: true }
+        );
+        res.json({ exito: true });
+    } catch (error) {
+        res.status(500).json({ exito: false });
+    }
+});
+
 // ==============================================================
-// 🔥 RUTAS DE CIERRE DE CAJA Y RESUMEN DE COMPROBACIONES
+// 🔥 RUTAS DE CIERRE DE CAJA Y RESÚMENES
 // ==============================================================
 app.post('/api/cierre-caja', requireLogin, async (req, res) => {
     try {
@@ -263,6 +257,16 @@ app.get('/api/resumen-cajas/:fecha', requireLogin, async (req, res) => {
     }
 });
 
+// NUEVA RUTA: Obtener el historial completo por fecha
+app.get('/api/historial-cajas/:fecha', requireLogin, async (req, res) => {
+    try {
+        const cierres = await CierreCaja.find({ fecha: req.params.fecha });
+        res.json(cierres);
+    } catch (e) {
+        res.status(500).json([]);
+    }
+});
+
 // --- RUTAS DE LA RULETA ---
 app.post('/api/guardar-ruleta', requireLogin, async (req, res) => {
     try {
@@ -287,7 +291,7 @@ app.get('/api/ruleta-config', async (req, res) => {
 app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
     try {
         const { configuracion } = req.body;
-        if (!configuracion || configuracion.length === 0) return res.json({ exito: false, mensaje: 'Configuración vacía.' });
+        if (!configuracion || configuracion.length === 0) return res.json({ exito: false });
 
         const rand = Math.random() * 100;
         let sum = 0;
@@ -346,6 +350,11 @@ app.post('/api/tirar-ruleta', async (req, res) => {
             usuarioExistente.historial = cliente.historialChat;
             if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
         }
+        if (adminSocketId) {
+            const clientesDB = await Cliente.find();
+            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
+
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
     } catch (error) {
         res.status(500).json({ exito: false });
@@ -429,6 +438,17 @@ app.post('/api/tirar-raspa', async (req, res) => {
         const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!<br>Premio obtenido: <b>${premioGanado.premio}</b>.<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu balance.`;
         cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
         await cliente.save();
+
+        const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
+        if (usuarioExistente) {
+            usuarioExistente.historial = cliente.historialChat;
+            if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
+        }
+        if (adminSocketId) {
+            const clientesDB = await Cliente.find();
+            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
+
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
     } catch (error) {
         res.status(500).json({ exito: false });
@@ -481,59 +501,14 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 }
 
 // --------------------------------------------------------
-// 📝 MODELOS DE DATOS DE MONGODB
+// 📝 MODELOS DE DATOS DE MONGODB (Restantes)
 // --------------------------------------------------------
-const clienteSchema = new mongoose.Schema({
-    usuarioCasino: { type: String, required: true, unique: true },
-    password: { type: String, default: '1234' },
-    saldo: { type: Number, default: 0 },
-    wager: { type: Number, default: 0 },
-    estado: { type: String, default: 'Activo' },
-    historialChat: { type: Array, default: [] },
-    ultimaConexion: { type: Date, default: Date.now },
-    ultimaRuleta: { type: Date, default: null },
-    ultimaRaspa: { type: Date, default: null } 
-});
-const Cliente = mongoose.model('Cliente', clienteSchema);
-
-const ruletaSchema = new mongoose.Schema({ configuracion: Array });
-const Ruleta = mongoose.model('Ruleta', ruletaSchema);
-
-const raspaSchema = new mongoose.Schema({ configuracion: Array });
-const Raspa = mongoose.model('Raspa', raspaSchema);
-
-const panelConfigSchema = new mongoose.Schema({
-    identificador: { type: String, default: 'global', unique: true },
-    retencion: { type: Array, default: [] },
-    apis: { type: Object, default: {} },
-    push: { type: Object, default: {} },
-    billetera: { type: Object, default: {} }
-});
-const PanelConfig = mongoose.model('PanelConfig', panelConfigSchema);
-
-const c_cajaSchema = new mongoose.Schema({
-    fecha: String, turno: String, hora: String, inicio: String, fin: String, cajero: String,
+const CierreCaja = mongoose.model('CierreCaja', new mongoose.Schema({
+    fecha: String, hora: String, inicio: String, fin: String, turno: String, cajero: String,
     ingreso: Number, saldoOro: Number, saldoGanamos: Number, egreso: Number,
     montoEsperado: Number, montoRealFinal: Number, sobranteFaltante: Number, reserva: Number,
     gastos: Array, propinas: Array
-});
-const CierreCaja = mongoose.model('CierreCaja', c_cajaSchema);
-
-const retiroSchema = new mongoose.Schema({
-    fecha: { type: String, default: () => new Date().toLocaleString('es-AR') },
-    cliente: String,
-    monto: Number,
-    cbuAlias: String,
-    titular: String,
-    estado: { type: String, default: 'Aprobado (Enviado)' },
-    procesadoPor: { type: String, default: 'Lambda (Automático)' }
-});
-const Retiro = mongoose.model('Retiro', retiroSchema);
-
-const usuarioInternoSchema = new mongoose.Schema({
-    nombre: String, usuario: String, email: String, rol: String, estado: { type: String, default: 'Activo' }
-});
-const UsuarioInterno = mongoose.model('UsuarioInterno', usuarioInternoSchema);
+}));
 
 // --------------------------------------------------------
 // VARIABLES EN VIVO PARA SOCKETS
@@ -543,24 +518,26 @@ let adminSocketId = null;
 let usuarioSeleccionadoActivoAdmin = null;
 
 io.on('connection', (socket) => {
+    
     socket.on('identificar_admin', async () => {
         adminSocketId = socket.id;
         socket.emit('lista_usuarios_actualizada', usuariosConectados);
+        
         try {
             const clientesDB = await Cliente.find();
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
             const ruletaDB = await Ruleta.findOne();
-            const raspaDB = await Raspa.findOne();
-            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' });
-
+            const raspaDB = await Raspa.findOne(); 
+            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); 
+            
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
                 retiros: retirosDB,
                 usuariosInternos: internosDB,
                 ruleta: ruletaDB ? ruletaDB.configuracion : [],
                 raspa: raspaDB ? raspaDB.configuracion : [],
-                panelConfig: panelConfigDB
+                panelConfig: panelConfigDB 
             });
         } catch (e) { console.log(e); }
     });
@@ -581,6 +558,7 @@ io.on('connection', (socket) => {
     socket.on('identificar_usuario', async (datos) => {
         socket.username = datos.usuario;
         let clienteDB = await Cliente.findOne({ usuarioCasino: datos.usuario });
+        
         if (!clienteDB) {
             clienteDB = new Cliente({
                 usuarioCasino: datos.usuario,
@@ -588,15 +566,26 @@ io.on('connection', (socket) => {
             });
             await clienteDB.save();
         }
+
         let usuarioExistente = usuariosConectados.find(u => u.nombre === datos.usuario);
         if (!usuarioExistente) {
-            usuariosConectados.push({ id: socket.id, nombre: datos.usuario, estado: 'Menú', historial: clienteDB.historialChat });
+            usuariosConectados.push({ 
+                id: socket.id, 
+                nombre: datos.usuario, 
+                estado: 'Menú',
+                historial: clienteDB.historialChat
+            });
         } else {
             usuarioExistente.id = socket.id; 
             usuarioExistente.historial = clienteDB.historialChat; 
         }
+        
         socket.emit('resultado_validacion', { exito: true, usuario: datos.usuario, historial: clienteDB.historialChat });
-        if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+        if (adminSocketId) {
+            io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+            const clientesDB = await Cliente.find();
+            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
     });
 
     socket.on('cliente_accion', async (datos) => {
@@ -604,13 +593,17 @@ io.on('connection', (socket) => {
         if (usuario) {
             usuario.estado = datos.estado;
             let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
+
             if (datos.mensajeCliente) { usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); }
             if (datos.mensajeBot) { usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); }
+
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
+
             if (adminSocketId) {
                 io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
                 io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
             }
+            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
     });
 
@@ -619,11 +612,14 @@ io.on('connection', (socket) => {
         if (usuario) {
             let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
             usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensaje, leido: estaMirandome });
+
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
+
             if (adminSocketId) {
                 io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
                 io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
             }
+            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
     });
 
@@ -632,7 +628,7 @@ io.on('connection', (socket) => {
         if (usuario) {
             usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true });
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
-            if(usuario.id) io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
+            io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
             socket.emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
         }
     });
@@ -641,6 +637,7 @@ io.on('connection', (socket) => {
         if (socket.username) {
             let usuario = usuariosConectados.find(u => u.nombre === socket.username);
             if (usuario) { usuario.id = null; }
+            if (usuarioSeleccionadoActivoAdmin === socket.username) usuarioSeleccionadoActivoAdmin = null;
             if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
         }
     });
@@ -651,6 +648,7 @@ async function inicializarDatosDePrueba() {
     if(countCl === 0) {
         await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save();
     }
+    
     const countRuleta = await Ruleta.countDocuments();
     if (countRuleta === 0) {
         await new Ruleta({ configuracion: [
@@ -662,6 +660,7 @@ async function inicializarDatosDePrueba() {
             { id: 5, premio: '🎁 Sorpresa', valor: 100, probabilidad: 40 }
         ]}).save();
     }
+
     const countRaspa = await Raspa.countDocuments();
     if (countRaspa === 0) {
         await new Raspa({ configuracion: [
@@ -673,6 +672,7 @@ async function inicializarDatosDePrueba() {
             { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
         ]}).save();
     }
+
     const countPanel = await PanelConfig.countDocuments();
     if (countPanel === 0) {
         await new PanelConfig({ identificador: 'global' }).save();
@@ -680,4 +680,8 @@ async function inicializarDatosDePrueba() {
 }
 
 const PUERTO = process.env.PORT || 3000;
-server.listen(PUERTO, () => console.log(`🚀 SERVIDOR CORRIENDO EN PUERTO ${PUERTO}`));
+server.listen(PUERTO, () => {
+    console.log('=============================================');
+    console.log(`🚀 SERVIDOR VINCULADO AL PANEL EN PUERTO ${PUERTO}`);
+    console.log('=============================================');
+});
