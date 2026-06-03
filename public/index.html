@@ -36,7 +36,7 @@
         .client-text-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 10px; color: white; font-size: 13px; }
         .btn-send-client { background-color: #2563eb; border: none; color: white; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
 
-        /* ESTILOS DE LA RULETA VISUAL */
+        /* ESTILOS INTERFAZ VISUAL DE LA RULETA */
         .modal-ruleta-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
         .modal-ruleta-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 330px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.4); text-align: center; box-sizing: border-box; }
         .ruleta-container { position: relative; width: 280px; height: 280px; margin: 0 auto; }
@@ -44,6 +44,17 @@
         #ruleta-canvas { transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1f2937; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
         .btn-spin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
         .btn-spin:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ESTILOS INTERFAZ VISUAL DEL RASPA Y GANA */
+        .modal-raspa-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
+        .modal-raspa-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 335px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #10b981; box-shadow: 0 0 30px rgba(16, 185, 129, 0.4); text-align: center; box-sizing: border-box; }
+        .raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin: 20px 0; }
+        .raspa-block-card { width: 92px; height: 80px; background-color: #1f2937; border: 2px dashed #10b981; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; box-sizing: border-box; }
+        .raspa-block-card.scratched { background-color: #0b0f19; border-style: solid; border-color: #2563eb; }
+        .raspa-block-card.others-revealed { background-color: #111827; border-style: solid; border-color: #374151; opacity: 0.65; }
+        .raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #374151, #1f2937); display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold; font-size: 22px; transition: opacity 0.4s; z-index: 2; }
+        .raspa-prize-text { font-size: 10px; font-weight: bold; color: white; text-align: center; padding: 2px; line-height: 1.2; }
+        .raspa-value-text { font-size: 11px; font-weight: bold; color: #38bdf8; margin-top: 3px; }
     </style>
 </head>
 <body>
@@ -68,7 +79,13 @@
                     <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
                     <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
                     
-                    <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #ff007f, #ffaa00); border:none; box-shadow: 0 0 15px rgba(255,170,0,0.3); color: white;" onclick="abrirModalRuleta()">🎯 Tirar Ruleta Diaria</button>
+                    <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7); border:none; box-shadow: 0 0 15px rgba(168,85,247,0.3); color: white;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos Diarios</button>
+                </div>
+
+                <div id="container-games-options" class="menu-grid" style="display: none;">
+                    <button class="btn-action" style="padding: 20px 10px; font-size:14px; background: linear-gradient(135deg, #ff007f, #ffaa00); border:none; color:white; font-weight: bold;" onclick="abrirModalRuleta()">🎯 Ruleta de Premios</button>
+                    <button class="btn-action" style="padding: 20px 10px; font-size:14px; background: linear-gradient(135deg, #10b981, #3b82f6); border:none; color:white; font-weight: bold;" onclick="abrirModalRaspa()">🎫 Raspa y Gana</button>
+                    <button class="btn-action" style="background-color: #374151; padding: 12px 10px; font-size:14px; grid-column: span 2;" onclick="irAlMenuPrincipal()">↩️ Volver al Menú Principal</button>
                 </div>
 
                 <div id="container-deposit-options" class="deposit-grid" style="display: none;">
@@ -94,7 +111,25 @@
                 <canvas id="ruleta-canvas" width="280" height="280"></canvas>
             </div>
             <button id="btn-spin" class="btn-spin" onclick="iniciarGiro()">GIRAR AHORA</button>
-            <button id="btn-close-ruleta" class="btn-action" style="margin-top:10px; width:100%;" onclick="cerrarRuleta()">Cerrar</button>
+            <button id="btn-close-ruleta" class="btn-action" style="margin-top:10px; width:100%; display:none; background-color:#374151;" onclick="cerrarRuletaModal()">Volver</button>
+        </div>
+    </div>
+
+    <div id="modal-raspa" class="modal-raspa-overlay">
+        <div class="modal-raspa-content">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🎫 Raspa y Gana</h3>
+            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Elegí 1 casillero para raspar y descubrir tu premio diario.</p>
+            
+            <div class="raspa-grid-board" id="client-tablero-raspa">
+                <div class="raspa-block-card" onclick="rasparCasilleroCliente(0)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroCliente(1)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroCliente(2)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroCliente(3)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroCliente(4)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroCliente(5)"><div class="raspa-cover-layer">?</div></div>
+            </div>
+            
+            <button id="btn-close-raspa" class="btn-action" style="margin-top:15px; width:100%; display:none; background-color:#374151; padding: 10px;" onclick="cerrarRaspaModal()">Volver al Menú</button>
         </div>
     </div>
 
@@ -103,9 +138,11 @@
         const msgArea = document.getElementById('messages-area');
         window.usuarioLogueado = null; 
 
-        // VARIABLES DE LA RULETA VISUAL
+        // VARIABLES DE LOS MINIJUEGOS
         let ruletaConfig = [];
         let currentRotation = 0;
+        let raspaConfig = [];
+        let raspaYaJugada = false;
 
         function validarAcceso() {
             const usuarioInput = document.getElementById('username').value.trim();
@@ -156,12 +193,20 @@
         function irAlMenuPrincipal() {
             document.getElementById('container-deposit-options').style.display = 'none';
             document.getElementById('container-chat-input').style.display = 'none';
+            document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('container-menu-options').style.display = 'grid';
             
             let msgBot = 'Volviste al menú principal. ¿En qué te podemos ayudar?';
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot"><b>Club Zeus:</b><br>${msgBot}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
             socket.emit('cliente_accion', { estado: 'Menú', mensajeBot: msgBot });
+        }
+
+        function mostrarSubMenuMinijuegos() {
+            document.getElementById('container-menu-options').style.display = 'none';
+            document.getElementById('container-deposit-options').style.display = 'none';
+            document.getElementById('container-chat-input').style.display = 'none';
+            document.getElementById('container-games-options').style.display = 'grid';
         }
 
         function seleccionarOpcion(opcion) {
@@ -198,21 +243,19 @@
             ruletaConfig = data.config;
             dibujarRuleta(ruletaConfig);
             
-            // Reseteamos el estado visual
             document.getElementById('ruleta-canvas').style.transition = 'none';
             document.getElementById('ruleta-canvas').style.transform = `rotate(${currentRotation}deg)`;
-            
-            // Forzamos un reflow para que aplique el reset sin animación
             void document.getElementById('ruleta-canvas').offsetWidth; 
             
             document.getElementById('ruleta-canvas').style.transition = 'transform 5s cubic-bezier(0.25, 0.1, 0.15, 1)';
             document.getElementById('btn-spin').disabled = false;
-            document.getElementById('btn-close-ruleta').style.display = 'block';
+            document.getElementById('btn-close-ruleta').style.display = 'none';
             document.getElementById('modal-ruleta').style.display = 'block';
         }
 
-        function cerrarRuleta() {
+        function cerrarRuletaModal() {
             document.getElementById('modal-ruleta').style.display = 'none';
+            irAlMenuPrincipal();
         }
 
         function dibujarRuleta(config) {
@@ -221,16 +264,11 @@
             const center = canvas.width / 2;
             const radius = center - 2; 
             const sliceAngle = (2 * Math.PI) / config.length;
-            
-            // Colores bien llamativos tipo casino
             const colors = ['#ff007f', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             for(let i=0; i<config.length; i++) {
                 const angle = i * sliceAngle;
-                
-                // Dibujar la porción (slice)
                 ctx.beginPath();
                 ctx.fillStyle = colors[i % colors.length];
                 ctx.moveTo(center, center);
@@ -240,24 +278,21 @@
                 ctx.strokeStyle = "#0b0f19";
                 ctx.stroke();
 
-                // Dibujar el texto y el emoji girados
                 ctx.save();
                 ctx.translate(center, center);
-                ctx.rotate(angle + sliceAngle / 2); // Rotamos al centro de la porción
+                ctx.rotate(angle + sliceAngle / 2); 
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
                 ctx.font = "bold 13px 'Segoe UI', sans-serif";
-                
                 let text = config[i].premio;
-                if(text.length > 15) text = text.substring(0, 15) + ".."; // Cortamos si es muy largo
-                ctx.fillText(text, radius - 15, 5); // Dibujamos cerca del borde
+                if(text.length > 15) text = text.substring(0, 15) + "..";
+                ctx.fillText(text, radius - 15, 5); 
                 ctx.restore();
             }
         }
 
         function iniciarGiro() {
             document.getElementById('btn-spin').disabled = true;
-            document.getElementById('btn-close-ruleta').style.display = 'none';
 
             fetch('/api/tirar-ruleta', {
                 method: 'POST',
@@ -268,49 +303,124 @@
             .then(data => {
                 if(!data.exito) {
                     alert(data.mensaje);
-                    cerrarRuleta();
+                    cerrarRuletaModal();
                     return;
                 }
 
-                // 1. Encontramos en qué slice cayó según la base de datos
                 const winnerIndex = ruletaConfig.findIndex(item => item.id === data.premio.id);
-                
-                // 2. Calculamos los grados matemáticos
                 const sliceDegree = 360 / ruletaConfig.length;
                 const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
-                
-                // El puntero está arriba (270 grados en canvas). Rotamos para que el centro del premio quede ahí.
                 const targetRotation = 270 - centerOfWinner;
-                
-                // 3. Añadimos 5 vueltas completas extra para el suspenso
                 const currentMod = currentRotation % 360;
                 let needed = targetRotation - currentMod;
                 if (needed < 0) needed += 360; 
                 
-                currentRotation += needed + (360 * 5); // + 5 vueltas
+                currentRotation += needed + (360 * 5); 
 
-                // 4. Disparamos la animación CSS
                 const canvas = document.getElementById('ruleta-canvas');
                 canvas.style.transform = `rotate(${currentRotation}deg)`;
 
-                // 5. Esperamos que termine de girar (5 segundos)
                 setTimeout(() => {
-                    cerrarRuleta();
+                    document.getElementById('btn-close-ruleta').style.display = 'block';
                     
-                    // Mostramos el resultado de victoria en el chat
-                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Quiero tirar la Ruleta Diaria</div><span class="status-text">✓ Enviado</span></div>`;
+                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Jugué a la Ruleta de Premios</div><span class="status-text">✓ Enviado</span></div>`;
                     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
                     msgArea.scrollTop = msgArea.scrollHeight;
                     socket.emit('cliente_accion', { estado: 'Menú' }); 
-                    
-                    // Lo dejamos leer el premio unos segundos antes de tirarle de nuevo el menú
-                    setTimeout(irAlMenuPrincipal, 4000); 
-
-                }, 5500); // 500ms de changüí para asegurar que frenó visualmente
+                }, 5300);
             })
             .catch(err => {
-                alert("Hubo un error de conexión, intentá de nuevo.");
-                cerrarRuleta();
+                alert("Error de conexión.");
+                cerrarRuletaModal();
+            });
+        }
+
+        // ==========================================
+        // LÓGICA DEL RASPA Y GANA VISUAL
+        // ==========================================
+        function abrirModalRaspa() {
+            fetch('/api/raspa-config')
+            .then(res => res.json())
+            .then(data => {
+                if(!data.exito || data.config.length === 0) return alert("El Raspa y Gana no está configurado.");
+                raspaConfig = data.config;
+                raspaYaJugada = false;
+
+                // Limpiar y resetear las 6 tarjetas tapadas
+                const tablero = document.getElementById('client-tablero-raspa');
+                tablero.innerHTML = `
+                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(0)"><div class="raspa-cover-layer">?</div></div>
+                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(1)"><div class="raspa-cover-layer">?</div></div>
+                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(2)"><div class="raspa-cover-layer">?</div></div>
+                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(3)"><div class="raspa-cover-layer">?</div></div>
+                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(4)"><div class="raspa-cover-layer">?</div></div>
+                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(5)"><div class="raspa-cover-layer">?</div></div>
+                `;
+                document.getElementById('btn-close-raspa').style.display = 'none';
+                document.getElementById('modal-raspa').style.display = 'block';
+            });
+        }
+
+        function cerrarRaspaModal() {
+            document.getElementById('modal-raspa').style.display = 'none';
+            irAlMenuPrincipal();
+        }
+
+        function rasparCasilleroCliente(indexClickeado) {
+            if(raspaYaJugada) return;
+            raspaYaJugada = true;
+
+            const casillerosDOM = document.querySelectorAll('.raspa-block-card');
+            casillerosDOM[indexClickeado].querySelector('.raspa-cover-layer').innerText = "⏳";
+
+            fetch('/api/tirar-raspa', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: window.usuarioLogueado })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(!data.exito) {
+                    alert(data.mensaje);
+                    cerrarRaspaModal();
+                    return;
+                }
+
+                const ganador = data.premio;
+                const poolPremiosRestantes = raspaConfig.filter(item => item.id !== ganador.id);
+                poolPremiosRestantes.sort(() => Math.random() - 0.5);
+
+                // Destapamos la tarjeta elegida
+                const cardGanadora = casillerosDOM[indexClickeado];
+                cardGanadora.classList.add('scratched');
+                cardGanadora.querySelector('.raspa-cover-layer').style.opacity = '0';
+                cardGanadora.innerHTML += `<div class="raspa-prize-text">${ganador.premio}</div><div class="raspa-value-text">$${ganador.valor}</div>`;
+
+                // A los 800ms revelamos el resto de las porciones tentadoras
+                setTimeout(() => {
+                    let rIndex = 0;
+                    casillerosDOM.forEach((card, i) => {
+                        if(i !== indexClickeado) {
+                            card.classList.add('others-revealed');
+                            card.querySelector('.raspa-cover-layer').style.opacity = '0';
+                            const premioDeRelleno = poolPremiosRestantes[rIndex];
+                            card.innerHTML += `<div class="raspa-prize-text">${premioDeRelleno.premio}</div><div class="raspa-value-text">$${premioDeRelleno.valor}</div>`;
+                            rIndex++;
+                        }
+                    });
+
+                    document.getElementById('btn-close-raspa').style.display = 'block';
+
+                    // Mandamos el veredicto oficial al historial de soporte
+                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎫 Jugué al Raspa y Gana Diario</div><span class="status-text">✓ Enviado</span></div>`;
+                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
+                    msgArea.scrollTop = msgArea.scrollHeight;
+                    socket.emit('cliente_accion', { estado: 'Menú' }); 
+                }, 800);
+            })
+            .catch(err => {
+                alert("Error de conexión al raspar.");
+                cerrarRaspaModal();
             });
         }
         // ==========================================
