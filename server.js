@@ -108,7 +108,6 @@ app.get('/api/ruleta-config', async (req, res) => {
     }
 });
 
-// NUEVA RUTA: Tiro de PRUEBA para el Administrador (No gasta tiro diario ni da saldo)
 app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
     try {
         const { configuracion } = req.body;
@@ -125,7 +124,6 @@ app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
                 break;
             }
         }
-
         res.json({ exito: true, premio: premioGanado });
     } catch (error) {
         res.status(500).json({ exito: false, mensaje: 'Error al simular la ruleta.' });
@@ -138,7 +136,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
 
-        // Verificamos si ya tiró hoy
         const hoy = new Date();
         const ultima = cliente.ultimaRuleta;
         if (ultima && ultima.getDate() === hoy.getDate() && ultima.getMonth() === hoy.getMonth() && ultima.getFullYear() === hoy.getFullYear()) {
@@ -161,7 +158,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
             }
         }
 
-        // Sumamos el premio, guardamos la fecha y lo metemos al historial de chat
         cliente.saldo += premioGanado.valor;
         cliente.ultimaRuleta = hoy;
         
@@ -170,7 +166,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
         
         await cliente.save();
 
-        // Actualizamos en vivo el panel del admin
         const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
         if (usuarioExistente) {
             usuarioExistente.historial = cliente.historialChat;
@@ -182,9 +177,105 @@ app.post('/api/tirar-ruleta', async (req, res) => {
         }
 
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
-
     } catch (error) {
         res.status(500).json({ exito: false, mensaje: 'Error al girar la ruleta.' });
+    }
+});
+
+// --------------------------------------------------------
+// 🔥 NUEVAS RUTAS MECÁNICA: RASPA Y GANA
+// --------------------------------------------------------
+app.post('/api/guardar-raspa', requireLogin, async (req, res) => {
+    try {
+        await Raspa.deleteMany({});
+        await new Raspa({ configuracion: req.body.configuracion }).save();
+        res.json({ exito: true });
+    } catch (error) {
+        res.json({ exito: false });
+    }
+});
+
+app.get('/api/raspa-config', async (req, res) => {
+    try {
+        const raspaDb = await Raspa.findOne();
+        const config = raspaDb ? raspaDb.configuracion : [];
+        res.json({ exito: true, config });
+    } catch (error) {
+        res.json({ exito: false });
+    }
+});
+
+// Simulación de tiro de prueba para la tarjeta de administración
+app.post('/api/tirar-raspa-prueba', requireLogin, (req, res) => {
+    try {
+        const { configuracion } = req.body;
+        if (!configuracion || configuracion.length === 0) return res.json({ exito: false });
+
+        const rand = Math.random() * 100;
+        let sum = 0;
+        let premioGanado = configuracion[configuracion.length - 1];
+
+        for (let item of configuracion) {
+            sum += item.probabilidad;
+            if (rand <= sum) {
+                premioGanado = item;
+                break;
+            }
+        }
+        res.json({ exito: true, premio: premioGanado });
+    } catch (error) {
+        res.status(500).json({ exito: false });
+    }
+});
+
+app.post('/api/tirar-raspa', async (req, res) => {
+    try {
+        const { usuario } = req.body;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
+
+        const hoy = new Date();
+        const ultima = cliente.ultimaRaspa;
+        if (ultima && ultima.getDate() === hoy.getDate() && ultima.getMonth() === hoy.getMonth() && ultima.getFullYear() === hoy.getFullYear()) {
+            return res.json({ exito: false, mensaje: '❌ Ya raspaste tu tarjeta de hoy. ¡Volvé mañana!' });
+        }
+
+        const raspaDb = await Raspa.findOne();
+        const config = raspaDb ? raspaDb.configuracion : [];
+        if (config.length === 0) return res.json({ exito: false, mensaje: 'El Raspa y Gana está en mantenimiento.' });
+
+        const rand = Math.random() * 100;
+        let sum = 0;
+        let premioGanado = config[config.length - 1];
+
+        for (let item of config) {
+            sum += item.probabilidad;
+            if (rand <= sum) {
+                premioGanado = item;
+                break;
+            }
+        }
+
+        cliente.saldo += premioGanado.valor;
+        cliente.ultimaRaspa = hoy;
+
+        const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!<br>Premio obtenido: <b>${premioGanado.premio}</b>.<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu balance.`;
+        cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
+        await cliente.save();
+
+        const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
+        if (usuarioExistente) {
+            usuarioExistente.historial = cliente.historialChat;
+            if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
+        }
+        if (adminSocketId) {
+            const clientesDB = await Cliente.find();
+            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
+
+        res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: 'Error al procesar el Raspa y Gana.' });
     }
 });
 
@@ -246,14 +337,16 @@ const clienteSchema = new mongoose.Schema({
     estado: { type: String, default: 'Activo' },
     historialChat: { type: Array, default: [] },
     ultimaConexion: { type: Date, default: Date.now },
-    ultimaRuleta: { type: Date, default: null } 
+    ultimaRuleta: { type: Date, default: null },
+    ultimaRaspa: { type: Date, default: null } // NUEVO CAMPO DE TRACCIÓN DIARIA
 });
 const Cliente = mongoose.model('Cliente', clienteSchema);
 
-const ruletaSchema = new mongoose.Schema({
-    configuracion: Array 
-});
+const ruletaSchema = new mongoose.Schema({ configuracion: Array });
 const Ruleta = mongoose.model('Ruleta', ruletaSchema);
+
+const raspaSchema = new mongoose.Schema({ configuracion: Array }); // NUEVO MODELO DE BASE DE DATOS
+const Raspa = mongoose.model('Raspa', raspaSchema);
 
 const retiroSchema = new mongoose.Schema({
     fecha: { type: String, default: () => new Date().toLocaleString('es-AR') },
@@ -293,12 +386,14 @@ io.on('connection', (socket) => {
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
             const ruletaDB = await Ruleta.findOne();
+            const raspaDB = await Raspa.findOne(); // Mandamos los datos al panel
             
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
                 retiros: retirosDB,
                 usuariosInternos: internosDB,
-                ruleta: ruletaDB ? ruletaDB.configuracion : []
+                ruleta: ruletaDB ? ruletaDB.configuracion : [],
+                raspa: raspaDB ? raspaDB.configuracion : []
             });
         } catch (e) { console.log(e); }
     });
@@ -419,6 +514,19 @@ async function inicializarDatosDePrueba() {
             { id: 3, premio: '🍀 Premio Chico', valor: 2000, probabilidad: 18 },
             { id: 4, premio: '✨ Consolación', valor: 500, probabilidad: 20 },
             { id: 5, premio: '🎁 Sorpresa', valor: 100, probabilidad: 40 }
+        ]}).save();
+    }
+
+    // Inicializar configuración inicial del Raspa y Gana por defecto
+    const countRaspa = await Raspa.countDocuments();
+    if (countRaspa === 0) {
+        await new Raspa({ configuracion: [
+            { id: 0, premio: '💎 MEGA BONO', valor: 30000, probabilidad: 3 },
+            { id: 1, premio: '👑 Premio Alto', valor: 15000, probabilidad: 7 },
+            { id: 2, premio: '💵 Premio Intermedio', valor: 4000, probabilidad: 15 },
+            { id: 3, premio: 'パック Premio Base', valor: 1500, probabilidad: 25 },
+            { id: 4, premio: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 },
+            { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
         ]}).save();
     }
 }
