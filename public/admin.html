@@ -8,7 +8,6 @@
     <style>
         body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
         
-        /* BARRA LATERAL */
         .sidebar { width: 240px; background-color: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
         .sidebar h2 { color: #f8fafc; font-size: 18px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
         .menu-category { font-size: 11px; font-weight: bold; color: #4b5563; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
@@ -17,13 +16,11 @@
         .nav-btn.active-nav { color: #38bdf8; background-color: #1f2937; box-shadow: inset 4px 0 0 #38bdf8; }
         .nav-btn:hover { background-color: #1f2937; color: white; }
 
-        /* MODAL DE IMPORTACIÓN */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
         .modal-content { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); width: 450px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #38bdf8; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
         .modal-content h3 { color: #38bdf8; margin-top: 0; }
         .modal-content textarea { width: 100%; height: 150px; background: #0f172a; color: white; border: 1px solid #374151; padding: 10px; border-radius: 6px; box-sizing: border-box; margin-bottom: 15px; font-family: monospace; }
 
-        /* CONTENIDO PRINCIPAL */
         .main-content { flex: 1; display: flex; flex-direction: column; background-color: #0f172a; }
         .top-bar { height: 60px; background-color: #111827; border-bottom: 1px solid #1f2937; display: flex; align-items: center; padding: 0 30px; font-weight: bold; color: #f8fafc; justify-content: space-between; }
         
@@ -31,7 +28,6 @@
         .view-section { display: none; width: 100%; height: 100%; flex-direction: column; }
         .view-section.active-view { display: flex; }
 
-        /* TABLAS Y TARJETAS */
         .panel-inside { flex: 1; padding: 30px; overflow-y: auto; }
         .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
         .stat-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; text-align: center; }
@@ -47,7 +43,6 @@
         .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; margin-top: 15px; transition: background 0.2s; }
         .btn-save:hover { background-color: #1d4ed8; }
 
-        /* CHATS EN VIVO */
         .chats-sidebar { width: 300px; background-color: #111827; border-right: 1px solid #1f2937; display: flex; flex-direction: column; }
         .chats-header { padding: 15px; font-weight: 600; border-bottom: 1px solid #1f2937; background-color: #1f2937; color: white; }
         .user-list { flex: 1; overflow-y: auto; padding: 10px; }
@@ -70,14 +65,12 @@
         .admin-chat-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 12px; color: white; outline: none; }
         .admin-chat-input:focus { border-color: #38bdf8; }
 
-        /* MENÚ HORIZONTAL DE EVENTOS */
         .event-tabs-header { display: flex; gap: 10px; background-color: #111827; padding: 10px; border-radius: 10px; border: 1px solid #1f2937; margin-bottom: 20px; }
         .event-tab-btn { background: none; border: none; color: #94a3b8; padding: 10px 16px; font-weight: bold; font-size: 13px; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .event-tab-btn.active-event-tab { background-color: #1f2937; color: #38bdf8; border: 1px solid #374151; }
+        .event-tab-btn.active-event-tab { background-color: #1f2937; color: #38b#38bdf8; border: 1px solid #374151; }
         .event-subview { display: none; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
         .event-subview.active-subview { display: flex; flex-direction: column; }
         
-        /* DISEÑO DE LA RULETA */
         .ruleta-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15); border: 1px solid #ffaa00; }
         .ruleta-table th { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; padding: 14px; text-align: left; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
         .ruleta-table td { padding: 12px; border-bottom: 1px solid #1f2937; color: white; background-color: #0b0f19; }
@@ -85,41 +78,25 @@
         .input-ruleta-val { background-color: #1f2937; border: 1px solid #38bdf8; color: #38bdf8; font-weight: bold; padding: 8px; border-radius: 6px; width: 90px; font-size: 13px; outline: none; }
         .prob-input { background-color: #1f2937; border: 1px solid #10b981; color: #10b981; padding: 8px; border-radius: 6px; width: 60px; text-align: center; font-weight: bold; font-size: 13px; outline: none; }
 
-        /* SIMULADOR RULETA ADMIN */
         .ruleta-container { position: relative; width: 240px; height: 240px; margin: 0 auto; }
         .ruleta-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 35px; color: #ffaa00; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
         #ruleta-admin-canvas { transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1f2937; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
         .btn-spin-admin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 20px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
         .btn-spin-admin:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* NOTIFICACIONES PUSH AVANZADAS */
-        .push-layout { display: flex; gap: 25px; }
-        .push-form-card { flex: 1.2; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; }
-        .push-history-card { flex: 1; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; height: 430px; overflow-y: auto; }
-        .push-type-selector { display: flex; gap: 10px; }
-        .type-pill { background-color: #1f2937; border: 1px solid #374151; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; color: #94a3b8; }
-        .type-pill.active-pill { background-color: #2563eb; color: white; }
-        .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
-        .form-row label { font-size: 12px; font-weight: 600; color: #94a3b8; }
-        .input-text-adv { background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; }
-        .history-card-item { border-bottom: 1px solid #1f2937; padding: 12px 0; }
-        .history-card-title { font-weight: bold; color: white; display: flex; justify-content: space-between; font-size: 13px; }
-        .history-card-desc { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+        /* ESTILOS DE LA TARJETA RASPA Y GANA EN ADMIN */
+        .raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 320px; margin: 15px 0; }
+        .raspa-block-card { width: 100px; height: 85px; background-color: #1f2937; border: 2px dashed #ffaa00; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; }
+        .raspa-block-card.scratched { background-color: #0b0f19; border-style: solid; border-color: #2563eb; }
+        .raspa-block-card.others-revealed { background-color: #111827; border-style: solid; border-color: #374151; opacity: 0.75; }
+        .raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #4b5563, #1f2937); display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold; font-size: 20px; transition: opacity 0.4s; z-index: 2; }
+        .raspa-prize-text { font-size: 11px; font-weight: bold; color: white; text-align: center; padding: 4px; }
+        .raspa-value-text { font-size: 12px; font-weight: bold; color: #38bdf8; margin-top: 2px; }
 
-        /* DISEÑO RETENCIÓN */
-        .retencion-container { display: flex; flex-direction: column; gap: 20px; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
-        .retencion-block { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px solid #1f2937; padding-bottom: 15px; }
-        .retencion-block:last-child { border: none; padding-bottom: 0; }
-        .retencion-header-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #38bdf8; }
-        .input-retencion-large { background-color: #0f172a; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; max-width: 600px; margin-top: 4px; }
-
-        /* APIS CARD GRID COMPLETAS */
         .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
         .api-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
         .api-card-header { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 15px; color: white; border-bottom: 1px solid #1f2937; padding-bottom: 12px; margin-bottom: 5px; }
         .wallet-status { font-size: 17px; font-weight: bold; color: #10b981; display: flex; align-items: center; gap: 8px; }
-
-        /* SWITCH AUTOMÁTICO */
         .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
         .switch input { opacity: 0; width: 0; height: 0; }
         .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 22px; }
@@ -132,32 +109,25 @@
 
     <div class="sidebar">
         <h2>⚡ Club Fenix</h2>
-        
         <div class="menu-category">Soporte</div>
         <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')">💬 Chats en Vivo</button>
-        
         <div class="menu-category">Control Personal</div>
         <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
         <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Datos de Clientes</button>
-        
         <div class="menu-category">Finanzas</div>
         <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')">💸 Control de Retiros</button>
         <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
-        
         <div class="menu-category">Marketing</div>
         <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
         <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
         <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
-        
         <div class="menu-category">Sistema</div>
         <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
-        
         <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar de Ganamos.net</button>
     </div>
 
     <div class="main-content">
         <div class="top-bar" id="panel-title">Panel de Control - Chats en Vivo</div>
-        
         <div class="workspace">
             
             <div id="section-chats" class="view-section active-view" style="flex-direction: row; padding: 0;">
@@ -167,9 +137,7 @@
                 </div>
                 <div class="live-chat-monitor">
                     <div class="monitor-header" id="active-chat-username" style="padding: 15px; border-bottom: 1px solid #1f2937; background: #111827; font-weight: bold;">Ningún usuario seleccionado</div>
-                    <div class="monitor-messages" id="active-chat-messages">
-                        <div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div>
-                    </div>
+                    <div class="monitor-messages" id="active-chat-messages"><div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div></div>
                     <div class="monitor-input-area">
                         <input type="text" id="admin-message-input" class="admin-chat-input" placeholder="Escribí un mensaje..." disabled>
                         <button class="btn-save" id="btn-enviar-msg" onclick="enviarMensajeManual()" style="margin-top: 0;" disabled>Enviar</button>
@@ -178,202 +146,130 @@
             </div>
 
             <div id="section-usuarios" class="view-section">
-                <div class="panel-inside">
-                    <div class="stats-grid">
-                        <div class="stat-card"><div class="label">Total Usuarios</div><div class="num">8</div></div>
-                        <div class="stat-card"><div class="label">Activos</div><div class="num">8</div></div>
-                    </div>
-                    <h3 style="color:white; margin-bottom:15px;">Listado de Operadores Internos</h3>
-                    <table class="data-table">
-                        <thead><tr><th>#</th><th>Nombre</th><th>Usuario</th><th>Email</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
-                        <tbody><tr><td>1</td><td>Admin clubzeus</td><td>admin</td><td>admin@clubzeus.local</td><td><span style="color:#a855f7; font-weight:bold;">Master</span></td><td><span class="badge" style="background-color:#10b981;">Activo</span></td><td><button class="btn-action-table btn-edit">Editar</button></td></tr></tbody>
-                    </table>
-                </div>
+                <div class="panel-inside"><h3 style="color:white; margin-bottom:15px;">Operadores Internos</h3><table class="data-table"><thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th></tr></thead><tbody><tr><td>Admin</td><td>admin</td><td>Master</td><td>Activo</td></tr></tbody></table></div>
             </div>
-
+            
             <div id="section-clientes" class="view-section">
                 <div class="panel-inside">
-                    <div class="stats-grid">
-                        <div class="stat-card"><div class="label">Total Clientes</div><div class="num">2.475</div></div>
-                        <div class="stat-card"><div class="label">Activos</div><div class="num">2.471</div></div>
-                    </div>
+                    <h3 style="color:white; margin-bottom:15px;">Base de Clientes</h3>
                     <table class="data-table">
-                        <thead><tr><th>ID</th><th>Nombre Plataforma</th><th>Usuario Casino</th><th>Fichas / Saldo</th><th>Wager</th><th>Estado</th><th>Push</th></tr></thead>
-                        <tbody><tr><td>2475</td><td>Central</td><td>nicolas211150</td><td style="color:#10b981; font-weight:bold;">$0</td><td>$0</td><td><span style="color:#10b981;">● Activo</span></td><td><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></td></tr></tbody>
+                        <thead><tr><th>Usuario Casino</th><th>Saldo Panel</th><th>Wager</th><th>Estado</th><th>Acción</th></tr></thead>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
-
+            
             <div id="section-retiros" class="view-section">
                 <div class="panel-inside">
-                    <h3 style="color:white; margin-bottom:15px;">Solicitudes de Retiro Recientes</h3>
+                    <h3 style="color:white; margin-bottom:15px;">Auditoría de Retiros</h3>
                     <table class="data-table">
-                        <thead><tr><th># ID</th><th>Fecha</th><th>Cliente</th><th>Monto</th><th>CBU / Alias</th><th>Titular</th><th>Estado</th><th>Procesado</th></tr></thead>
-                        <tbody><tr><td>1674</td><td>15/05, 19:03</td><td>yanina21667</td><td style="color:#3b82f6; font-weight:bold;">$30.900,00</td><td>0000013000032318656943</td><td>YANINA PATRICIA GALLARDO</td><td><span class="badge" style="background-color:#10b981;">Aprobado</span></td><td>Automático</td></tr></tbody>
+                        <thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>CBU/Alias</th><th>Estado</th></tr></thead>
+                        <tbody></tbody>
                     </table>
                 </div>
             </div>
-
+            
             <div id="section-billetera" class="view-section">
-                <div class="panel-inside">
-                    <div class="stats-grid">
-                        <div class="stat-card" style="grid-column: span 2; text-align: left; border-left: 5px solid #10b981;">
-                            <div class="wallet-status">🟢 HG Cash Conectada</div>
-                            <div class="num" style="font-size:32px; color:#10b981; margin-top:10px;">$1.342.823,47 ARS</div>
-                        </div>
-                    </div>
-                </div>
+                <div class="panel-inside"><div class="stat-card" style="text-align:left;"><div class="wallet-status">🟢 HG Cash Conectada</div><div class="num">$1.342.823,47 ARS</div></div></div>
             </div>
-
+            
             <div id="section-push" class="view-section">
-                <div class="panel-inside">
-                    <div class="stats-grid" style="margin-bottom:20px;">
-                        <div class="stat-card"><div class="label">Dispositivos Suscriptos</div><div class="num">568</div></div>
-                        <div class="stat-card"><div class="label">Push Enviados</div><div class="num">17</div></div>
-                        <div class="stat-card"><div class="label">Popups en Vivo Lanzados</div><div class="num">3</div></div>
-                    </div>
-                    <div class="push-layout">
-                        <div class="push-form-card">
-                            <div class="push-type-selector"><div class="type-pill active-pill">🔔 Push Notifications</div></div>
-                            <div class="form-row"><label>Título</label><input type="text" class="input-text-adv" value="Casino 463 - Bono Especial!"></div>
-                            <div class="form-row"><label>Mensaje Masivo</label><textarea class="input-text-adv" rows="3" style="resize:none;">Tenés un bono del 200% esperándote...</textarea></div>
-                            <button class="btn-save" style="width:fit-content; margin:0;" onclick="alert('Push lanzado')">🚀 Enviar Notificación</button>
-                        </div>
-                        <div class="push-history-card">
-                            <h4 style="margin:0 0 15px 0; color:#38bdf8;">Historial de Push Enviados</h4>
-                            <div class="history-card-item">
-                                <div class="history-card-title"><span>CARGANDO POR LA WEB, APP 🎁</span> <span style="color:#64748b; font-size:11px;">15/05, 17:28</span></div>
-                                <div class="history-card-desc">TENÉS 150% EN TODAS TUS CARGAS DIARIAS. ✅ 565 | ❌ 3</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <div class="panel-inside"><h4>Lanzador de Notificaciones</h4><input type="text" class="input-text-adv" value="¡Tenés saldo extra de regalo! Aprovechalo ya."><button class="btn-save">Enviar Push Masivo</button></div>
             </div>
-
+            
             <div id="section-retencion" class="view-section">
-                <div class="panel-inside">
-                    <div class="panel-title-text" style="font-size: 20px;">Reglas por Inactividad</div>
-                    <p style="color: #64748b; margin: 0 0 25px 0; font-size:13.5px;">Activá o desactivá cada alerta con su switch correspondiente de manera independiente.</p>
-                    
-                    <div class="retencion-container">
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div>
-                            <input type="text" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div>
-                            <input type="text" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div>
-                            <input type="text" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox"><span class="slider"></span></label><span>Inactivo 15 días</span></div>
-                            <input type="text" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox"><span class="slider"></span></label><span>Inactivo 30 días</span></div>
-                            <input type="text" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy.">
-                        </div>
-                    </div>
-                    <button class="btn-save" onclick="alert('¡Reglas guardadas!')">Guardar</button>
-                </div>
+                <div class="panel-inside"><h4>Automatización de Mensajes de Retención</h4><input type="text" class="input-retencion-large" value="¡Te extrañamos! Volvé hoy y te bonificamos tu próxima carga."><button class="btn-save">Guardar Reglas</button></div>
             </div>
 
             <div id="section-eventos" class="view-section">
                 <div class="panel-inside">
                     <div class="event-tabs-header">
                         <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯<br>Ruleta</button>
-                        <button class="event-tab-btn" id="tab-ev-sorteo" onclick="cambiarSubJuego('sorteo')">🎟️<br>Sorteo</button>
                         <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫<br>Raspa/Gana</button>
-                        <button class="event-tab-btn" id="tab-ev-slots" onclick="cambiarSubJuego('slots')">🎰<br>Slots</button>
-                        <button class="event-tab-btn" id="tab-ev-cofre" onclick="cambiarSubJuego('cofre')">💎<br>Cofre</button>
-                        <button class="event-tab-btn" id="tab-ev-rojo" onclick="cambiarSubJuego('rojo')">🔴<br>Rojo/Negro</button>
                     </div>
 
                     <div id="subview-ruleta" class="event-subview active-subview">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size: 18px;">Configurar Ruleta Diaria</h4>
-                        <p style="color: #64748b; font-size:13px; margin:0 0 20px 0;">Modificá el nombre, el valor y las probabilidades. La suma de probabilidad DEBE dar 100%. Podés probar la configuración en la rueda interactiva antes de guardarla.</p>
-                        
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Ruleta Diaria</h4>
                         <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                            
-                            <div style="flex: 1; min-width: 480px;">
+                            <div style="flex: 1; min-width: 450px;">
                                 <table class="ruleta-table" id="tabla-config-ruleta">
-                                    <thead>
-                                        <tr><th>ID</th><th>Premio / Segmento</th><th>Tipo</th><th>Fichas</th><th>Probabilidad</th></tr>
-                                    </thead>
+                                    <thead><tr><th>ID</th><th>Premio / Segmento</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
                                     <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🏆 JACKPOT"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="50000"></td><td><input type="text" class="prob-input" value="2"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🔥 Premio Mayor"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="10000"></td><td><input type="text" class="prob-input" value="8"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="⭐ Premio Medio"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="5000"></td><td><input type="text" class="prob-input" value="12"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🍀 Premio Chico"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="2000"></td><td><input type="text" class="prob-input" value="18"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="✨ Consolación"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="500"></td><td><input type="text" class="prob-input" value="20"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🎁 Sorpresa"></td><td>Fichas</td><td><input type="text" class="input-ruleta-val" value="100"></td><td><input type="text" class="prob-input" value="40"> %</td></tr>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🏆 JACKPOT"></td><td><input type="text" class="input-ruleta-val" value="50000"></td><td><input type="text" class="prob-input" value="2"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🔥 Premio Mayor"></td><td><input type="text" class="input-ruleta-val" value="10000"></td><td><input type="text" class="prob-input" value="8"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="⭐ Premio Medio"></td><td><input type="text" class="input-ruleta-val" value="5000"></td><td><input type="text" class="prob-input" value="12"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🍀 Premio Chico"></td><td><input type="text" class="input-ruleta-val" value="2000"></td><td><input type="text" class="prob-input" value="18"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="✨ Consolación"></td><td><input type="text" class="input-ruleta-val" value="500"></td><td><input type="text" class="prob-input" value="20"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🎁 Sorpresa"></td><td><input type="text" class="input-ruleta-val" value="100"></td><td><input type="text" class="prob-input" value="40"> %</td></tr>
                                     </tbody>
                                 </table>
-                                <button class="btn-save" onclick="guardarRuleta()">Guardar Configuración Oficial</button>
+                                <button class="btn-save" onclick="guardarRuleta()">Guardar Configuración Ruleta</button>
                             </div>
-
-                            <div style="width: 320px; background-color: #0b0f19; border: 1px solid #1f2937; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; align-items: center;">
-                                <h4 style="margin: 0 0 20px 0; color: #38bdf8; font-size: 15px;">Vista Previa y Prueba Libre</h4>
+                            <div style="width: 280px; text-align: center;">
                                 <div class="ruleta-container">
                                     <div class="ruleta-pointer">▼</div>
                                     <canvas id="ruleta-admin-canvas" width="240" height="240"></canvas>
                                 </div>
-                                <button id="btn-spin-admin" class="btn-spin-admin" onclick="iniciarGiroPrueba()">🎲 Simular Tiro</button>
-                                <div id="resultado-prueba" style="margin-top: 15px; color: #10b981; font-weight: bold; text-align: center; min-height: 40px; font-size: 13px;"></div>
+                                <button id="btn-spin-admin" class="btn-spin-admin" onclick="iniciarGiroPrueba()">🎲 Simular Tiro Ruleta</button>
+                                <div id="resultado-prueba" style="margin-top:10px; color:#ffaa00; font-weight:bold; font-size:13px;"></div>
                             </div>
                         </div>
-
                     </div>
 
-                    <div id="subview-sorteo" class="event-subview"><h4>Crear Nuevo Sorteo</h4></div>
-                    <div id="subview-raspa" class="event-subview"><h4>Raspa y Gana Digital</h4></div>
-                    <div id="subview-slots" class="event-subview"><h4>Configurar Tragamonedas (Slots)</h4></div>
-                    <div id="subview-cofre" class="event-subview"><h4>Crear Cofre del Tesoro</h4></div>
-                    <div id="subview-rojo" class="event-subview"><h4>Minijuego Rojo o Negro</h4></div>
+                    <div id="subview-raspa" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Raspa y Gana Diario</h4>
+                        <p style="color: #64748b; font-size:12px; margin:0 0 15px 0;">Modificá los 6 casilleros. La suma de las probabilidades debe ser obligatoriamente 100%.</p>
+                        
+                        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-raspa">
+                                    <thead><tr><th>ID</th><th>Premio / Tarjeta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" value="💎 MEGA BONO"></td><td><input type="text" class="input-ruleta-val" value="30000"></td><td><input type="text" class="prob-input" value="3"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" value="👑 Premio Alto"></td><td><input type="text" class="input-ruleta-val" value="15000"></td><td><input type="text" class="prob-input" value="7"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" value="💵 Premio Intermedio"></td><td><input type="text" class="input-ruleta-val" value="4000"></td><td><input type="text" class="prob-input" value="15"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" value="📦 Premio Base"></td><td><input type="text" class="input-ruleta-val" value="1500"></td><td><input type="text" class="prob-input" value="25"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" value="🪙 Recompensa Menor"></td><td><input type="text" class="input-ruleta-val" value="600"></td><td><input type="text" class="prob-input" value="20"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" value="🎈 Suerte Loca"></td><td><input type="text" class="input-ruleta-val" value="200"></td><td><input type="text" class="prob-input" value="30"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarRaspa()">Guardar Configuración Raspa</button>
+                            </div>
 
+                            <div style="width: 320px; background-color: #0b0f19; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; border-color: #ffaa00;">
+                                <h4 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 14px;">Simulador Tarjeta de Pruebas</h4>
+                                <p style="color: #64748b; font-size:11px; margin:0 0 10px 0; text-align:center;">Hacé clic en cualquier casillero gris para simular la raspada.</p>
+                                
+                                <div class="raspa-grid-board" id="tablero-prueba-raspa">
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(0)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(1)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(2)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(3)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(4)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(5)"><div class="raspa-cover-layer">?</div></div>
+                                </div>
+
+                                <button class="btn-spin-admin" style="background: #1f2937; border: 1px solid #374151; color: white;" onclick="reiniciarTableroRaspaPrueba()">🔄 Limpiar y Volver a Probar</button>
+                                <div id="resultado-raspa-prueba" style="margin-top: 15px; color: #38bdf8; font-weight: bold; text-align: center; min-height: 35px; font-size:12px;"></div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div id="section-apis" class="view-section">
-                <div class="panel-inside">
-                    <div class="panel-title-text" style="font-size: 20px; margin-bottom: 20px;">Integraciones y Llaves de API</div>
-                    <div class="api-grid">
-                        <div class="api-card">
-                            <div class="api-card-header">🎰 API Sincronización Casino</div>
-                            <div class="form-row"><label>URL Panel Servidor Casino</label><input type="text" class="input-text-adv" value="https://admin.clubzeus.vip/"></div>
-                            <div class="form-row"><label>Usuario Agente API</label><input type="text" class="input-text-adv" value="CHATZEUS"></div>
-                            <div class="form-row"><label>Password / Token de Acceso</label><input type="password" class="input-text-adv" value="••••••••••••••••••••••••"></div>
-                        </div>
-                        <div class="api-card">
-                            <div class="api-card-header">🧠 API OpenAI Vision (OCR)</div>
-                            <div class="form-row"><label>OpenAI Secret API Key</label><input type="password" class="input-text-adv" value="••••••••••••••••••••••••••••••••"></div>
-                            <div class="form-row"><label>Modelo AI</label><select class="input-text-adv"><option>gpt-4o (Más veloz y preciso)</option><option>gpt-4-vision-preview</option></select></div>
-                        </div>
-                        <div class="api-card">
-                            <div class="api-card-header">⚡ Webhooks Billetera Lambda</div>
-                            <div class="form-row" style="flex-direction:row; justify-content:space-between; align-items:center;"><label>Integración Activa</label><label class="switch"><input type="checkbox" checked><span class="slider"></span></label></div>
-                            <div class="form-row"><label>Callback Webhook URL</label><input type="text" class="input-text-adv" value="https://j5uky5p2k6.execute-api.us-east-2.amazonaws.com"></div>
-                            <div class="form-row"><label>Callback Secret Pass</label><input type="password" class="input-text-adv" value="••••••••••••••••"></div>
-                        </div>
-                    </div>
-                    <button class="btn-save" onclick="alert('¡Conexiones guardadas!')">Guardar Conexiones</button>
-                </div>
+                <div class="panel-inside"><h4>Configuración APIs</h4><button class="btn-save">Guardar Parámetros</button></div>
             </div>
-
         </div>
     </div>
 
     <div id="modalImportador" class="modal-overlay">
         <div class="modal-content">
-            <h3>📥 Importar datos desde Ganamos.net</h3>
-            <p style="font-size: 13px; color: #94a3b8; margin-bottom: 15px;">Pegá a continuación la tabla de usuarios.</p>
-            <textarea id="dataPaste" placeholder="Pegá aquí la tabla..."></textarea>
+            <h3>📥 Importar de Ganamos.net</h3>
+            <textarea id="dataPaste" placeholder="Pegá la tabla completa aquí..."></textarea>
             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                <button onclick="cerrarImportador()" style="background: none; border: 1px solid #374151; color: #cbd5e1; padding: 10px 15px; border-radius: 6px; cursor: pointer;">Cancelar</button>
-                <button onclick="procesarDatos()" class="btn-save" style="margin-top: 0;">Actualizar Base</button>
+                <button onclick="cerrarImportador()">Cancelar</button>
+                <button onclick="procesarDatos()">Actualizar Base</button>
             </div>
         </div>
     </div>
@@ -381,24 +277,24 @@
     <script>
         const socket = io();
         let usuarioSeleccionadoActivo = null;
+        let raspaYaJugadaAdmin = false; // Bloqueo para evitar múltiples clicks en la prueba
 
-        // IMPORTADOR
         function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
         function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; document.getElementById('dataPaste').value = ''; }
         
         async function procesarDatos() {
             const texto = document.getElementById('dataPaste').value;
-            if (!texto.trim()) return alert("Pegá los datos antes de procesar.");
+            if (!texto.trim()) return alert("Pegá datos válidos.");
             try {
                 const res = await fetch('/importar-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datosCrudos: texto }) });
                 const result = await res.json();
                 alert(result.mensaje);
                 cerrarImportador();
-            } catch (error) { alert("Error al conectar con el servidor."); }
+            } catch (error) { alert("Error de comunicación."); }
         }
 
         async function cargarFichas(usuario) {
-            const monto = prompt(`¿Cuántas fichas querés cargarle a ${usuario}?`);
+            const monto = prompt(`Monto a cargar en balance del panel para ${usuario}:`);
             if (!monto || isNaN(monto)) return;
             try {
                 const res = await fetch('/api/cargar-saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuario, monto: Number(monto) }) });
@@ -408,13 +304,12 @@
         }
 
         // ===============================================
-        // LOGICA DE LA RULETA EN EL PANEL ADMIN
+        // MÓDULO CONTROL: RULETA DIARIA
         // ===============================================
         let currentRotationAdmin = 0;
 
-        // Lee los datos que el admin acaba de tipear en la tabla
         function getRuletaConfigFromDOM() {
-            const filas = document.querySelectorAll('.ruleta-table tbody tr');
+            const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
             const configuracion = [];
             filas.forEach((fila, index) => {
                 const premio = fila.querySelector('.input-ruleta-text').value;
@@ -425,7 +320,6 @@
             return configuracion;
         }
 
-        // Dibuja la ruleta en el panel
         function dibujarRuletaAdmin() {
             const config = getRuletaConfigFromDOM();
             const canvas = document.getElementById('ruleta-admin-canvas');
@@ -433,12 +327,10 @@
             const ctx = canvas.getContext('2d');
             const center = canvas.width / 2;
             const radius = center - 2; 
-            const sliceAngle = (2 * Math.PI) / (config.length || 1);
-            
+            const sliceAngle = (2 * Math.PI) / config.length;
             const colors = ['#ff007f', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
-
             for(let i=0; i<config.length; i++) {
                 const angle = i * sliceAngle;
                 ctx.beginPath();
@@ -446,8 +338,6 @@
                 ctx.moveTo(center, center);
                 ctx.arc(center, center, radius, angle, angle + sliceAngle);
                 ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = "#0b0f19";
                 ctx.stroke();
 
                 ctx.save();
@@ -455,80 +345,134 @@
                 ctx.rotate(angle + sliceAngle / 2);
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
-                ctx.font = "bold 13px 'Segoe UI', sans-serif";
-                
-                let text = config[i].premio;
-                if(text.length > 15) text = text.substring(0, 15) + "..";
-                ctx.fillText(text, radius - 15, 5);
+                ctx.font = "bold 11px sans-serif";
+                ctx.fillText(config[i].premio.substring(0,12), radius - 10, 4);
                 ctx.restore();
             }
         }
 
-        // Guardar oficial
         async function guardarRuleta() {
             const config = getRuletaConfigFromDOM();
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
-
-            if (sumaProb !== 100) return alert(`¡Cuidado! La suma de las probabilidades es ${sumaProb}%. Tiene que ser exactamente 100%.`);
-
-            try {
-                const res = await fetch('/api/guardar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
-                const data = await res.json();
-                if(data.exito) alert('✅ ¡Ruleta guardada y activada con éxito para los clientes!');
-            } catch(e) { alert("Hubo un error de conexión al guardar."); }
+            if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
+            const res = await fetch('/api/guardar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            const data = await res.json();
+            if(data.exito) alert('✅ ¡Ruleta guardada con éxito!');
         }
 
-        // Simular giro de prueba desde el admin
         function iniciarGiroPrueba() {
             const config = getRuletaConfigFromDOM();
-            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
-            if (sumaProb !== 100) return alert("Para probar, la suma de las probabilidades debe ser exactamente 100%.");
-
             const btn = document.getElementById('btn-spin-admin');
-            const resultBox = document.getElementById('resultado-prueba');
             btn.disabled = true;
-            resultBox.innerText = "Girando...";
-
-            fetch('/api/tirar-ruleta-prueba', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ configuracion: config })
-            })
+            fetch('/api/tirar-ruleta-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
             .then(res => res.json())
             .then(data => {
-                if(!data.exito) {
-                    btn.disabled = false;
-                    resultBox.innerText = "Error al girar.";
-                    return;
-                }
-
-                // Hacemos el calculo de animación visual para el admin
                 const winnerIndex = config.findIndex(item => item.id === data.premio.id);
                 const sliceDegree = 360 / config.length;
                 const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
-                
                 const targetRotation = 270 - centerOfWinner;
                 const currentMod = currentRotationAdmin % 360;
                 let needed = targetRotation - currentMod;
-                if (needed < 0) needed += 360; 
-                
-                currentRotationAdmin += needed + (360 * 5); // + 5 vueltas
-
-                const canvas = document.getElementById('ruleta-admin-canvas');
-                canvas.style.transform = `rotate(${currentRotationAdmin}deg)`;
-
-                setTimeout(() => {
-                    btn.disabled = false;
-                    resultBox.innerHTML = `¡Simulación Exitosa!<br><span style="color:#ffaa00;">Premio Cae en: ${data.premio.premio}</span>`;
-                }, 5100); 
-            })
-            .catch(err => {
-                btn.disabled = false;
-                resultBox.innerText = "Error al conectar.";
+                if (needed < 0) needed += 360;
+                currentRotationAdmin += needed + (360 * 4);
+                document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotationAdmin}deg)`;
+                setTimeout(() => { btn.disabled = false; document.getElementById('resultado-prueba').innerText = `Cae en: ${data.premio.premio}`; }, 5100);
             });
         }
-        // ===============================================
 
+        // ===============================================
+        // 🔥 MÓDULO CONTROL: RASPA Y GANA (ADMIN SIMULACIÓN)
+        // ===============================================
+        function getRaspaConfigFromDOM() {
+            const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
+            const configuracion = [];
+            filas.forEach((fila, index) => {
+                const premio = fila.querySelector('.input-ruleta-text').value;
+                const valor = Number(fila.querySelector('.input-ruleta-val').value);
+                const prob = Number(fila.querySelector('.prob-input').value);
+                configuracion.push({ id: index, premio: premio, valor: valor, probabilidad: prob });
+            });
+            return configuracion;
+        }
+
+        async function guardarRaspa() {
+            const config = getRaspaConfigFromDOM();
+            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
+            if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
+            
+            const res = await fetch('/api/guardar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            const data = await res.json();
+            if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada en la base de datos!');
+        }
+
+        function rasparCasilleroSimulado(indexClickeado) {
+            if(raspaYaJugadaAdmin) return; // Evita clics extras una vez jugado
+            
+            const configFull = getRaspaConfigFromDOM();
+            const sumaProb = configFull.reduce((acc, curr) => acc + curr.probabilidad, 0);
+            if (sumaProb !== 100) return alert("Para probar, la probabilidad en la tabla debe sumar 100%.");
+
+            raspaYaJugadaAdmin = true;
+            const casillerosDOM = document.querySelectorAll('.raspa-block-card');
+            
+            // Consultamos al servidor el premio ganador según probabilidad
+            fetch('/api/tirar-raspa-prueba', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ configuracion: configFull })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(!data.exito) return;
+                
+                const ganador = data.premio;
+                
+                // Mezclamos el resto de los casilleros de manera aleatoria con los premios restantes
+                const poolPremiosRestantes = configFull.filter(item => item.id !== ganador.id);
+                // Mezclado rápido (Shuffle)
+                poolPremiosRestantes.sort(() => Math.random() - 0.5);
+
+                // Inyectamos y revelamos el ganador en el casillero elegido
+                const cardGanadora = casillerosDOM[indexClickeado];
+                cardGanadora.classList.add('scratched');
+                cardGanadora.querySelector('.raspa-cover-layer').style.opacity = '0';
+                cardGanadora.innerHTML += `<div class="raspa-prize-text">${ganador.premio}</div><div class="raspa-value-text">$${ganador.valor}</div>`;
+
+                document.getElementById('resultado-raspa-prueba').innerHTML = `¡Raspada Simulada!<br>Ganaste: <span style="color:#ffaa00;">${ganador.premio} ($${ganador.valor})</span>`;
+
+                // Revelamos los otros 5 casilleros de manera aleatoria después de 800ms
+                setTimeout(() => {
+                    let rIndex = 0;
+                    casillerosDOM.forEach((card, i) => {
+                        if(i !== indexClickeado) {
+                            card.classList.add('others-revealed');
+                            card.querySelector('.raspa-cover-layer').style.opacity = '0';
+                            const premioDeRelleno = poolPremiosRestantes[rIndex];
+                            card.innerHTML += `<div class="raspa-prize-text">${premioDeRelleno.premio}</div><div class="raspa-value-text">$${premioDeRelleno.valor}</div>`;
+                            rIndex++;
+                        }
+                    });
+                }, 800);
+            });
+        }
+
+        function reiniciarTableroRaspaPrueba() {
+            raspaYaJugadaAdmin = false;
+            document.getElementById('resultado-raspa-prueba').innerText = "";
+            const tablero = document.getElementById('tablero-prueba-raspa');
+            tablero.innerHTML = `
+                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(0)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(1)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(2)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(3)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(4)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(5)"><div class="raspa-cover-layer">?</div></div>
+            `;
+        }
+
+        // ===============================================
+        // NAVEGACIÓN GENERAL Y SOCKETS
+        // ===============================================
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
@@ -536,8 +480,6 @@
             const targetBtn = document.getElementById('btn-nav-' + seccion);
             if(targetSection) targetSection.classList.add('active-view');
             if(targetBtn) targetBtn.classList.add('active-nav');
-            const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API" };
-            document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
         }
 
         function cambiarSubJuego(juego) {
@@ -547,91 +489,55 @@
             document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
         }
 
-        socket.emit('identificar_admin');
-
         socket.on('cargar_datos_tablas', (datos) => {
+            if (datos.clientes) {
+                const tbody = document.querySelector('#section-clientes .data-table tbody');
+                tbody.innerHTML = '';
+                datos.clientes.forEach(c => {
+                    tbody.innerHTML += `<tr><td>${c.usuarioCasino}</td><td style="color:#10b981;font-weight:bold;">$${c.saldo}</td><td>$${c.wager}</td><td>● Activo</td><td><button onclick="cargarFichas('${c.usuarioCasino}')">💰 Cargar</button></td></tr>`;
+                });
+            }
+            if (datos.retiros) {
+                const tbody = document.querySelector('#section-retiros .data-table tbody');
+                tbody.innerHTML = '';
+                datos.retiros.forEach(r => {
+                    tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`;
+                });
+            }
             if (datos.ruleta && datos.ruleta.length > 0) {
-                const filas = document.querySelectorAll('.ruleta-table tbody tr');
-                datos.ruleta.forEach((item, index) => {
-                    if(filas[index]) {
-                        filas[index].querySelector('.input-ruleta-text').value = item.premio;
-                        filas[index].querySelector('.input-ruleta-val').value = item.valor;
-                        filas[index].querySelector('.prob-input').value = item.probabilidad;
+                const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
+                datos.ruleta.forEach((item, idx) => {
+                    if(filas[idx]) {
+                        filas[idx].querySelector('.input-ruleta-text').value = item.premio;
+                        filas[idx].querySelector('.input-ruleta-val').value = item.valor;
+                        filas[idx].querySelector('.prob-input').value = item.probabilidad;
                     }
                 });
-                // Dibujamos la ruleta por primera vez cuando carga la configuración
                 dibujarRuletaAdmin();
+            }
+            // Cargar datos guardados del Raspa y Gana al iniciar el panel
+            if (datos.raspa && datos.raspa.length > 0) {
+                const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
+                datos.raspa.forEach((item, idx) => {
+                    if(filas[idx]) {
+                        filas[idx].querySelector('.input-ruleta-text').value = item.premio;
+                        filas[idx].querySelector('.input-ruleta-val').value = item.valor;
+                        filas[idx].querySelector('.prob-input').value = item.probabilidad;
+                    }
+                });
             }
         });
 
         socket.on('lista_usuarios_actualizada', (usuarios) => {
             const listaDiv = document.getElementById('lista-usuarios');
             if (!listaDiv) return;
-            listaDiv.innerHTML = ''; 
+            listaDiv.innerHTML = '';
             usuarios.forEach(user => {
-                let tieneMensajesSinLeer = user.historial.some(h => h.emisor === 'cliente' && h.leido === false);
-                let colorEtiqueta = '#4b5563'; 
-                if (user.estado === 'Depósito') colorEtiqueta = '#eab308'; 
-                if (user.estado === 'Subir Comprobante' || user.estado === 'Reportar Pago') colorEtiqueta = '#10b981'; 
-                if (user.estado === 'Soporte') colorEtiqueta = '#2563eb';
-                
                 const item = document.createElement('div');
-                let claseNoLeido = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? 'unread-chat' : '';
-                item.className = `user-item ${usuarioSeleccionadoActivo === user.nombre ? 'selected-user' : ''} ${claseNoLeido}`;
-                let dotVisual = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? '<span class="unread-indicator"></span>' : '';
-                
-                item.innerHTML = `<div class="name">👤 ${dotVisual}${user.nombre}</div><div class="badge" style="background-color: ${colorEtiqueta}">${user.estado || 'Menú'}</div>`;
-                
-                item.onclick = () => {
-                    usuarioSeleccionadoActivo = user.nombre;
-                    document.getElementById('active-chat-username').innerText = "Monitoreando a: " + user.nombre;
-                    document.getElementById('admin-message-input').disabled = false;
-                    document.getElementById('btn-enviar-msg').disabled = false;
-                    socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
-                    renderizarHistorialChat(user.historial);
-                };
+                item.className = `user-item ${usuarioSelectedActivo === user.nombre ? 'selected-user' : ''}`;
+                item.innerHTML = `<div>👤 ${user.nombre}</div><div class="badge" style="background:#2563eb">${user.estado}</div>`;
                 listaDiv.appendChild(item);
-                if (usuarioSeleccionadoActivo === user.nombre) renderizarHistorialChat(user.historial);
             });
-        });
-
-        function renderizarHistorialChat(historial) {
-            const areaMsg = document.getElementById('active-chat-messages');
-            if (!areaMsg) return;
-            areaMsg.innerHTML = ''; 
-            historial.forEach(h => {
-                const wrap = document.createElement('div');
-                wrap.className = 'admin-bubble-wrapper';
-                const b = document.createElement('div');
-                if (h.emisor === 'bot') { b.className = 'admin-bubble b-bot'; b.innerHTML = `🤖 <b>Bot:</b><br>${h.mensaje}`; wrap.appendChild(b); }
-                if (h.emisor === 'admin') { b.className = 'admin-bubble b-admin'; b.innerHTML = `👨‍💼 <b>Vos:</b><br>${h.mensaje}`; wrap.appendChild(b); }
-                if (h.emisor === 'cliente') { 
-                    let checkLectura = h.leido ? '<span class="read-receipt seen">✓ Visto</span>' : '<span class="read-receipt">✓ Enviado</span>';
-                    b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}`; wrap.appendChild(b); wrap.innerHTML += checkLectura;
-                }
-                areaMsg.appendChild(wrap);
-            });
-            areaMsg.scrollTop = areaMsg.scrollHeight;
-        }
-
-        function enviarMensajeManual() {
-            const input = document.getElementById('admin-message-input');
-            const texto = input.value.trim();
-            if (!texto || !usuarioSeleccionadoActivo) return;
-            socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto });
-            input.value = '';
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual();
-            if (e.key === 'Escape' && usuarioSeleccionadoActivo !== null) {
-                usuarioSeleccionadoActivo = null;
-                socket.emit('admin_cambio_chat_activo', { usuario: null });
-                document.getElementById('active-chat-username').innerText = "Ningún usuario seleccionado";
-                document.getElementById('active-chat-messages').innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear.</div>';
-                document.getElementById('admin-message-input').disabled = true;
-                document.getElementById('btn-enviar-msg').disabled = true;
-            }
         });
     </script>
 </body>
