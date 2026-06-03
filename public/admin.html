@@ -116,25 +116,25 @@
         input:checked + .slider { background-color: #10b981; }
         input:checked + .slider:before { transform: translateX(22px); }
 
-        /* CIERRE CAJA / EXCEL STYLES */
-        .excel-card { background: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        /* NUEVOS ESTILOS PARA CIERRE DE CAJA / EXCEL */
+        .excel-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
         .excel-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
         .table-custom { width: 100%; border-collapse: collapse; margin-bottom: 10px; border: 1px solid #1f2937; }
-        .table-custom th { background: #002b5e; color: #38bdf8; padding: 10px; text-transform: uppercase; font-size: 12px; border: 1px solid #1f2937; }
-        .table-custom td { padding: 6px; border: 1px solid #1f2937; background: #1e293b; }
+        .table-custom th { background-color: #002b5e; color: #38bdf8; padding: 10px; text-transform: uppercase; font-size: 12px; border: 1px solid #1f2937; }
+        .table-custom td { padding: 6px; border: 1px solid #1f2937; background-color: #1e293b; }
         .val-num { text-align: right; }
-        .btn-add { background: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
-        .btn-remove { background: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn-add { background-color: #10b981; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold; }
+        .btn-remove { background-color: #ef4444; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 
-        /* RESUMEN CAJAS STYLES */
+        /* NUEVOS ESTILOS PARA RESUMEN DE CAJAS */
         .resumen-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; text-align: center; }
-        .resumen-table th { background: #4c0519; color: #facc15; padding: 12px; font-size: 13px; border: 1px solid #1f2937; }
-        .resumen-table th.col-m { background: #fde047; color: #4c0519; }
-        .resumen-table th.col-t { background: #fdba74; color: #4c0519; }
-        .resumen-table th.col-n { background: #93c5fd; color: #4c0519; }
-        .resumen-table th.col-tot { background: #9ca3af; color: #111827; }
-        .resumen-table td { padding: 12px; font-weight: bold; border: 1px solid #1f2937; background: #1e293b; color: white; }
-        .resumen-table td.header-row { background: #701a35; color: white; text-align: left; }
+        .resumen-table th { background-color: #4c0519; color: #facc15; padding: 12px; font-size: 13px; border: 1px solid #1f2937; }
+        .resumen-table th.col-m { background-color: #fde047; color: #4c0519; }
+        .resumen-table th.col-t { background-color: #fdba74; color: #4c0519; }
+        .resumen-table th.col-n { background-color: #93c5fd; color: #4c0519; }
+        .resumen-table th.col-tot { background-color: #9ca3af; color: #111827; }
+        .resumen-table td { padding: 12px; font-weight: bold; border: 1px solid #1f2937; background-color: #1e293b; color: white; }
+        .resumen-table td.header-row { background-color: #701a35; color: white; text-align: left; }
     </style>
 </head>
 <body>
@@ -151,6 +151,7 @@
         <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
         <button id="btn-nav-cierre" class="nav-btn" onclick="cambiarSeccion('cierre')" style="color:#a3e635;">📊 Cierre de Caja</button>
         <button id="btn-nav-resumen" class="nav-btn" onclick="cambiarSeccion('resumen')" style="color:#a3e635;">📈 Resumen Cajas</button>
+        <button id="btn-nav-historial" class="nav-btn" onclick="cambiarSeccion('historial')" style="color:#a3e635;">📅 Historial de Cajas</button>
         <div class="menu-category">Marketing</div>
         <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
         <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
@@ -250,9 +251,9 @@
                                     <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
                                     <tr><th>Monto Esperado</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
                                     <tr>
-                                        <td><input type="number" id="cc-esperado" class="input-text-adv" readonly style="margin-bottom:0;"></td>
+                                        <td><input type="number" id="cc-esperado" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
                                         <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
-                                        <td><input type="number" id="cc-dif" class="input-text-adv" readonly style="margin-bottom:0;"></td>
+                                        <td><input type="number" id="cc-dif" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
                                     </tr>
                                 </table>
                                 <div style="display:flex; justify-content:flex-end; margin-top:10px;">
@@ -274,12 +275,14 @@
             <div id="section-resumen" class="view-section">
                 <div class="panel-inside">
                     <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #1f2937;">
-                        <h3 style="margin:0; color:#38bdf8;">INGRESAR FECHA:</h3>
+                        <h3 style="margin:0; color:#38bdf8;">INGRESAR FECHA PARA RESUMEN:</h3>
                         <input type="date" id="res-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarResumen()">
                     </div>
 
                     <table class="resumen-table">
-                        <thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead>
+                        <thead>
+                            <tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr>
+                        </thead>
                         <tbody id="res-diario"></tbody>
                     </table>
 
@@ -288,6 +291,7 @@
                             <thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead>
                             <tbody id="res-mensual-salidas"></tbody>
                         </table>
+
                         <div>
                             <table class="resumen-table" style="margin-bottom:15px;">
                                 <thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead>
@@ -298,6 +302,19 @@
                                 <tbody id="res-mensual-bonos"></tbody>
                             </table>
                         </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-historial" class="view-section">
+                <div class="panel-inside">
+                    <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #1f2937;">
+                        <h3 style="margin:0; color:#38bdf8;">SELECCIONAR FECHA PARA HISTORIAL COMPLETO:</h3>
+                        <input type="date" id="hist-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarHistorialCajas()">
+                    </div>
+                    
+                    <div id="historial-resultados">
+                        <p style="color:#64748b; font-size:14px; text-align:center; margin-top:40px;">Por favor, seleccioná una fecha para ver las planillas de caja guardadas.</p>
                     </div>
                 </div>
             </div>
@@ -470,10 +487,11 @@
         const socket = io();
         let usuarioSeleccionadoActivo = null;
         let raspaYaJugadaAdmin = false;
+        let currentRotationAdmin = 0;
 
         socket.emit('identificar_admin');
 
-        // ESCUCHADOR EN VIVO PARA MERCADO PAGO VIA WEBHOOKS + SOCKETS
+        // BILLETERA WEBHOOKS
         socket.on('billetera_actualizada_en_vivo', (datos) => {
             const inputMonto = document.getElementById('wallet-monto');
             if(inputMonto) {
@@ -483,13 +501,13 @@
                 setTimeout(() => { inputMonto.style.textShadow = 'none'; }, 1200);
             }
             if(datos.montoTransferido) {
-                alert(`💸 ¡MERCADO PAGO EN VIVO!\nIngresó un pago aprobado de $${datos.montoTransferido}.\nSaldo reflejado: ${datos.saldoFormateado}`);
+                alert(`💸 ¡MERCADO PAGO EN VIVO!\\nIngresó un pago aprobado de $${datos.montoTransferido}.\\nSaldo reflejado: ${datos.saldoFormateado}`);
             }
         });
         
         async function simularPago() { await fetch('/api/simular-pago-test', { method: 'POST' }); }
 
-        // CONTROL ACCIONES DE GUARDADO
+        // CONFIGURACIONES GLOBALES
         async function guardarConfig(seccion) {
             let datosParaGuardar = {};
 
@@ -514,29 +532,22 @@
                 };
             }
             else if (seccion === 'push') {
-                datosParaGuardar = {
-                    titulo: document.getElementById('push-titulo').value,
-                    mensaje: document.getElementById('push-mensaje').value
-                };
+                datosParaGuardar = { titulo: document.getElementById('push-titulo').value, mensaje: document.getElementById('push-mensaje').value };
             }
             else if (seccion === 'billetera') {
-                datosParaGuardar = {
-                    monto: document.getElementById('wallet-monto').value
-                };
+                datosParaGuardar = { monto: document.getElementById('wallet-monto').value };
             }
 
             try {
                 const res = await fetch('/api/guardar-config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ seccion: seccion, datos: datosParaGuardar })
                 });
+                if(res.redirected) return window.location.href = '/login.html';
                 const result = await res.json();
                 if (result.exito) alert('✅ ¡Los cambios se guardaron permanentemente en la base de datos!');
                 else alert('Error al intentar guardar los datos.');
-            } catch (error) {
-                alert('Error de conexión.');
-            }
+            } catch (error) { alert('Error de conexión.'); }
         }
 
         // IMPORTADOR Y FICHAS
@@ -548,6 +559,7 @@
             if (!texto.trim()) return alert("Pegá datos válidos.");
             try {
                 const res = await fetch('/importar-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datosCrudos: texto }) });
+                if(res.redirected) return window.location.href = '/login.html';
                 const result = await res.json();
                 alert(result.mensaje);
                 cerrarImportador();
@@ -559,14 +571,13 @@
             if (!monto || isNaN(monto)) return;
             try {
                 const res = await fetch('/api/cargar-saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuario, monto: Number(monto) }) });
+                if(res.redirected) return window.location.href = '/login.html';
                 const result = await res.json();
                 alert(result.mensaje);
             } catch (error) { alert("Error técnico."); }
         }
 
-        // CONTROL INTERACTIVO RULETA
-        let currentRotationAdmin = 0;
-
+        // RULETA
         function getRuletaConfigFromDOM() {
             const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
             const configuracion = [];
@@ -618,6 +629,7 @@
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
             if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
             const res = await fetch('/api/guardar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
             if(data.exito) alert('✅ ¡Ruleta guardada con éxito!');
         }
@@ -630,8 +642,12 @@
             const btn = document.getElementById('btn-spin-admin');
             btn.disabled = true;
             fetch('/api/tirar-ruleta-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
-            .then(res => res.json())
+            .then(res => {
+                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
+                return res.json();
+            })
             .then(data => {
+                if(!data.exito) { btn.disabled = false; return alert("Error al simular ruleta"); }
                 const winnerIndex = config.findIndex(item => item.id === data.premio.id);
                 const sliceDegree = 360 / config.length;
                 const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
@@ -642,10 +658,10 @@
                 currentRotationAdmin += needed + (360 * 4);
                 document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotationAdmin}deg)`;
                 setTimeout(() => { btn.disabled = false; document.getElementById('resultado-prueba').innerText = `Cae en: ${data.premio.premio}`; }, 5100);
-            });
+            }).catch(e => { btn.disabled = false; console.error("Error Ruleta:", e); });
         }
 
-        // CONTROL INTERACTIVO RASPA Y GANA
+        // RASPA Y GANA
         function getRaspaConfigFromDOM() {
             const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
             const configuracion = [];
@@ -663,8 +679,9 @@
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
             if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
             const res = await fetch('/api/guardar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
-            if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada en la base de datos!');
+            if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada!');
         }
 
         function rasparCasilleroSimulado(indexClickeado) {
@@ -677,11 +694,13 @@
             const casillerosDOM = document.querySelectorAll('.raspa-block-card');
             
             fetch('/api/tirar-raspa-prueba', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ configuracion: configFull })
             })
-            .then(res => res.json())
+            .then(res => {
+                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
+                return res.json();
+            })
             .then(data => {
                 if(!data.exito) return;
                 const winner = data.premio;
@@ -706,7 +725,7 @@
                         }
                     });
                 }, 800);
-            });
+            }).catch(e => console.error("Error Raspa:", e));
         }
 
         function reiniciarTableroRaspaPrueba() {
@@ -723,7 +742,7 @@
             `;
         }
 
-        // ENRUTADOR SECCIONES
+        // ENRUTAMIENTO DE SECCIONES
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
@@ -732,10 +751,13 @@
             if(targetSection) targetSection.classList.add('active-view');
             if(targetBtn) targetBtn.classList.add('active-nav');
             
-            const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API", cierre: "Panel de Control - Cierre de Caja", resumen: "Panel de Control - Resumen Cajas" };
+            const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API", cierre: "Panel de Control - Cierre de Caja", resumen: "Panel de Control - Resumen Cajas", historial: "Panel de Control - Historial de Cajas" };
             document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
 
-            if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
+            // Retraso para que el canvas asimile el tamaño antes de dibujar
+            if (seccion === 'eventos') {
+                setTimeout(dibujarRuletaAdmin, 300);
+            }
         }
 
         function cambiarSubJuego(juego) {
@@ -747,6 +769,7 @@
             if (juego === 'ruleta') setTimeout(dibujarRuletaAdmin, 100);
         }
 
+        // RECEPCIÓN DE DATOS INICIALES
         socket.on('cargar_datos_tablas', (datos) => {
             if (datos.clientes) {
                 const tbody = document.querySelector('#section-clientes .data-table tbody');
@@ -874,7 +897,7 @@
         });
 
         // ==========================================
-        // LÓGICA DEL CIERRE DE CAJA (FRONTEND)
+        // LÓGICA DEL CIERRE DE CAJA Y RESÚMENES
         // ==========================================
         const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
         
@@ -901,22 +924,18 @@
         }
 
         function calcCierre() {
-            // 1. Sumar Gastos (Egreso)
             let totGastos = 0;
             document.querySelectorAll('.gm').forEach(i => totGastos += Number(i.value) || 0);
             document.getElementById('tot-gastos').innerText = totGastos.toFixed(2);
             document.getElementById('cc-egreso').value = totGastos;
 
-            // 2. Sumar Propinas
             let totPropinas = 0;
             document.querySelectorAll('.pm').forEach(i => totPropinas += Number(i.value) || 0);
             document.getElementById('tot-propinas').innerText = totPropinas.toFixed(2);
 
-            // 3. Montos Generales
             const ingreso = Number(document.getElementById('cc-ingreso').value) || 0;
             const real = Number(document.getElementById('cc-real').value) || 0;
             
-            // Fórmula básica de caja: Esperado = Ingreso - Gastos
             const esperado = ingreso - totGastos;
             document.getElementById('cc-esperado').value = esperado;
             
@@ -930,65 +949,47 @@
             
             const gastos = [];
             document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => {
-                gastos.push({
-                    tipo: tr.querySelector('.gt').value,
-                    usuario: tr.querySelector('.gu').value,
-                    monto: Number(tr.querySelector('.gm').value) || 0
-                });
+                gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 });
             });
 
             const propinas = [];
             document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => {
-                propinas.push({
-                    usuario: tr.querySelector('.pu').value,
-                    monto: Number(tr.querySelector('.pm').value) || 0
-                });
+                propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 });
             });
 
             const payload = {
-                fecha: document.getElementById('cc-fecha').value,
-                hora: document.getElementById('cc-hora').value,
-                inicio: document.getElementById('cc-inicio').value,
-                fin: document.getElementById('cc-fin').value,
-                turno: document.getElementById('cc-turno').value,
-                cajero: document.getElementById('cc-cajero').value,
-                ingreso: Number(document.getElementById('cc-ingreso').value) || 0,
-                saldoOro: Number(document.getElementById('cc-oro').value) || 0,
-                saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0,
-                egreso: Number(document.getElementById('cc-egreso').value) || 0,
-                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0,
-                montoRealFinal: Number(document.getElementById('cc-real').value) || 0,
-                sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0,
-                reserva: Number(document.getElementById('cc-reserva').value) || 0,
+                fecha: document.getElementById('cc-fecha').value, hora: document.getElementById('cc-hora').value,
+                inicio: document.getElementById('cc-inicio').value, fin: document.getElementById('cc-fin').value,
+                turno: document.getElementById('cc-turno').value, cajero: document.getElementById('cc-cajero').value,
+                ingreso: Number(document.getElementById('cc-ingreso').value) || 0, saldoOro: Number(document.getElementById('cc-oro').value) || 0,
+                saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0, egreso: Number(document.getElementById('cc-egreso').value) || 0,
+                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0, montoRealFinal: Number(document.getElementById('cc-real').value) || 0,
+                sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0, reserva: Number(document.getElementById('cc-reserva').value) || 0,
                 gastos, propinas
             };
 
             const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+            if(res.redirected) return window.location.href = '/login.html';
+            
             if(res.ok) {
                 alert("✅ Cierre Guardado en la Base de Datos!");
-                // Si tiene el panel de resumen abierto en la misma fecha, lo actualizamos
                 if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen();
             }
         }
 
-        // Inicializar la tabla con una fila vacía
         addGastoRow(); addPropinaRow();
         document.getElementById('cc-fecha').valueAsDate = new Date();
 
-        // ==========================================
-        // LÓGICA DE RESUMEN DE CAJAS
-        // ==========================================
         const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
 
         async function buscarResumen() {
             const fecha = document.getElementById('res-fecha').value;
             if(!fecha) return;
             const res = await fetch('/api/resumen-cajas/' + fecha);
+            if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
-            const d = data.dia;
-            const m = data.mes;
+            const d = data.dia; const m = data.mes;
 
-            // DIARIO
             document.getElementById('res-diario').innerHTML = `
                 <tr><td class="header-row">Ingreso Inicial</td><td>${f.format(d.manana.ingreso)}</td><td>${f.format(d.tarde.ingreso)}</td><td>${f.format(d.noche.ingreso)}</td><td style="color:#9ca3af">${f.format(d.total.ingreso)}</td></tr>
                 <tr><td class="header-row">Saldo Oro</td><td>${f.format(d.manana.oro)}</td><td>${f.format(d.tarde.oro)}</td><td>${f.format(d.noche.oro)}</td><td style="color:#9ca3af">${f.format(d.total.oro)}</td></tr>
@@ -997,7 +998,6 @@
                 <tr><td class="header-row">Monto Real Final</td><td>${f.format(d.manana.real)}</td><td>${f.format(d.tarde.real)}</td><td>${f.format(d.noche.real)}</td><td style="color:#9ca3af">${f.format(d.total.real)}</td></tr>
             `;
 
-            // MENSUAL - SALIDAS
             const totSalidas = m.salidas.lean + m.salidas.nahue + m.salidas.brai + m.salidas.tati;
             document.getElementById('res-salida-tot').innerText = f.format(totSalidas);
             document.getElementById('res-mensual-salidas').innerHTML = `
@@ -1009,18 +1009,93 @@
                 <tr><td class="header-row" style="background:#1d4ed8;">TOTAL SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.ganamos)}</td></tr>
             `;
 
-            // MENSUAL - FICHAS
             document.getElementById('res-mensual-fichas').innerHTML = `
                 <tr><td class="header-row">MEGAFARAON</td><td>${f.format(m.fichas.mega)}</td></tr>
                 <tr><td class="header-row">GANAMOS</td><td>${f.format(m.fichas.ganamos)}</td></tr>
                 <tr><td class="header-row">ORO</td><td>${f.format(m.fichas.oro)}</td></tr>
             `;
 
-            // MENSUAL - BONOS
             document.getElementById('res-mensual-bonos').innerHTML = `
                 <tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr>
                 <tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>
             `;
+        }
+
+        // ==========================================
+        // NUEVO: HISTORIAL DE CAJAS COMPLETAS
+        // ==========================================
+        async function buscarHistorialCajas() {
+            const fecha = document.getElementById('hist-fecha').value;
+            const container = document.getElementById('historial-resultados');
+            if(!fecha) return;
+
+            try {
+                const res = await fetch('/api/historial-cajas/' + fecha);
+                if(res.redirected) return window.location.href = '/login.html';
+                const cierres = await res.json();
+
+                if (cierres.length === 0) {
+                    container.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay cajas guardadas para la fecha ${fecha}.</p>`;
+                    return;
+                }
+
+                container.innerHTML = cierres.map(c => `
+                    <div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;">
+                        <h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">
+                            📅 Fecha: ${c.fecha} | 🕒 Turno: ${c.turno || 'S/T'} | 👤 Cajero: ${c.cajero || 'N/D'}
+                        </h4>
+                        
+                        <div class="excel-grid">
+                            <div>
+                                <table class="table-custom">
+                                    <tr><th style="width:50%">Hora de Apertura</th><td>${c.inicio || '--:--'}</td></tr>
+                                    <tr><th>Hora de Cierre</th><td>${c.fin || '--:--'}</td></tr>
+                                </table>
+                                
+                                <h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE DE GASTOS / SALIDAS</h5>
+                                <table class="table-custom">
+                                    <thead><tr><th>Tipo</th><th>Usuario/Destino</th><th>Monto</th></tr></thead>
+                                    <tbody>
+                                        ${(c.gastos && c.gastos.length > 0) ? c.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos registrados</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div>
+                                <table class="table-custom">
+                                    <tr><th>Ingreso Declarado</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>Egreso Total</th></tr>
+                                    <tr>
+                                        <td style="text-align:right;">${f.format(c.ingreso || 0)}</td>
+                                        <td style="text-align:right;">${f.format(c.saldoOro || 0)}</td>
+                                        <td style="text-align:right;">${f.format(c.saldoGanamos || 0)}</td>
+                                        <td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(c.egreso || 0)}</td>
+                                    </tr>
+                                </table>
+
+                                <table class="table-custom" style="margin-top:15px;">
+                                    <tr><th>Monto Esperado (Teórico)</th><th>Monto Real Final (Caja)</th><th>Diferencia</th></tr>
+                                    <tr>
+                                        <td style="text-align:right;">${f.format(c.montoEsperado || 0)}</td>
+                                        <td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(c.montoRealFinal || 0)}</td>
+                                        <td style="text-align:right; font-weight:bold; color:${(c.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(c.sobranteFaltante || 0)}</td>
+                                    </tr>
+                                </table>
+
+                                <h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS REPARTIDAS</h5>
+                                <table class="table-custom">
+                                    <thead><tr><th>Usuario</th><th>Monto</th></tr></thead>
+                                    <tbody>
+                                        ${(c.propinas && c.propinas.length > 0) ? c.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas registradas</td></tr>'}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                container.innerHTML = `<p style="color:#ef4444; text-align:center;">Hubo un error al cargar el historial.</p>`;
+            }
         }
     </script>
 </body>
