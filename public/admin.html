@@ -67,7 +67,7 @@
 
         .event-tabs-header { display: flex; gap: 10px; background-color: #111827; padding: 10px; border-radius: 10px; border: 1px solid #1f2937; margin-bottom: 20px; }
         .event-tab-btn { background: none; border: none; color: #94a3b8; padding: 10px 16px; font-weight: bold; font-size: 13px; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .event-tab-btn.active-event-tab { background-color: #1f2937; color: #38b#38bdf8; border: 1px solid #374151; }
+        .event-tab-btn.active-event-tab { background-color: #1f2937; color: #38bdf8; border: 1px solid #374151; }
         .event-subview { display: none; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
         .event-subview.active-subview { display: flex; flex-direction: column; }
         
@@ -92,17 +92,6 @@
         .raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #4b5563, #1f2937); display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold; font-size: 20px; transition: opacity 0.4s; z-index: 2; }
         .raspa-prize-text { font-size: 11px; font-weight: bold; color: white; text-align: center; padding: 4px; }
         .raspa-value-text { font-size: 12px; font-weight: bold; color: #38bdf8; margin-top: 2px; }
-
-        .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
-        .api-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
-        .api-card-header { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 15px; color: white; border-bottom: 1px solid #1f2937; padding-bottom: 12px; margin-bottom: 5px; }
-        .wallet-status { font-size: 17px; font-weight: bold; color: #10b981; display: flex; align-items: center; gap: 8px; }
-        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
-        .switch input { opacity: 0; width: 0; height: 0; }
-        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 22px; }
-        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
-        input:checked + .slider { background-color: #10b981; }
-        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body>
@@ -195,12 +184,12 @@
                                 <table class="ruleta-table" id="tabla-config-ruleta">
                                     <thead><tr><th>ID</th><th>Premio / Segmento</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
                                     <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🏆 JACKPOT"></td><td><input type="text" class="input-ruleta-val" value="50000"></td><td><input type="text" class="prob-input" value="2"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🔥 Premio Mayor"></td><td><input type="text" class="input-ruleta-val" value="10000"></td><td><input type="text" class="prob-input" value="8"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="⭐ Premio Medio"></td><td><input type="text" class="input-ruleta-val" value="5000"></td><td><input type="text" class="prob-input" value="12"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🍀 Premio Chico"></td><td><input type="text" class="input-ruleta-val" value="2000"></td><td><input type="text" class="prob-input" value="18"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="✨ Consolación"></td><td><input type="text" class="input-ruleta-val" value="500"></td><td><input type="text" class="prob-input" value="20"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🎁 Sorpresa"></td><td><input type="text" class="input-ruleta-val" value="100"></td><td><input type="text" class="prob-input" value="40"> %</td></tr>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🏆 JACKPOT"></td><td><input type="text" class="input-ruleta-val" value="50000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="2"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🔥 Premio Mayor"></td><td><input type="text" class="input-ruleta-val" value="10000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="8"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="⭐ Premio Medio"></td><td><input type="text" class="input-ruleta-val" value="5000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="12"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🍀 Premio Chico"></td><td><input type="text" class="input-ruleta-val" value="2000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="18"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="✨ Consolación"></td><td><input type="text" class="input-ruleta-val" value="500"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="20"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🎁 Sorpresa"></td><td><input type="text" class="input-ruleta-val" value="100"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="40"> %</td></tr>
                                     </tbody>
                                 </table>
                                 <button class="btn-save" onclick="guardarRuleta()">Guardar Configuración Ruleta</button>
@@ -254,6 +243,7 @@
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
 
@@ -277,8 +267,11 @@
     <script>
         const socket = io();
         let usuarioSeleccionadoActivo = null;
-        let raspaYaJugadaAdmin = false; // Bloqueo para evitar múltiples clicks en la prueba
+        let raspaYaJugadaAdmin = false;
 
+        socket.emit('identificar_admin');
+
+        // IMPORTADOR Y FICHAS
         function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
         function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; document.getElementById('dataPaste').value = ''; }
         
@@ -321,13 +314,14 @@
         }
 
         function dibujarRuletaAdmin() {
-            const config = getRuletaConfigFromDOM();
             const canvas = document.getElementById('ruleta-admin-canvas');
             if(!canvas) return;
+            
+            const config = getRuletaConfigFromDOM();
             const ctx = canvas.getContext('2d');
             const center = canvas.width / 2;
-            const radius = center - 2; 
-            const sliceAngle = (2 * Math.PI) / config.length;
+            const radius = center - 5; 
+            const sliceAngle = (2 * Math.PI) / (config.length || 1);
             const colors = ['#ff007f', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
 
             ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -338,6 +332,8 @@
                 ctx.moveTo(center, center);
                 ctx.arc(center, center, radius, angle, angle + sliceAngle);
                 ctx.fill();
+                ctx.strokeStyle = "#0b0f19";
+                ctx.lineWidth = 2;
                 ctx.stroke();
 
                 ctx.save();
@@ -346,7 +342,7 @@
                 ctx.textAlign = "right";
                 ctx.fillStyle = "white";
                 ctx.font = "bold 11px sans-serif";
-                ctx.fillText(config[i].premio.substring(0,12), radius - 10, 4);
+                ctx.fillText(config[i].premio.substring(0,12), radius - 10, 5);
                 ctx.restore();
             }
         }
@@ -362,6 +358,9 @@
 
         function iniciarGiroPrueba() {
             const config = getRuletaConfigFromDOM();
+            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
+            if (sumaProb !== 100) return alert("La suma de probabilidad debe dar 100%.");
+
             const btn = document.getElementById('btn-spin-admin');
             btn.disabled = true;
             fetch('/api/tirar-ruleta-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
@@ -381,7 +380,7 @@
         }
 
         // ===============================================
-        // 🔥 MÓDULO CONTROL: RASPA Y GANA (ADMIN SIMULACIÓN)
+        // 🔥 MÓDULO CONTROL: RASPA Y GANA (ADMIN)
         // ===============================================
         function getRaspaConfigFromDOM() {
             const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
@@ -399,15 +398,13 @@
             const config = getRaspaConfigFromDOM();
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
             if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
-            
             const res = await fetch('/api/guardar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
             const data = await res.json();
             if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada en la base de datos!');
         }
 
         function rasparCasilleroSimulado(indexClickeado) {
-            if(raspaYaJugadaAdmin) return; // Evita clics extras una vez jugado
-            
+            if(raspaYaJugadaAdmin) return;
             const configFull = getRaspaConfigFromDOM();
             const sumaProb = configFull.reduce((acc, curr) => acc + curr.probabilidad, 0);
             if (sumaProb !== 100) return alert("Para probar, la probabilidad en la tabla debe sumar 100%.");
@@ -415,7 +412,6 @@
             raspaYaJugadaAdmin = true;
             const casillerosDOM = document.querySelectorAll('.raspa-block-card');
             
-            // Consultamos al servidor el premio ganador según probabilidad
             fetch('/api/tirar-raspa-prueba', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -424,23 +420,16 @@
             .then(res => res.json())
             .then(data => {
                 if(!data.exito) return;
-                
                 const ganador = data.premio;
-                
-                // Mezclamos el resto de los casilleros de manera aleatoria con los premios restantes
                 const poolPremiosRestantes = configFull.filter(item => item.id !== ganador.id);
-                // Mezclado rápido (Shuffle)
                 poolPremiosRestantes.sort(() => Math.random() - 0.5);
 
-                // Inyectamos y revelamos el ganador en el casillero elegido
                 const cardGanadora = casillerosDOM[indexClickeado];
                 cardGanadora.classList.add('scratched');
                 cardGanadora.querySelector('.raspa-cover-layer').style.opacity = '0';
                 cardGanadora.innerHTML += `<div class="raspa-prize-text">${ganador.premio}</div><div class="raspa-value-text">$${ganador.valor}</div>`;
-
                 document.getElementById('resultado-raspa-prueba').innerHTML = `¡Raspada Simulada!<br>Ganaste: <span style="color:#ffaa00;">${ganador.premio} ($${ganador.valor})</span>`;
 
-                // Revelamos los otros 5 casilleros de manera aleatoria después de 800ms
                 setTimeout(() => {
                     let rIndex = 0;
                     casillerosDOM.forEach((card, i) => {
@@ -471,7 +460,7 @@
         }
 
         // ===============================================
-        // NAVEGACIÓN GENERAL Y SOCKETS
+        // NAVEGACIÓN Y SOCKETS
         // ===============================================
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
@@ -480,6 +469,14 @@
             const targetBtn = document.getElementById('btn-nav-' + seccion);
             if(targetSection) targetSection.classList.add('active-view');
             if(targetBtn) targetBtn.classList.add('active-nav');
+            
+            const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API" };
+            document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
+
+            // SIEMPRE que entremos a la pestaña eventos, forzamos un dibujo para que no quede el círculo vacío
+            if (seccion === 'eventos') {
+                setTimeout(dibujarRuletaAdmin, 100);
+            }
         }
 
         function cambiarSubJuego(juego) {
@@ -487,6 +484,10 @@
             document.querySelectorAll('.event-tab-btn').forEach(b => b.classList.remove('active-event-tab'));
             document.getElementById('subview-' + juego).classList.add('active-subview');
             document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
+            
+            if (juego === 'ruleta') {
+                setTimeout(dibujarRuletaAdmin, 100);
+            }
         }
 
         socket.on('cargar_datos_tablas', (datos) => {
@@ -494,7 +495,7 @@
                 const tbody = document.querySelector('#section-clientes .data-table tbody');
                 tbody.innerHTML = '';
                 datos.clientes.forEach(c => {
-                    tbody.innerHTML += `<tr><td>${c.usuarioCasino}</td><td style="color:#10b981;font-weight:bold;">$${c.saldo}</td><td>$${c.wager}</td><td>● Activo</td><td><button onclick="cargarFichas('${c.usuarioCasino}')">💰 Cargar</button></td></tr>`;
+                    tbody.innerHTML += `<tr><td>${c.usuarioCasino}</td><td style="color:#10b981;font-weight:bold;">$${c.saldo}</td><td>$${c.wager}</td><td>● Activo</td><td><button class="btn-save" style="margin:0; padding: 6px 12px; font-size:12px;" onclick="cargarFichas('${c.usuarioCasino}')">💰 Cargar</button></td></tr>`;
                 });
             }
             if (datos.retiros) {
@@ -504,6 +505,7 @@
                     tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`;
                 });
             }
+            
             if (datos.ruleta && datos.ruleta.length > 0) {
                 const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
                 datos.ruleta.forEach((item, idx) => {
@@ -513,9 +515,10 @@
                         filas[idx].querySelector('.prob-input').value = item.probabilidad;
                     }
                 });
-                dibujarRuletaAdmin();
+                // Dibujamos inmediatamente
+                setTimeout(dibujarRuletaAdmin, 500);
             }
-            // Cargar datos guardados del Raspa y Gana al iniciar el panel
+            
             if (datos.raspa && datos.raspa.length > 0) {
                 const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
                 datos.raspa.forEach((item, idx) => {
@@ -533,11 +536,55 @@
             if (!listaDiv) return;
             listaDiv.innerHTML = '';
             usuarios.forEach(user => {
+                let tieneMensajesSinLeer = user.historial.some(h => h.emisor === 'cliente' && h.leido === false);
+                let claseNoLeido = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? 'unread-chat' : '';
+                let dotVisual = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? '<span class="unread-indicator"></span>' : '';
+                
                 const item = document.createElement('div');
-                item.className = `user-item ${usuarioSelectedActivo === user.nombre ? 'selected-user' : ''}`;
-                item.innerHTML = `<div>👤 ${user.nombre}</div><div class="badge" style="background:#2563eb">${user.estado}</div>`;
+                item.className = `user-item ${usuarioSeleccionadoActivo === user.nombre ? 'selected-user' : ''} ${claseNoLeido}`;
+                item.innerHTML = `<div>👤 ${dotVisual}${user.nombre}</div><div class="badge" style="background:#2563eb">${user.estado}</div>`;
+                item.onclick = () => {
+                    usuarioSeleccionadoActivo = user.nombre;
+                    document.getElementById('active-chat-username').innerText = "Monitoreando a: " + user.nombre;
+                    document.getElementById('admin-message-input').disabled = false;
+                    document.getElementById('btn-enviar-msg').disabled = false;
+                    socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
+                    renderizarHistorialChat(user.historial);
+                };
                 listaDiv.appendChild(item);
+                if (usuarioSeleccionadoActivo === user.nombre) renderizarHistorialChat(user.historial);
             });
+        });
+
+        function renderizarHistorialChat(historial) {
+            const areaMsg = document.getElementById('active-chat-messages');
+            if (!areaMsg) return;
+            areaMsg.innerHTML = ''; 
+            historial.forEach(h => {
+                const wrap = document.createElement('div');
+                wrap.className = 'admin-bubble-wrapper';
+                const b = document.createElement('div');
+                if (h.emisor === 'bot') { b.className = 'admin-bubble b-bot'; b.innerHTML = `🤖 <b>Bot:</b><br>${h.mensaje}`; wrap.appendChild(b); }
+                if (h.emisor === 'admin') { b.className = 'admin-bubble b-admin'; b.innerHTML = `👨‍💼 <b>Vos:</b><br>${h.mensaje}`; wrap.appendChild(b); }
+                if (h.emisor === 'cliente') { 
+                    let checkLectura = h.leido ? '<span class="read-receipt seen">✓ Visto</span>' : '<span class="read-receipt">✓ Enviado</span>';
+                    b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}`; wrap.appendChild(b); wrap.innerHTML += checkLectura;
+                }
+                areaMsg.appendChild(wrap);
+            });
+            areaMsg.scrollTop = areaMsg.scrollHeight;
+        }
+
+        function enviarMensajeManual() {
+            const input = document.getElementById('admin-message-input');
+            const texto = input.value.trim();
+            if (!texto || !usuarioSeleccionadoActivo) return;
+            socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto });
+            input.value = '';
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual();
         });
     </script>
 </body>
