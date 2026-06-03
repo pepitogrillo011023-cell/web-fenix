@@ -90,9 +90,19 @@ app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
 // --- RUTAS DE LA RULETA ---
 app.post('/api/guardar-ruleta', requireLogin, async (req, res) => {
     try {
-        await Ruleta.deleteMany({}); // Borramos la confi vieja
-        await new Ruleta({ configuracion: req.body.configuracion }).save(); // Guardamos la nueva
+        await Ruleta.deleteMany({});
+        await new Ruleta({ configuracion: req.body.configuracion }).save();
         res.json({ exito: true });
+    } catch (error) {
+        res.json({ exito: false });
+    }
+});
+
+app.get('/api/ruleta-config', async (req, res) => {
+    try {
+        const ruletaDb = await Ruleta.findOne();
+        const config = ruletaDb ? ruletaDb.configuracion : [];
+        res.json({ exito: true, config });
     } catch (error) {
         res.json({ exito: false });
     }
@@ -115,10 +125,10 @@ app.post('/api/tirar-ruleta', async (req, res) => {
         const config = ruletaDb ? ruletaDb.configuracion : [];
         if (config.length === 0) return res.json({ exito: false, mensaje: 'La ruleta está en mantenimiento.' });
 
-        // Cálculo de probabilidad matemática
+        // Cálculo de probabilidad
         const rand = Math.random() * 100;
         let sum = 0;
-        let premioGanado = config[config.length - 1]; // Por defecto cae en el último si hay error decimal
+        let premioGanado = config[config.length - 1]; 
 
         for (let item of config) {
             sum += item.probabilidad;
@@ -132,12 +142,12 @@ app.post('/api/tirar-ruleta', async (req, res) => {
         cliente.saldo += premioGanado.valor;
         cliente.ultimaRuleta = hoy;
         
-        const msgBot = `🎰 ¡La ruleta giró y ganaste <b>${premioGanado.premio}</b>!<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu cuenta.`;
+        const msgBot = `🎰 ¡La ruleta frenó en <b>${premioGanado.premio}</b>!<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu cuenta de casino.`;
         cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
         
         await cliente.save();
 
-        // Actualizamos en vivo el panel del admin si está mirando el chat
+        // Actualizamos en vivo el panel del admin
         const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
         if (usuarioExistente) {
             usuarioExistente.historial = cliente.historialChat;
@@ -148,7 +158,8 @@ app.post('/api/tirar-ruleta', async (req, res) => {
             io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
         }
 
-        res.json({ exito: true, mensaje: msgBot });
+        // Devolvemos el premioGanado para que la ruleta visual sepa dónde frenar
+        res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
 
     } catch (error) {
         res.status(500).json({ exito: false, mensaje: 'Error al girar la ruleta.' });
@@ -213,12 +224,12 @@ const clienteSchema = new mongoose.Schema({
     estado: { type: String, default: 'Activo' },
     historialChat: { type: Array, default: [] },
     ultimaConexion: { type: Date, default: Date.now },
-    ultimaRuleta: { type: Date, default: null } // NUEVO CAMPO DE FECHA
+    ultimaRuleta: { type: Date, default: null } 
 });
 const Cliente = mongoose.model('Cliente', clienteSchema);
 
 const ruletaSchema = new mongoose.Schema({
-    configuracion: Array // NUEVA TABLA PARA GUARDAR LA CONFIG DE LA RULETA
+    configuracion: Array 
 });
 const Ruleta = mongoose.model('Ruleta', ruletaSchema);
 
@@ -259,7 +270,7 @@ io.on('connection', (socket) => {
             const clientesDB = await Cliente.find();
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
-            const ruletaDB = await Ruleta.findOne(); // Cargamos la ruleta para enviarla
+            const ruletaDB = await Ruleta.findOne();
             
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
@@ -377,7 +388,6 @@ async function inicializarDatosDePrueba() {
         await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save();
     }
     
-    // Inicia una ruleta de prueba si no existe ninguna
     const countRuleta = await Ruleta.countDocuments();
     if (countRuleta === 0) {
         await new Ruleta({ configuracion: [
