@@ -4,13 +4,6 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session'); 
-const fs = require('fs'); // Para manejar la carpeta de la foto
-const path = require('path');
-
-// --- LA ARTILLERÍA PESADA: PUPPETEER STEALTH ---
-const puppeteer = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-puppeteer.use(StealthPlugin()); 
 
 const app = express();
 const server = http.createServer(app);
@@ -55,95 +48,10 @@ app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(__dirname + '/public/admin.html');
 });
 
-// --------------------------------------------------------
-// 🤖 BOT INVISIBLE CON CÁMARA DE SEGURIDAD
-// --------------------------------------------------------
-async function operarGanamosNet(usuarioJugador, monto) {
-    let browser;
-    let page; // Lo declaramos acá para poder sacarle foto en el catch si falla
-    
-    try {
-        browser = await puppeteer.launch({ 
-            headless: true, // "true" funciona mejor con Stealth en la versión 22
-            args: [
-                '--no-sandbox', 
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--window-size=1920,1080'
-            ] 
-        });
-        
-        // USAMOS LA PESTAÑA PRINCIPAL (Así el radar no se confunde)
-        const pages = await browser.pages();
-        page = pages[0];
-        
-        await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        
-        // 2. IR AL LOGIN
-        await page.goto('https://agents.ganamosnet.org/', { waitUntil: 'domcontentloaded', timeout: 30000 });
-        
-        // --- LOGIN ---
-        await page.waitForSelector('input[placeholder="Nombre"], input[type="text"]', { timeout: 15000 }); 
-        await page.type('input[placeholder="Nombre"], input[type="text"]', process.env.GANAMOS_USER || 'Fenix80');
-        
-        await page.waitForSelector('input[type="password"]');
-        await page.type('input[type="password"]', process.env.GANAMOS_PASS || 'Cipriano123');
-        
-        await page.keyboard.press('Enter');
-        await page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: 20000 });
-        
-        // 3. IR A LA SECCIÓN DE USUARIOS
-        await page.goto('https://agents.ganamosnet.org/users/all', { waitUntil: 'domcontentloaded' });
-        
-        // 4. BUSCAR AL USUARIO
-        await page.waitForSelector('input[placeholder="Buscar Usuario"]');
-        await page.type('input[placeholder="Buscar Usuario"]', usuarioJugador);
-        await new Promise(r => setTimeout(r, 2000));
-        
-        // 5. HACER CLIC EN DEPOSITAR
-        await page.waitForSelector('a[href^="/user/deposit/"]');
-        await page.click('a[href^="/user/deposit/"]');
-        
-        // 6. ESCRIBIR EL MONTO
-        await page.waitForSelector('input[name="amount"]');
-        await page.type('input[name="amount"]', monto.toString());
-        
-        // 7. CONFIRMAR LA CARGA
-        await page.waitForSelector('button[type="submit"]');
-        await page.click('button[type="submit"]');
-        
-        await new Promise(r => setTimeout(r, 2000));
-        await browser.close();
-        return { exito: true };
-        
-    } catch (error) {
-        // --- LA CÁMARA DE SEGURIDAD ---
-        if (page) {
-            console.log("🔴 TOMANDO FOTO DEL ERROR...");
-            try {
-                const dir = path.join(__dirname, 'public');
-                if (!fs.existsSync(dir)){ fs.mkdirSync(dir); } // Crea la carpeta public si no existe
-                
-                await page.screenshot({ path: path.join(dir, 'error-bot.png'), fullPage: true });
-                console.log("📸 ¡FOTO GUARDADA! Mirala entrando a: https://casino-fenix.onrender.com/error-bot.png");
-                console.log("URL DONDE FALLÓ:", page.url());
-            } catch(e) {
-                console.log("No se pudo sacar la foto:", e);
-            }
-        }
-        if (browser) await browser.close();
-        console.error("🔴 Error DETALLADO:", error.message);
-        return { exito: false, error: error.message };
-    }
-}
-
 // --- NUEVA RUTA: VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
 app.post('/api/validar-cliente', async (req, res) => {
     try {
         const { usuario, password } = req.body;
-        
-        // Buscamos si el usuario existe y coincide la contraseña en la base de datos
         const cliente = await Cliente.findOne({ usuarioCasino: usuario, password: password });
         
         if (cliente) {
@@ -157,19 +65,23 @@ app.post('/api/validar-cliente', async (req, res) => {
     }
 });
 
-// --- RUTA PARA QUE TU PANEL LE ORDENE AL BOT CARGAR FICHAS ---
+// --- RUTA DE GESTIÓN DE SALDOS (VERSIÓN LIMPIA - SIN BOT) ---
 app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     const { usuario, monto } = req.body;
-    const resultado = await operarGanamosNet(usuario, monto);
     
-    if (resultado.exito) {
+    try {
+        // Actualizamos el saldo únicamente en tu panel para mantener tu contabilidad
         await Cliente.updateOne(
             { usuarioCasino: usuario }, 
             { $inc: { saldo: monto } }
         );
-        res.json({ exito: true, mensaje: `¡Acreditados $${monto} a ${usuario} en tiempo real!` });
-    } else {
-        res.status(500).json({ exito: false, mensaje: 'El bot falló al entrar a Ganamos.net.' });
+        res.json({ 
+            exito: true, 
+            mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.\n\n(Recordá impactar esta carga de forma manual en Ganamos.net)` 
+        });
+    } catch (error) {
+        console.error("🔴 Error al actualizar el saldo en la base de datos:", error);
+        res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
     }
 });
 
@@ -222,7 +134,7 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 // --------------------------------------------------------
 const clienteSchema = new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
-    password: { type: String, default: '1234' }, // Agregado para el control de accesos de tus clientes
+    password: { type: String, default: '1234' },
     saldo: { type: Number, default: 0 },
     wager: { type: Number, default: 0 },
     estado: { type: String, default: 'Activo' },
