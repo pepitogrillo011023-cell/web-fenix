@@ -94,16 +94,9 @@
 
         .push-layout { display: flex; gap: 25px; }
         .push-form-card { flex: 1.2; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; }
-        .push-history-card { flex: 1; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; height: 430px; overflow-y: auto; }
-        .push-type-selector { display: flex; gap: 10px; }
-        .type-pill { background-color: #1f2937; border: 1px solid #374151; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; color: #94a3b8; }
-        .type-pill.active-pill { background-color: #2563eb; color: white; }
         .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
         .form-row label { font-size: 12px; font-weight: 600; color: #94a3b8; }
         .input-text-adv { background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; }
-        .history-card-item { border-bottom: 1px solid #1f2937; padding: 12px 0; }
-        .history-card-title { font-weight: bold; color: white; display: flex; justify-content: space-between; font-size: 13px; }
-        .history-card-desc { font-size: 12px; color: #94a3b8; margin-top: 4px; }
 
         .retencion-container { display: flex; flex-direction: column; gap: 20px; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
         .retencion-block { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px solid #1f2937; padding-bottom: 15px; }
@@ -191,9 +184,9 @@
             <div id="section-billetera" class="view-section">
                 <div class="panel-inside">
                     <div class="stat-card" style="text-align:left; border-left: 5px solid #10b981; grid-column: span 2; width: fit-content;">
-                        <div class="wallet-status">🟢 Billetera HG Cash</div>
-                        <input type="text" id="wallet-monto" style="background: transparent; border: none; color: #10b981; font-size: 32px; font-weight: bold; width: 100%; outline: none; margin-top: 10px;" value="$1.342.823,47 ARS">
-                        <button class="btn-save" onclick="guardarConfig('billetera')" style="margin-top: 20px; float: left;">Guardar Saldo Mostrado</button>
+                        <div class="wallet-status">🟢 Billetera Mercado Pago (Monto Vinculado)</div>
+                        <input type="text" id="wallet-monto" style="background: transparent; border: none; color: #10b981; font-size: 32px; font-weight: bold; width: 100%; outline: none; margin-top: 10px;" value="$0,00 ARS">
+                        <button class="btn-save" onclick="guardarConfig('billetera')" style="margin-top: 20px; float: left;">Guardar Ajuste Manual</button>
                     </div>
                 </div>
             </div>
@@ -324,7 +317,7 @@
                             <div class="api-card-header">🎰 API Sincronización Casino</div>
                             <div class="form-row"><label>URL Panel Servidor</label><input type="text" id="api-url" class="input-text-adv" value="https://admin.clubzeus.vip/"></div>
                             <div class="form-row"><label>Usuario Agente API</label><input type="text" id="api-user" class="input-text-adv" value="CHATZEUS"></div>
-                            <div class="form-row"><label>Password / Token</label><input type="password" id="api-pass" class="input-text-adv" value="••••••••••••••••"></div>
+                            <div class="form-row"><label>Mercado Pago Access Token</label><input type="password" id="api-pass" class="input-text-adv" value=""></div>
                         </div>
                         <div class="api-card">
                             <div class="api-card-header">🧠 API OpenAI Vision (OCR)</div>
@@ -370,9 +363,21 @@
 
         socket.emit('identificar_admin');
 
-        // ===============================================
-        // 🔥 NUEVA LÓGICA DE GUARDADO UNIVERSAL
-        // ===============================================
+        // ESCUCHADOR EN VIVO PARA MERCADO PAGO VIA WEBHOOKS + SOCKETS
+        socket.on('billetera_actualizada_en_vivo', (datos) => {
+            const inputMonto = document.getElementById('wallet-monto');
+            if(inputMonto) {
+                inputMonto.value = datos.saldoFormateado;
+                inputMonto.style.transition = 'text-shadow 0.3s, color 0.3s';
+                inputMonto.style.textShadow = '0 0 25px #10b981';
+                setTimeout(() => { inputMonto.style.textShadow = 'none'; }, 1200);
+            }
+            if(datos.montoTransferido) {
+                alert(`💸 ¡MERCADO PAGO EN VIVO!\nIngresó un pago aprobado de $${datos.montoTransferido}.\nSaldo reflejado: ${datos.saldoFormateado}`);
+            }
+        });
+
+        // CONTROL ACCIONES DE GUARDADO
         async function guardarConfig(seccion) {
             let datosParaGuardar = {};
 
@@ -447,9 +452,7 @@
             } catch (error) { alert("Error técnico."); }
         }
 
-        // ===============================================
-        // MÓDULO CONTROL: RULETA DIARIA
-        // ===============================================
+        // CONTROL INTERACTIVO RULETA
         let currentRotationAdmin = 0;
 
         function getRuletaConfigFromDOM() {
@@ -530,9 +533,7 @@
             });
         }
 
-        // ===============================================
-        // 🔥 MÓDULO CONTROL: RASPA Y GANA (ADMIN)
-        // ===============================================
+        // CONTROL INTERACTIVO RASPA Y GANA
         function getRaspaConfigFromDOM() {
             const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
             const configuracion = [];
@@ -571,15 +572,15 @@
             .then(res => res.json())
             .then(data => {
                 if(!data.exito) return;
-                const ganador = data.premio;
-                const poolPremiosRestantes = configFull.filter(item => item.id !== ganador.id);
+                const winner = data.premio;
+                const poolPremiosRestantes = configFull.filter(item => item.id !== winner.id);
                 poolPremiosRestantes.sort(() => Math.random() - 0.5);
 
                 const cardGanadora = casillerosDOM[indexClickeado];
                 cardGanadora.classList.add('scratched');
                 cardGanadora.querySelector('.raspa-cover-layer').style.opacity = '0';
-                cardGanadora.innerHTML += `<div class="raspa-prize-text">${ganador.premio}</div><div class="raspa-value-text">$${ganador.valor}</div>`;
-                document.getElementById('resultado-raspa-prueba').innerHTML = `¡Raspada Simulada!<br>Ganaste: <span style="color:#ffaa00;">${ganador.premio} ($${ganador.valor})</span>`;
+                cardGanadora.innerHTML += `<div class="raspa-prize-text">${winner.premio}</div><div class="raspa-value-text">$${winner.valor}</div>`;
+                document.getElementById('resultado-raspa-prueba').innerHTML = `¡Raspada Simulada!<br>Ganaste: <span style="color:#ffaa00;">${winner.premio} ($${winner.valor})</span>`;
 
                 setTimeout(() => {
                     let rIndex = 0;
@@ -610,9 +611,7 @@
             `;
         }
 
-        // ===============================================
-        // NAVEGACIÓN Y CARGA DE DATOS
-        // ===============================================
+        // ENRUTADOR SECCIONES
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
@@ -675,7 +674,6 @@
                 });
             }
 
-            // AUTO-RELLENAR CONFIGURACIONES GLOBALES GUARDADAS
             if (datos.panelConfig) {
                 const c = datos.panelConfig;
                 
