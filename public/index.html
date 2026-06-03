@@ -29,6 +29,8 @@
         .deposit-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 8px; width: 100%; margin-top: auto; padding-top: 10px; }
         .btn-action { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 5px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .btn-action:hover { background-color: #2563eb; }
+        
+        /* Ajustamos el grid del menú para darle lugar al botón de ruleta */
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
 
         .chat-input-area { display: none; gap: 8px; border-top: 1px solid #1f2937; padding-top: 10px; margin-top: auto; width: 100%; box-sizing: border-box; }
@@ -57,6 +59,8 @@
                     <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
                     <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
                     <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
+                    
+                    <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #ff007f, #ffaa00); border:none; box-shadow: 0 0 15px rgba(255,170,0,0.3);" onclick="tirarRuleta()">🎯 Tirar Ruleta Diaria</button>
                 </div>
 
                 <div id="container-deposit-options" class="deposit-grid" style="display: none;">
@@ -77,16 +81,13 @@
     <script>
         const socket = io();
         const msgArea = document.getElementById('messages-area');
+        window.usuarioLogueado = null; // Guardamos el usuario para la ruleta
 
-        // FUNCIÓN NUEVA: ENVÍA EL USUARIO Y PASS AL SERVIDOR PARA VALIDAR
         function validarAcceso() {
             const usuarioInput = document.getElementById('username').value.trim();
             const passwordInput = document.getElementById('password').value.trim();
             
-            if (usuarioInput === '' || passwordInput === '') {
-                alert('Por favor, ingresá tu usuario y contraseña.');
-                return;
-            }
+            if (usuarioInput === '' || passwordInput === '') return alert('Por favor, ingresá tu usuario y contraseña.');
 
             const btn = document.getElementById('btn-login');
             btn.innerText = 'Validando...';
@@ -101,9 +102,8 @@
             .then(data => {
                 btn.innerText = 'Ingresar al Chat';
                 btn.disabled = false;
-
                 if(data.exito) {
-                    // Si el servidor aprueba la clave, recién acá se conecta el chat
+                    window.usuarioLogueado = usuarioInput; // Guardamos el usuario global
                     socket.emit('identificar_usuario', { usuario: usuarioInput });
                 } else {
                     alert('Usuario o contraseña incorrectos. Consultá con soporte.');
@@ -116,11 +116,8 @@
             });
         }
 
-        // Permite loguearse apretando Enter
         document.getElementById('password').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                validarAcceso();
-            }
+            if (e.key === 'Enter') validarAcceso();
         });
 
         socket.on('resultado_validacion', (respuesta) => {
@@ -137,10 +134,9 @@
             document.getElementById('container-chat-input').style.display = 'none';
             document.getElementById('container-menu-options').style.display = 'grid';
             
-            let msgBot = 'Estas en el menú principal. ¿Como te podemos ayudar?';
+            let msgBot = 'Volviste al menú principal. ¿En qué te podemos ayudar?';
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot"><b>Club Zeus:</b><br>${msgBot}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
-            
             socket.emit('cliente_accion', { estado: 'Menú', mensajeBot: msgBot });
         }
 
@@ -150,42 +146,60 @@
             if (opcion === 'Depósito') {
                 document.getElementById('container-deposit-options').style.display = 'grid';
                 let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><b>Titular:</b> BAIRES LOGISTICAS AUDIOVISUALES S.A.<br><br>Realizá la transferencia y enviá el comprobante 📄`;
-                
-                msgArea.innerHTML += `
-                    <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
-                    <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
-                `;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
             } else if (opcion === 'Soporte') {
                 document.getElementById('container-chat-input').style.display = 'flex';
                 let msgBot = `🛠️ <b>Conectado con Soporte:</b> Podés escribir tu consulta acá abajo. Un asesor te va a responder de inmediato.`;
-                
-                msgArea.innerHTML += `
-                    <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
-                    <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
-                `;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
             } else {
                 let msgBot = `⏳ Derivando a un asesor... Elegiste la opción de <b>${opcion}</b>. Aguardá un instante en línea por favor.`;
-                msgArea.innerHTML += `
-                    <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
-                    <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
-                `;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
                 setTimeout(irAlMenuPrincipal, 4000); 
             }
             msgArea.scrollTop = msgArea.scrollHeight;
         }
 
+        // --- NUEVA FUNCIÓN PARA TIRAR LA RULETA ---
+        function tirarRuleta() {
+            document.getElementById('container-menu-options').style.display = 'none';
+
+            // El cliente ve que envió la solicitud
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Quiero tirar la Ruleta Diaria</div><span class="status-text">✓ Enviado</span></div>`;
+            
+            // Creamos un mensaje temporal del bot simulando suspenso
+            const idTemporal = 'ruleta-' + Date.now();
+            msgArea.innerHTML += `<div class="bubble-wrapper" id="${idTemporal}"><div class="bubble bot">🎰 <i>Girando la ruleta... ¡Cruza los dedos!</i> ⏳</div></div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+
+            fetch('/api/tirar-ruleta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ usuario: window.usuarioLogueado })
+            })
+            .then(res => res.json())
+            .then(data => {
+                // Reemplazamos el mensaje de suspenso por el premio real que dio el servidor
+                document.getElementById(idTemporal).innerHTML = `<div class="bubble bot">${data.mensaje}</div>`;
+                socket.emit('cliente_accion', { estado: 'Menú' }); // Para que en el admin marque que terminó
+                msgArea.scrollTop = msgArea.scrollHeight;
+                
+                setTimeout(irAlMenuPrincipal, 3500); // Volvemos al menú después de un rato
+            })
+            .catch(err => {
+                document.getElementById(idTemporal).innerHTML = `<div class="bubble bot">Hubo un error de conexión, intentá de nuevo.</div>`;
+                setTimeout(irAlMenuPrincipal, 2000);
+            });
+        }
+
         function ejecutarAccionDeposito(accion) {
             let confirmacionBot = "";
-            if(accion === 'Subir Comprobante') { confirmacionBot = "📁 Archivo recibido con éxito. Aguarde a que un cajero verifique su saldo."; }
-            if(accion === 'Reportar Pago') { confirmacionBot = "✅ Pago reportado. El administrador revisará la transferencia a la brevedad."; }
+            if(accion === 'Subir Comprobante') confirmacionBot = "📁 Archivo recibido con éxito. Aguarde a que un cajero verifique su saldo.";
+            if(accion === 'Reportar Pago') confirmacionBot = "✅ Pago reportado. El administrador revisará la transferencia a la brevedad.";
 
-            msgArea.innerHTML += `
-                <div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div>
-                <div class="bubble-wrapper"><div class="bubble bot">${confirmacionBot}</div></div>
-            `;
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${confirmacionBot}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
             socket.emit('cliente_accion', { estado: accion, mensajeCliente: accion, mensajeBot: confirmacionBot });
         }
@@ -194,19 +208,14 @@
             const input = document.getElementById('client-raw-input');
             const texto = input.value.trim();
             if (texto === '') return;
-
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${texto}</div><span class="status-text">✓ Enviado</span></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
-
             socket.emit('cliente_envia_mensaje_libre', { mensaje: texto });
             input.value = '';
         }
 
-        // Permite enviar mensajes del chat con Enter
         document.getElementById('client-raw-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') {
-                enviarMensajeLibreCliente();
-            }
+            if (e.key === 'Enter') enviarMensajeLibreCliente();
         });
 
         socket.on('recibir_mensaje_admin', (datos) => {
