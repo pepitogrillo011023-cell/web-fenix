@@ -30,7 +30,6 @@
         .btn-action { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 5px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .btn-action:hover { background-color: #2563eb; }
         
-        /* Ajustamos el grid del menú para darle lugar al botón de ruleta */
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
 
         .chat-input-area { display: none; gap: 8px; border-top: 1px solid #1f2937; padding-top: 10px; margin-top: auto; width: 100%; box-sizing: border-box; }
@@ -60,7 +59,7 @@
                     <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
                     <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
                     
-                    <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #ff007f, #ffaa00); border:none; box-shadow: 0 0 15px rgba(255,170,0,0.3);" onclick="tirarRuleta()">🎯 Tirar Ruleta Diaria</button>
+                    <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #ff007f, #ffaa00); border:none; box-shadow: 0 0 15px rgba(255,170,0,0.3); color: white;" onclick="tirarRuleta()">🎯 Tirar Ruleta Diaria</button>
                 </div>
 
                 <div id="container-deposit-options" class="deposit-grid" style="display: none;">
@@ -81,7 +80,7 @@
     <script>
         const socket = io();
         const msgArea = document.getElementById('messages-area');
-        window.usuarioLogueado = null; // Guardamos el usuario para la ruleta
+        window.usuarioLogueado = null; 
 
         function validarAcceso() {
             const usuarioInput = document.getElementById('username').value.trim();
@@ -103,7 +102,7 @@
                 btn.innerText = 'Ingresar al Chat';
                 btn.disabled = false;
                 if(data.exito) {
-                    window.usuarioLogueado = usuarioInput; // Guardamos el usuario global
+                    window.usuarioLogueado = usuarioInput; 
                     socket.emit('identificar_usuario', { usuario: usuarioInput });
                 } else {
                     alert('Usuario o contraseña incorrectos. Consultá con soporte.');
@@ -162,16 +161,13 @@
             msgArea.scrollTop = msgArea.scrollHeight;
         }
 
-        // --- NUEVA FUNCIÓN PARA TIRAR LA RULETA ---
         function tirarRuleta() {
             document.getElementById('container-menu-options').style.display = 'none';
 
-            // El cliente ve que envió la solicitud
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Quiero tirar la Ruleta Diaria</div><span class="status-text">✓ Enviado</span></div>`;
             
-            // Creamos un mensaje temporal del bot simulando suspenso
             const idTemporal = 'ruleta-' + Date.now();
-            msgArea.innerHTML += `<div class="bubble-wrapper" id="${idTemporal}"><div class="bubble bot">🎰 <i>Girando la ruleta... ¡Cruza los dedos!</i> ⏳</div></div>`;
+            msgArea.innerHTML += `<div class="bubble-wrapper" id="${idTemporal}"><div class="bubble bot">🎰 <i>Girando la ruleta... ¡Cruzá los dedos!</i> ⏳</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
 
             fetch('/api/tirar-ruleta', {
@@ -181,12 +177,10 @@
             })
             .then(res => res.json())
             .then(data => {
-                // Reemplazamos el mensaje de suspenso por el premio real que dio el servidor
                 document.getElementById(idTemporal).innerHTML = `<div class="bubble bot">${data.mensaje}</div>`;
-                socket.emit('cliente_accion', { estado: 'Menú' }); // Para que en el admin marque que terminó
+                socket.emit('cliente_accion', { estado: 'Menú' }); 
                 msgArea.scrollTop = msgArea.scrollHeight;
-                
-                setTimeout(irAlMenuPrincipal, 3500); // Volvemos al menú después de un rato
+                setTimeout(irAlMenuPrincipal, 3500); 
             })
             .catch(err => {
                 document.getElementById(idTemporal).innerHTML = `<div class="bubble bot">Hubo un error de conexión, intentá de nuevo.</div>`;
