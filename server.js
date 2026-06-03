@@ -108,6 +108,30 @@ app.get('/api/ruleta-config', async (req, res) => {
     }
 });
 
+// NUEVA RUTA: Tiro de PRUEBA para el Administrador (No gasta tiro diario ni da saldo)
+app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
+    try {
+        const { configuracion } = req.body;
+        if (!configuracion || configuracion.length === 0) return res.json({ exito: false, mensaje: 'Configuración vacía.' });
+
+        const rand = Math.random() * 100;
+        let sum = 0;
+        let premioGanado = configuracion[configuracion.length - 1]; 
+
+        for (let item of configuracion) {
+            sum += item.probabilidad;
+            if (rand <= sum) {
+                premioGanado = item;
+                break;
+            }
+        }
+
+        res.json({ exito: true, premio: premioGanado });
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: 'Error al simular la ruleta.' });
+    }
+});
+
 app.post('/api/tirar-ruleta', async (req, res) => {
     try {
         const { usuario } = req.body;
@@ -125,7 +149,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
         const config = ruletaDb ? ruletaDb.configuracion : [];
         if (config.length === 0) return res.json({ exito: false, mensaje: 'La ruleta está en mantenimiento.' });
 
-        // Cálculo de probabilidad
         const rand = Math.random() * 100;
         let sum = 0;
         let premioGanado = config[config.length - 1]; 
@@ -158,7 +181,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
             io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
         }
 
-        // Devolvemos el premioGanado para que la ruleta visual sepa dónde frenar
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
 
     } catch (error) {
