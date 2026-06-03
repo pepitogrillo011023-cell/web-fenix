@@ -87,9 +87,7 @@ app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     }
 });
 
-// ==============================================================
-// 🔥 NUEVA RUTA: GUARDAR CUALQUIER CONFIGURACIÓN DEL PANEL
-// ==============================================================
+// --- RUTA DE CONFIGURACIONES GENERALES DEL PANEL ---
 app.post('/api/guardar-config', requireLogin, async (req, res) => {
     try {
         const { seccion, datos } = req.body;
@@ -101,6 +99,62 @@ app.post('/api/guardar-config', requireLogin, async (req, res) => {
         res.json({ exito: true });
     } catch (error) {
         res.status(500).json({ exito: false });
+    }
+});
+
+// ==============================================================
+// ⚡ RECEPTOR WEBHOOK: MERCADO PAGO EN TIEMPO REAL
+// ==============================================================
+app.post('/api/webhook/billetera', async (req, res) => {
+    // Mercado Pago exige responder HTTP 200 rápido de entrada
+    res.status(200).send("OK");
+
+    try {
+        const accion = req.body?.action;
+        const tipo = req.body?.type;
+        const paymentId = req.body?.data?.id;
+
+        if ((accion === 'payment.created' || tipo === 'payment') && paymentId) {
+            const configDb = await PanelConfig.findOne({ identificador: 'global' });
+            const accessTokenMP = configDb?.apis?.pass; 
+
+            if (!accessTokenMP) {
+                console.log("🔴 Webhook recibido pero falta el Access Token de MP en el panel.");
+                return;
+            }
+
+            // Consultamos los detalles oficiales del pago a la API de Mercado Pago
+            const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
+                method: 'GET',
+                headers: { 'Authorization': `Bearer ${accessTokenMP}` }
+            });
+            const dataMP = await mpResponse.json();
+
+            if (dataMP.status === 'approved') {
+                const montoTransferido = dataMP.transaction_amount;
+                const saldoFormateado = `$${Number(montoTransferido).toLocaleString('es-AR')} ARS`;
+
+                // Guardamos el registro actualizado del saldo en la configuración de la billetera
+                let datosBilleteraActuales = configDb.billetera || {};
+                datosBilleteraActuales.monto = saldoFormateado;
+
+                await PanelConfig.updateOne(
+                    { identificador: 'global' },
+                    { $set: { billetera: datosBilleteraActuales } }
+                );
+
+                // Notificamos mediante Sockets al panel de administrador que esté abierto
+                if (adminSocketId) {
+                    io.to(adminSocketId).emit('billetera_actualizada_en_vivo', {
+                        saldoFormateado: saldoFormateado,
+                        montoTransferido: montoTransferido,
+                        tipoMovimiento: 'ingreso'
+                    });
+                }
+            }
+        }
+    } catch (error) {
+        console.error("🔴 Error procesando el Webhook de Mercado Pago:", error);
     }
 });
 
@@ -128,7 +182,7 @@ app.get('/api/ruleta-config', async (req, res) => {
 app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
     try {
         const { configuracion } = req.body;
-        if (!configuracion || configuracion.length === 0) return res.json({ exito: false, mensaje: 'Configuración vacía.' });
+        if (!configuracion || configuracion.length === 0) return res.json({ exito: false });
 
         const rand = Math.random() * 100;
         let sum = 0;
@@ -143,7 +197,7 @@ app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
         }
         res.json({ exito: true, premio: premioGanado });
     } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Error al simular la ruleta.' });
+        res.status(500).json({ exito: false });
     }
 });
 
@@ -180,7 +234,6 @@ app.post('/api/tirar-ruleta', async (req, res) => {
         
         const msgBot = `🎰 ¡La ruleta frenó en <b>${premioGanado.premio}</b>!<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu cuenta de casino.`;
         cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-        
         await cliente.save();
 
         const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
@@ -195,7 +248,7 @@ app.post('/api/tirar-ruleta', async (req, res) => {
 
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
     } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Error al girar la ruleta.' });
+        res.status(500).json({ exito: false });
     }
 });
 
@@ -289,7 +342,7 @@ app.post('/api/tirar-raspa', async (req, res) => {
 
         res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
     } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Error al procesar el Raspa y Gana.' });
+        res.status(500).json({ exito: false });
     }
 });
 
@@ -326,8 +379,6 @@ app.post('/importar-datos', requireLogin, async (req, res) => {
     }
 });
 
-app.use(express.static('public'));
-
 // --------------------------------------------------------
 // 🟢 CONEXIÓN A MONGODB
 // --------------------------------------------------------
@@ -362,7 +413,6 @@ const Ruleta = mongoose.model('Ruleta', ruletaSchema);
 const raspaSchema = new mongoose.Schema({ configuracion: Array });
 const Raspa = mongoose.model('Raspa', raspaSchema);
 
-// 🔥 NUEVO MODELO PARA GUARDAR TODAS LAS CONFIGURACIONES DEL PANEL
 const panelConfigSchema = new mongoose.Schema({
     identificador: { type: String, default: 'global', unique: true },
     retencion: { type: Array, default: [] },
@@ -411,7 +461,7 @@ io.on('connection', (socket) => {
             const internosDB = await UsuarioInterno.find();
             const ruletaDB = await Ruleta.findOne();
             const raspaDB = await Raspa.findOne(); 
-            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); // Traemos los ajustes
+            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); 
             
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
@@ -419,7 +469,7 @@ io.on('connection', (socket) => {
                 usuariosInternos: internosDB,
                 ruleta: ruletaDB ? ruletaDB.configuracion : [],
                 raspa: raspaDB ? raspaDB.configuracion : [],
-                panelConfig: panelConfigDB // Enviamos los ajustes al panel
+                panelConfig: panelConfigDB 
             });
         } catch (e) { console.log(e); }
     });
@@ -555,7 +605,6 @@ async function inicializarDatosDePrueba() {
         ]}).save();
     }
 
-    // Inicializamos las configuraciones del panel vacías por defecto
     const countPanel = await PanelConfig.countDocuments();
     if (countPanel === 0) {
         await new PanelConfig({ identificador: 'global' }).save();
