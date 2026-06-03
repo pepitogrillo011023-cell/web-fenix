@@ -4,12 +4,13 @@ const http = require('http');
 const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session'); 
+const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// --- CONFIGURACIÓN DE SESIÓN (LOGIN) Y MIDDLEWARES ---
+// --- CONFIGURACIÓN DE SESIÓN Y MIDDLEWARES ---
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); 
 app.use(session({
@@ -31,6 +32,7 @@ const requireLogin = (req, res, next) => {
 // --- RUTAS DE LOGIN Y LOGOUT ---
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
+    // Credenciales de acceso al panel
     if (username === 'admin' && password === '1234') {
         req.session.loggedIn = true;
         res.redirect('/admin.html');
@@ -44,63 +46,14 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
+// Protegemos el panel de administrador para que pida login
 app.get('/admin.html', requireLogin, (req, res) => {
-    res.sendFile(__dirname + '/public/admin.html');
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// --- VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
-app.post('/api/validar-cliente', async (req, res) => {
-    try {
-        const { usuario, password } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        
-        if (cliente) {
-            const claveReal = cliente.password ? cliente.password : '1234';
-            if (password === claveReal) {
-                if (!cliente.password) {
-                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
-                }
-                res.json({ exito: true });
-            } else {
-                res.json({ exito: false }); 
-            }
-        } else {
-            res.json({ exito: false }); 
-        }
-    } catch (error) {
-        console.error("🔴 Error al validar credenciales:", error);
-        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
-    }
-});
-
-// --- RUTA DE GESTIÓN DE SALDOS ---
-app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
-    const { usuario, monto } = req.body;
-    try {
-        await Cliente.updateOne(
-            { usuarioCasino: usuario }, 
-            { $inc: { saldo: monto } }
-        );
-        res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.` });
-    } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
-    }
-});
-
-// --- RUTA DE CONFIGURACIONES GENERALES DEL PANEL ---
-app.post('/api/guardar-config', requireLogin, async (req, res) => {
-    try {
-        const { seccion, datos } = req.body;
-        await PanelConfig.updateOne(
-            { identificador: 'global' },
-            { $set: { [seccion]: datos } },
-            { upsert: true }
-        );
-        res.json({ exito: true });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
+// 👇 LÍNEA MÁGICA REPARADA 👇
+// Permitimos que el servidor muestre el resto de los archivos libres (login.html, index.html)
+app.use(express.static('public'));
 
 // ==============================================================
 // ⚡ RECEPTOR WEBHOOK: MERCADO PAGO EN TIEMPO REAL
@@ -155,6 +108,60 @@ app.post('/api/webhook/billetera', async (req, res) => {
         }
     } catch (error) {
         console.error("🔴 Error procesando el Webhook de Mercado Pago:", error);
+    }
+});
+
+// --- VALIDACIÓN DE INICIO DE SESIÓN PARA CLIENTES ---
+app.post('/api/validar-cliente', async (req, res) => {
+    try {
+        const { usuario, password } = req.body;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        
+        if (cliente) {
+            const claveReal = cliente.password ? cliente.password : '1234';
+            if (password === claveReal) {
+                if (!cliente.password) {
+                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
+                }
+                res.json({ exito: true });
+            } else {
+                res.json({ exito: false }); 
+            }
+        } else {
+            res.json({ exito: false }); 
+        }
+    } catch (error) {
+        console.error("🔴 Error al validar credenciales:", error);
+        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
+    }
+});
+
+// --- RUTA DE GESTIÓN DE SALDOS PANEL ---
+app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
+    const { usuario, monto } = req.body;
+    try {
+        await Cliente.updateOne(
+            { usuarioCasino: usuario }, 
+            { $inc: { saldo: monto } }
+        );
+        res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.` });
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
+    }
+});
+
+// --- RUTA DE CONFIGURACIONES GENERALES DEL PANEL ---
+app.post('/api/guardar-config', requireLogin, async (req, res) => {
+    try {
+        const { seccion, datos } = req.body;
+        await PanelConfig.updateOne(
+            { identificador: 'global' },
+            { $set: { [seccion]: datos } },
+            { upsert: true }
+        );
+        res.json({ exito: true });
+    } catch (error) {
+        res.status(500).json({ exito: false });
     }
 });
 
@@ -600,7 +607,7 @@ async function inicializarDatosDePrueba() {
             { id: 1, premio: '👑 Premio Alto', valor: 15000, probabilidad: 7 },
             { id: 2, premio: '💵 Premio Intermedio', valor: 4000, probabilidad: 15 },
             { id: 3, premio: '📦 Premio Base', valor: 1500, probabilidad: 25 },
-            { id: 4, premio: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 },
+            { id: 4, grid_column: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 },
             { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
         ]}).save();
     }
