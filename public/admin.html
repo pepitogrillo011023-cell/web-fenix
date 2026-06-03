@@ -84,7 +84,6 @@
         .btn-spin-admin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 20px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
         .btn-spin-admin:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ESTILOS DE LA TARJETA RASPA Y GANA EN ADMIN */
         .raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 320px; margin: 15px 0; }
         .raspa-block-card { width: 100px; height: 85px; background-color: #1f2937; border: 2px dashed #ffaa00; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; }
         .raspa-block-card.scratched { background-color: #0b0f19; border-style: solid; border-color: #2563eb; }
@@ -92,6 +91,37 @@
         .raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #4b5563, #1f2937); display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold; font-size: 20px; transition: opacity 0.4s; z-index: 2; }
         .raspa-prize-text { font-size: 11px; font-weight: bold; color: white; text-align: center; padding: 4px; }
         .raspa-value-text { font-size: 12px; font-weight: bold; color: #38bdf8; margin-top: 2px; }
+
+        .push-layout { display: flex; gap: 25px; }
+        .push-form-card { flex: 1.2; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; }
+        .push-history-card { flex: 1; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; height: 430px; overflow-y: auto; }
+        .push-type-selector { display: flex; gap: 10px; }
+        .type-pill { background-color: #1f2937; border: 1px solid #374151; padding: 8px 16px; border-radius: 20px; font-size: 12px; font-weight: bold; cursor: pointer; color: #94a3b8; }
+        .type-pill.active-pill { background-color: #2563eb; color: white; }
+        .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+        .form-row label { font-size: 12px; font-weight: 600; color: #94a3b8; }
+        .input-text-adv { background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 12px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; }
+        .history-card-item { border-bottom: 1px solid #1f2937; padding: 12px 0; }
+        .history-card-title { font-weight: bold; color: white; display: flex; justify-content: space-between; font-size: 13px; }
+        .history-card-desc { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+
+        .retencion-container { display: flex; flex-direction: column; gap: 20px; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
+        .retencion-block { display: flex; flex-direction: column; gap: 8px; align-items: flex-start; border-bottom: 1px solid #1f2937; padding-bottom: 15px; }
+        .retencion-block:last-child { border: none; padding-bottom: 0; }
+        .retencion-header-row { display: flex; align-items: center; gap: 12px; font-size: 14px; font-weight: bold; color: #38bdf8; }
+        .input-retencion-large { background-color: #0f172a; border: 1px solid #374151; border-radius: 6px; padding: 10px 14px; color: white; font-size: 13.5px; width: 100%; box-sizing: border-box; max-width: 600px; margin-top: 4px; }
+
+        .api-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .api-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 25px; display: flex; flex-direction: column; gap: 15px; }
+        .api-card-header { display: flex; align-items: center; gap: 10px; font-weight: bold; font-size: 15px; color: white; border-bottom: 1px solid #1f2937; padding-bottom: 12px; margin-bottom: 5px; }
+        .wallet-status { font-size: 17px; font-weight: bold; color: #10b981; display: flex; align-items: center; gap: 8px; }
+        
+        .switch { position: relative; display: inline-block; width: 44px; height: 22px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #374151; transition: .3s; border-radius: 22px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #10b981; }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body>
@@ -159,15 +189,59 @@
             </div>
             
             <div id="section-billetera" class="view-section">
-                <div class="panel-inside"><div class="stat-card" style="text-align:left;"><div class="wallet-status">🟢 HG Cash Conectada</div><div class="num">$1.342.823,47 ARS</div></div></div>
+                <div class="panel-inside">
+                    <div class="stat-card" style="text-align:left; border-left: 5px solid #10b981; grid-column: span 2; width: fit-content;">
+                        <div class="wallet-status">🟢 Billetera HG Cash</div>
+                        <input type="text" id="wallet-monto" style="background: transparent; border: none; color: #10b981; font-size: 32px; font-weight: bold; width: 100%; outline: none; margin-top: 10px;" value="$1.342.823,47 ARS">
+                        <button class="btn-save" onclick="guardarConfig('billetera')" style="margin-top: 20px; float: left;">Guardar Saldo Mostrado</button>
+                    </div>
+                </div>
             </div>
             
             <div id="section-push" class="view-section">
-                <div class="panel-inside"><h4>Lanzador de Notificaciones</h4><input type="text" class="input-text-adv" value="¡Tenés saldo extra de regalo! Aprovechalo ya."><button class="btn-save">Enviar Push Masivo</button></div>
+                <div class="panel-inside">
+                    <div class="push-layout">
+                        <div class="push-form-card">
+                            <h4 style="margin:0; color:white;">Lanzador de Notificaciones</h4>
+                            <div class="form-row"><label>Título</label><input type="text" id="push-titulo" class="input-text-adv" value="Casino 463 - Bono Especial!"></div>
+                            <div class="form-row"><label>Mensaje Masivo</label><textarea id="push-mensaje" class="input-text-adv" rows="3" style="resize:none;">Tenés un bono del 200% esperándote...</textarea></div>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-save" style="margin:0; background-color: #374151;" onclick="guardarConfig('push')">💾 Guardar Borrador</button>
+                                <button class="btn-save" style="margin:0;" onclick="alert('Push lanzado')">🚀 Enviar Push Masivo</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
             
             <div id="section-retencion" class="view-section">
-                <div class="panel-inside"><h4>Automatización de Mensajes de Retención</h4><input type="text" class="input-retencion-large" value="¡Te extrañamos! Volvé hoy y te bonificamos tu próxima carga."><button class="btn-save">Guardar Reglas</button></div>
+                <div class="panel-inside">
+                    <h4 style="color:white; font-size: 20px; margin: 0 0 5px 0;">Automatización de Retención</h4>
+                    <p style="color: #64748b; font-size:13.5px; margin: 0 0 20px 0;">Activá las alertas por inactividad. Estos cambios se guardarán permanentemente en la base de datos.</p>
+                    <div class="retencion-container">
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-0" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div>
+                            <input type="text" id="ret-txt-0" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-1" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div>
+                            <input type="text" id="ret-txt-1" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-2" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div>
+                            <input type="text" id="ret-txt-2" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-3"><span class="slider"></span></label><span>Inactivo 15 días</span></div>
+                            <input type="text" id="ret-txt-3" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁">
+                        </div>
+                        <div class="retencion-block">
+                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-4"><span class="slider"></span></label><span>Inactivo 30 días</span></div>
+                            <input type="text" id="ret-txt-4" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy.">
+                        </div>
+                    </div>
+                    <button class="btn-save" onclick="guardarConfig('retencion')">Guardar Reglas</button>
+                </div>
             </div>
 
             <div id="section-eventos" class="view-section">
@@ -207,8 +281,6 @@
 
                     <div id="subview-raspa" class="event-subview">
                         <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Raspa y Gana Diario</h4>
-                        <p style="color: #64748b; font-size:12px; margin:0 0 15px 0;">Modificá los 6 casilleros. La suma de las probabilidades debe ser obligatoriamente 100%.</p>
-                        
                         <div style="display: flex; gap: 40px; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 450px;">
                                 <table class="ruleta-table" id="tabla-config-raspa">
@@ -227,8 +299,6 @@
 
                             <div style="width: 320px; background-color: #0b0f19; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; border-color: #ffaa00;">
                                 <h4 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 14px;">Simulador Tarjeta de Pruebas</h4>
-                                <p style="color: #64748b; font-size:11px; margin:0 0 10px 0; text-align:center;">Hacé clic en cualquier casillero gris para simular la raspada.</p>
-                                
                                 <div class="raspa-grid-board" id="tablero-prueba-raspa">
                                     <div class="raspa-block-card" onclick="rasparCasilleroSimulado(0)"><div class="raspa-cover-layer">?</div></div>
                                     <div class="raspa-block-card" onclick="rasparCasilleroSimulado(1)"><div class="raspa-cover-layer">?</div></div>
@@ -243,12 +313,41 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
             </div>
 
             <div id="section-apis" class="view-section">
-                <div class="panel-inside"><h4>Configuración APIs</h4><button class="btn-save">Guardar Parámetros</button></div>
+                <div class="panel-inside">
+                    <h4 style="color:white; font-size: 20px; margin: 0 0 20px 0;">Integraciones y Llaves de API</h4>
+                    <div class="api-grid">
+                        <div class="api-card">
+                            <div class="api-card-header">🎰 API Sincronización Casino</div>
+                            <div class="form-row"><label>URL Panel Servidor</label><input type="text" id="api-url" class="input-text-adv" value="https://admin.clubzeus.vip/"></div>
+                            <div class="form-row"><label>Usuario Agente API</label><input type="text" id="api-user" class="input-text-adv" value="CHATZEUS"></div>
+                            <div class="form-row"><label>Password / Token</label><input type="password" id="api-pass" class="input-text-adv" value="••••••••••••••••"></div>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🧠 API OpenAI Vision (OCR)</div>
+                            <div class="form-row"><label>OpenAI Secret API Key</label><input type="password" id="api-openai" class="input-text-adv" value="••••••••••••••••••••••••••••••••"></div>
+                            <div class="form-row"><label>Modelo AI</label>
+                                <select id="api-model" class="input-text-adv">
+                                    <option value="gpt-4o">gpt-4o (Más veloz y preciso)</option>
+                                    <option value="gpt-4-vision">gpt-4-vision-preview</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">⚡ Webhooks Billetera Lambda</div>
+                            <div class="form-row" style="flex-direction:row; justify-content:space-between; align-items:center;">
+                                <label>Integración Activa</label>
+                                <label class="switch"><input type="checkbox" id="api-webhook-active" checked><span class="slider"></span></label>
+                            </div>
+                            <div class="form-row"><label>Callback Webhook URL</label><input type="text" id="api-webhook-url" class="input-text-adv" value="https://j5uky5p2k6.execute-api.us-east-2.amazonaws.com"></div>
+                            <div class="form-row"><label>Callback Secret Pass</label><input type="password" id="api-webhook-pass" class="input-text-adv" value="••••••••••••••••"></div>
+                        </div>
+                    </div>
+                    <button class="btn-save" onclick="guardarConfig('apis')">Guardar Conexiones Permanentemente</button>
+                </div>
             </div>
         </div>
     </div>
@@ -270,6 +369,58 @@
         let raspaYaJugadaAdmin = false;
 
         socket.emit('identificar_admin');
+
+        // ===============================================
+        // 🔥 NUEVA LÓGICA DE GUARDADO UNIVERSAL
+        // ===============================================
+        async function guardarConfig(seccion) {
+            let datosParaGuardar = {};
+
+            if (seccion === 'retencion') {
+                datosParaGuardar = [];
+                for(let i=0; i<5; i++) {
+                    const chk = document.getElementById('ret-chk-'+i);
+                    const txt = document.getElementById('ret-txt-'+i);
+                    if(chk && txt) datosParaGuardar.push({ activo: chk.checked, mensaje: txt.value });
+                }
+            } 
+            else if (seccion === 'apis') {
+                datosParaGuardar = {
+                    url: document.getElementById('api-url').value,
+                    user: document.getElementById('api-user').value,
+                    pass: document.getElementById('api-pass').value,
+                    openai: document.getElementById('api-openai').value,
+                    model: document.getElementById('api-model').value,
+                    webhookActive: document.getElementById('api-webhook-active').checked,
+                    webhookUrl: document.getElementById('api-webhook-url').value,
+                    webhookPass: document.getElementById('api-webhook-pass').value
+                };
+            }
+            else if (seccion === 'push') {
+                datosParaGuardar = {
+                    titulo: document.getElementById('push-titulo').value,
+                    mensaje: document.getElementById('push-mensaje').value
+                };
+            }
+            else if (seccion === 'billetera') {
+                datosParaGuardar = {
+                    monto: document.getElementById('wallet-monto').value
+                };
+            }
+
+            try {
+                const res = await fetch('/api/guardar-config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ seccion: seccion, datos: datosParaGuardar })
+                });
+                const result = await res.json();
+                if (result.exito) alert('✅ ¡Los cambios se guardaron permanentemente en la base de datos!');
+                else alert('Error al intentar guardar los datos.');
+            } catch (error) {
+                alert('Error de conexión.');
+            }
+        }
 
         // IMPORTADOR Y FICHAS
         function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
@@ -460,7 +611,7 @@
         }
 
         // ===============================================
-        // NAVEGACIÓN Y SOCKETS
+        // NAVEGACIÓN Y CARGA DE DATOS
         // ===============================================
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
@@ -473,10 +624,7 @@
             const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API" };
             document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
 
-            // SIEMPRE que entremos a la pestaña eventos, forzamos un dibujo para que no quede el círculo vacío
-            if (seccion === 'eventos') {
-                setTimeout(dibujarRuletaAdmin, 100);
-            }
+            if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
         }
 
         function cambiarSubJuego(juego) {
@@ -485,9 +633,7 @@
             document.getElementById('subview-' + juego).classList.add('active-subview');
             document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
             
-            if (juego === 'ruleta') {
-                setTimeout(dibujarRuletaAdmin, 100);
-            }
+            if (juego === 'ruleta') setTimeout(dibujarRuletaAdmin, 100);
         }
 
         socket.on('cargar_datos_tablas', (datos) => {
@@ -515,7 +661,6 @@
                         filas[idx].querySelector('.prob-input').value = item.probabilidad;
                     }
                 });
-                // Dibujamos inmediatamente
                 setTimeout(dibujarRuletaAdmin, 500);
             }
             
@@ -528,6 +673,37 @@
                         filas[idx].querySelector('.prob-input').value = item.probabilidad;
                     }
                 });
+            }
+
+            // AUTO-RELLENAR CONFIGURACIONES GLOBALES GUARDADAS
+            if (datos.panelConfig) {
+                const c = datos.panelConfig;
+                
+                if (c.retencion && c.retencion.length === 5) {
+                    for(let i=0; i<5; i++) {
+                        const chk = document.getElementById('ret-chk-'+i);
+                        const txt = document.getElementById('ret-txt-'+i);
+                        if (chk) chk.checked = c.retencion[i].activo;
+                        if (txt) txt.value = c.retencion[i].mensaje;
+                    }
+                }
+                if (c.apis) {
+                    if(document.getElementById('api-url') && c.apis.url) document.getElementById('api-url').value = c.apis.url;
+                    if(document.getElementById('api-user') && c.apis.user) document.getElementById('api-user').value = c.apis.user;
+                    if(document.getElementById('api-pass') && c.apis.pass) document.getElementById('api-pass').value = c.apis.pass;
+                    if(document.getElementById('api-openai') && c.apis.openai) document.getElementById('api-openai').value = c.apis.openai;
+                    if(document.getElementById('api-model') && c.apis.model) document.getElementById('api-model').value = c.apis.model;
+                    if(document.getElementById('api-webhook-active') && c.apis.webhookActive !== undefined) document.getElementById('api-webhook-active').checked = c.apis.webhookActive;
+                    if(document.getElementById('api-webhook-url') && c.apis.webhookUrl) document.getElementById('api-webhook-url').value = c.apis.webhookUrl;
+                    if(document.getElementById('api-webhook-pass') && c.apis.webhookPass) document.getElementById('api-webhook-pass').value = c.apis.webhookPass;
+                }
+                if (c.push) {
+                    if(document.getElementById('push-titulo') && c.push.titulo) document.getElementById('push-titulo').value = c.push.titulo;
+                    if(document.getElementById('push-mensaje') && c.push.mensaje) document.getElementById('push-mensaje').value = c.push.mensaje;
+                }
+                if (c.billetera && document.getElementById('wallet-monto') && c.billetera.monto) {
+                    document.getElementById('wallet-monto').value = c.billetera.monto;
+                }
             }
         });
 
