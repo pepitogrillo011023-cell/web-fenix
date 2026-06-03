@@ -87,6 +87,23 @@ app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
     }
 });
 
+// ==============================================================
+// 🔥 NUEVA RUTA: GUARDAR CUALQUIER CONFIGURACIÓN DEL PANEL
+// ==============================================================
+app.post('/api/guardar-config', requireLogin, async (req, res) => {
+    try {
+        const { seccion, datos } = req.body;
+        await PanelConfig.updateOne(
+            { identificador: 'global' },
+            { $set: { [seccion]: datos } },
+            { upsert: true }
+        );
+        res.json({ exito: true });
+    } catch (error) {
+        res.status(500).json({ exito: false });
+    }
+});
+
 // --- RUTAS DE LA RULETA ---
 app.post('/api/guardar-ruleta', requireLogin, async (req, res) => {
     try {
@@ -182,9 +199,7 @@ app.post('/api/tirar-ruleta', async (req, res) => {
     }
 });
 
-// --------------------------------------------------------
-// 🔥 NUEVAS RUTAS MECÁNICA: RASPA Y GANA
-// --------------------------------------------------------
+// --- RUTAS DEL RASPA Y GANA ---
 app.post('/api/guardar-raspa', requireLogin, async (req, res) => {
     try {
         await Raspa.deleteMany({});
@@ -205,7 +220,6 @@ app.get('/api/raspa-config', async (req, res) => {
     }
 });
 
-// Simulación de tiro de prueba para la tarjeta de administración
 app.post('/api/tirar-raspa-prueba', requireLogin, (req, res) => {
     try {
         const { configuracion } = req.body;
@@ -338,15 +352,25 @@ const clienteSchema = new mongoose.Schema({
     historialChat: { type: Array, default: [] },
     ultimaConexion: { type: Date, default: Date.now },
     ultimaRuleta: { type: Date, default: null },
-    ultimaRaspa: { type: Date, default: null } // NUEVO CAMPO DE TRACCIÓN DIARIA
+    ultimaRaspa: { type: Date, default: null } 
 });
 const Cliente = mongoose.model('Cliente', clienteSchema);
 
 const ruletaSchema = new mongoose.Schema({ configuracion: Array });
 const Ruleta = mongoose.model('Ruleta', ruletaSchema);
 
-const raspaSchema = new mongoose.Schema({ configuracion: Array }); // NUEVO MODELO DE BASE DE DATOS
+const raspaSchema = new mongoose.Schema({ configuracion: Array });
 const Raspa = mongoose.model('Raspa', raspaSchema);
+
+// 🔥 NUEVO MODELO PARA GUARDAR TODAS LAS CONFIGURACIONES DEL PANEL
+const panelConfigSchema = new mongoose.Schema({
+    identificador: { type: String, default: 'global', unique: true },
+    retencion: { type: Array, default: [] },
+    apis: { type: Object, default: {} },
+    push: { type: Object, default: {} },
+    billetera: { type: Object, default: {} }
+});
+const PanelConfig = mongoose.model('PanelConfig', panelConfigSchema);
 
 const retiroSchema = new mongoose.Schema({
     fecha: { type: String, default: () => new Date().toLocaleString('es-AR') },
@@ -386,14 +410,16 @@ io.on('connection', (socket) => {
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
             const ruletaDB = await Ruleta.findOne();
-            const raspaDB = await Raspa.findOne(); // Mandamos los datos al panel
+            const raspaDB = await Raspa.findOne(); 
+            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); // Traemos los ajustes
             
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
                 retiros: retirosDB,
                 usuariosInternos: internosDB,
                 ruleta: ruletaDB ? ruletaDB.configuracion : [],
-                raspa: raspaDB ? raspaDB.configuracion : []
+                raspa: raspaDB ? raspaDB.configuracion : [],
+                panelConfig: panelConfigDB // Enviamos los ajustes al panel
             });
         } catch (e) { console.log(e); }
     });
@@ -517,17 +543,22 @@ async function inicializarDatosDePrueba() {
         ]}).save();
     }
 
-    // Inicializar configuración inicial del Raspa y Gana por defecto
     const countRaspa = await Raspa.countDocuments();
     if (countRaspa === 0) {
         await new Raspa({ configuracion: [
             { id: 0, premio: '💎 MEGA BONO', valor: 30000, probabilidad: 3 },
             { id: 1, premio: '👑 Premio Alto', valor: 15000, probabilidad: 7 },
             { id: 2, premio: '💵 Premio Intermedio', valor: 4000, probabilidad: 15 },
-            { id: 3, premio: 'パック Premio Base', valor: 1500, probabilidad: 25 },
+            { id: 3, premio: '📦 Premio Base', valor: 1500, probabilidad: 25 },
             { id: 4, premio: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 },
             { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
         ]}).save();
+    }
+
+    // Inicializamos las configuraciones del panel vacías por defecto
+    const countPanel = await PanelConfig.countDocuments();
+    if (countPanel === 0) {
+        await new PanelConfig({ identificador: 'global' }).save();
     }
 }
 
