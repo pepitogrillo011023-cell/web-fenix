@@ -52,12 +52,25 @@ app.get('/admin.html', requireLogin, (req, res) => {
 app.post('/api/validar-cliente', async (req, res) => {
     try {
         const { usuario, password } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario, password: password });
+        
+        // Buscamos al cliente solo por su nombre de usuario
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         
         if (cliente) {
-            res.json({ exito: true });
+            // Si es un cliente viejo y no tiene password en la BD, asumimos que es 1234
+            const claveReal = cliente.password ? cliente.password : '1234';
+            
+            if (password === claveReal) {
+                // Si entró con éxito y no tenía clave, se la guardamos para la próxima
+                if (!cliente.password) {
+                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
+                }
+                res.json({ exito: true });
+            } else {
+                res.json({ exito: false }); // Contraseña mal ingresada
+            }
         } else {
-            res.json({ exito: false });
+            res.json({ exito: false }); // El usuario no existe
         }
     } catch (error) {
         console.error("🔴 Error al validar las credenciales del cliente:", error);
@@ -101,7 +114,10 @@ app.post('/importar-datos', requireLogin, async (req, res) => {
                     if (!isNaN(saldoNumerico)) {
                         await Cliente.updateOne(
                             { usuarioCasino: usuario }, 
-                            { $set: { saldo: saldoNumerico, estado: 'Activo' } }, 
+                            { 
+                                $set: { saldo: saldoNumerico, estado: 'Activo' },
+                                $setOnInsert: { password: '1234' } // Si es un usuario nuevo, le clava el 1234
+                            }, 
                             { upsert: true }
                         );
                         actualizados++;
