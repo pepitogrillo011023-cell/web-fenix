@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Minigame = require('../models/Minigame'); // Importamos el modelo para los costos de créditos
+const Minigame = require('../models/Minigame'); 
 
 module.exports = function(app, requireLogin, io, sharedState) {
     const Cliente = mongoose.model('Cliente');
@@ -51,7 +51,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
             const { usuario } = req.body; const cliente = await Cliente.findOne({ usuarioCasino: usuario });
             if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
             
-            // Lógica de Tiro Diario o Cobro de Créditos
             const hoy = new Date(); const ult = cliente.ultimaRuleta;
             let esTiroGratis = true;
             if (ult && ult.getDate() === hoy.getDate() && ult.getMonth() === hoy.getMonth() && ult.getFullYear() === hoy.getFullYear()) {
@@ -62,7 +61,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 const gameInfo = await Minigame.findOne({ name: 'Ruleta' });
                 const costo = gameInfo ? gameInfo.creditCost : 10;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya usaste tu tiro gratis. Necesitas ${costo} Créditos para jugar otra vez.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya usaste tu tiro gratis. Necesitas ${costo} Créditos para jugar.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -73,12 +72,11 @@ module.exports = function(app, requireLogin, io, sharedState) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor; 
+            cliente.saldo += premio.valor;
             
-            const msgExtra = !esTiroGratis ? " (Tirada con Créditos)" : " (Tiro Gratis)";
+            const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
             const msgBot = `🎰 ¡La ruleta frenó en <b>${premio.premio}</b>!${msgExtra}<br>Se acreditaron <b>$${premio.valor}</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-            
             await cliente.save();
             await notificarPanelAdmin(usuario, cliente);
             res.json({ exito: true, mensaje: msgBot, premio: premio });
@@ -102,7 +100,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
             const { usuario } = req.body; const cliente = await Cliente.findOne({ usuarioCasino: usuario });
             if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
             
-            // Lógica de Tiro Diario o Cobro de Créditos
             const hoy = new Date(); const ult = cliente.ultimaRaspa;
             let esTiroGratis = true;
             if (ult && ult.getDate() === hoy.getDate() && ult.getMonth() === hoy.getMonth() && ult.getFullYear() === hoy.getFullYear()) {
@@ -113,7 +110,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 const gameInfo = await Minigame.findOne({ name: 'Raspa' });
                 const costo = gameInfo ? gameInfo.creditCost : 5;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya raspaste gratis hoy. Necesitas ${costo} Créditos para raspar de nuevo.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya raspaste gratis hoy. Necesitas ${costo} Créditos.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -124,12 +121,11 @@ module.exports = function(app, requireLogin, io, sharedState) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor; 
+            cliente.saldo += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
             const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!${msgExtra}<br>Premio: <b>${premio.premio}</b>.<br>Se acreditaron <b>$${premio.valor}</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-            
             await cliente.save();
             await notificarPanelAdmin(usuario, cliente);
             res.json({ exito: true, mensaje: msgBot, premio: premio });
@@ -153,7 +149,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
             const { usuario } = req.body; const cliente = await Cliente.findOne({ usuarioCasino: usuario });
             if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
             
-            // Lógica de Tiro Diario o Cobro de Créditos
             const hoy = new Date(); const ult = cliente.ultimaTragamonedas;
             let esTiroGratis = true;
             if (ult && ult.getDate() === hoy.getDate() && ult.getMonth() === hoy.getMonth() && ult.getFullYear() === hoy.getFullYear()) {
@@ -164,7 +159,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 const gameInfo = await Minigame.findOne({ name: 'Tragamonedas' });
                 const costo = gameInfo ? gameInfo.creditCost : 10;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya giraste gratis hoy. Necesitas ${costo} Créditos para otra ronda.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya giraste gratis hoy. Necesitas ${costo} Créditos.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -175,12 +170,11 @@ module.exports = function(app, requireLogin, io, sharedState) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor; 
+            cliente.saldo += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
             const msgBot = `🍒 ¡El Tragamonedas formó la línea ganadora!${msgExtra}<br>Salió: <b>${premio.premio}</b>.<br>Sumaste <b>$${premio.valor}</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-            
             await cliente.save();
             await notificarPanelAdmin(usuario, cliente);
             res.json({ exito: true, mensaje: msgBot, premio: premio });
@@ -204,7 +198,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
             const { usuario } = req.body; const cliente = await Cliente.findOne({ usuarioCasino: usuario });
             if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
             
-            // Lógica de Tiro Diario o Cobro de Créditos
             const hoy = new Date(); const ult = cliente.ultimaCarta;
             let esTiroGratis = true;
             if (ult && ult.getDate() === hoy.getDate() && ult.getMonth() === hoy.getMonth() && ult.getFullYear() === hoy.getFullYear()) {
@@ -215,7 +208,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 const gameInfo = await Minigame.findOne({ name: 'Cartas' });
                 const costo = gameInfo ? gameInfo.creditCost : 5;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya elegiste carta gratis hoy. Necesitas ${costo} Créditos para sacar otra.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya elegiste carta gratis hoy. Necesitas ${costo} Créditos.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -226,12 +219,11 @@ module.exports = function(app, requireLogin, io, sharedState) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor; 
+            cliente.saldo += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
             const msgBot = `🃏 ¡Diste vuelta tu Carta de la Suerte!${msgExtra}<br>Sacaste: <b>${premio.premio}</b>.<br>Ganaste <b>$${premio.valor}</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-            
             await cliente.save();
             await notificarPanelAdmin(usuario, cliente);
             res.json({ exito: true, mensaje: msgBot, premio: premio });
@@ -255,7 +247,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
             const { usuario } = req.body; const cliente = await Cliente.findOne({ usuarioCasino: usuario });
             if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
             
-            // Lógica de Tiro Diario o Cobro de Créditos
             const hoy = new Date(); const ult = cliente.ultimaMoneda;
             let esTiroGratis = true;
             if (ult && ult.getDate() === hoy.getDate() && ult.getMonth() === hoy.getMonth() && ult.getFullYear() === hoy.getFullYear()) {
@@ -266,7 +257,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 const gameInfo = await Minigame.findOne({ name: 'Moneda' });
                 const costo = gameInfo ? gameInfo.creditCost : 2;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya lanzaste la moneda gratis hoy. Necesitas ${costo} Créditos para volver a lanzar.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya lanzaste la moneda gratis hoy. Necesitas ${costo} Créditos.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -277,12 +268,11 @@ module.exports = function(app, requireLogin, io, sharedState) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor; 
+            cliente.saldo += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Lanzamiento con Créditos)" : " (Tiro Gratis)";
             const msgBot = `🪙 ¡La moneda cayó!${msgExtra}<br>Lado ganador: <b>${premio.premio}</b>.<br>Se acreditaron <b>$${premio.valor}</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-            
             await cliente.save();
             await notificarPanelAdmin(usuario, cliente);
             res.json({ exito: true, mensaje: msgBot, premio: premio });
@@ -290,7 +280,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
     });
 
     // ==============================================================
-    // ⚙️ 6. CONFIGURACIÓN DE COSTOS DE MINIJUEGOS (NUEVO BLOQUE ADMIN)
+    // ⚙️ 6. CONFIGURACIÓN DE COSTOS DE MINIJUEGOS (ADMIN)
     // ==============================================================
     app.get('/api/configuracion-minijuegos', requireLogin, async (req, res) => {
         try {
@@ -310,20 +300,9 @@ module.exports = function(app, requireLogin, io, sharedState) {
             }
             minijuego.creditCost = nuevoCosto;
             await minijuego.save();
-            res.json({ success: true, message: `Costo de ${minijuego.name} actualizado. Nuevo costo: ${nuevoCosto} créditos.` });
+            res.json({ success: true, message: `Costo actualizado.` });
         } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al actualizar el costo del minijuego.', error });
-        }
-    });
-
-    app.post('/api/crear-minijuego', requireLogin, async (req, res) => {
-        try {
-            const { name, creditCost } = req.body;
-            const nuevoMinijuego = new Minigame({ name, creditCost });
-            await nuevoMinijuego.save();
-            res.json({ success: true, message: 'Minijuego registrado exitosamente.', minijuego: nuevoMinijuego });
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al crear el minijuego.', error });
+            res.status(500).json({ success: false, message: 'Error al actualizar el costo.', error });
         }
     });
 };
