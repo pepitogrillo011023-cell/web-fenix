@@ -36,6 +36,7 @@
         .btn-action-small { background-color: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; transition: 0.2s; }
         .btn-action-small:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-action-small.warning { background-color: #ffaa00; color: #000; }
+        .btn-action-small.info { background-color: #38bdf8; color: #000; }
 
         .chats-sidebar { width: 300px; background-color: #111827; border-right: 1px solid #1f2937; display: flex; flex-direction: column; }
         .chats-header { padding: 15px; font-weight: 600; border-bottom: 1px solid #1f2937; background-color: #1f2937; color: white; }
@@ -149,7 +150,7 @@
         <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')">💬 Chats en Vivo</button>
         <div class="menu-category">Control Personal</div>
         <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
-        <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Datos de Clientes</button>
+        <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Clientes</button>
         <div class="menu-category">Finanzas</div>
         <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')">💸 Control de Retiros</button>
         <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
@@ -193,8 +194,9 @@
             <div id="section-clientes" class="view-section">
                 <div class="panel-inside">
                     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
-                        <h3 style="color:white; margin:0;">Base de Clientes</h3>
+                        <h3 style="color:white; margin:0;">Clientes</h3>
                         <div style="display:flex; gap:10px; align-items:center;">
+                            <input type="text" id="buscador-clientes" class="input-text-adv" placeholder="🔍 Buscar por nombre..." onkeyup="buscarCliente()" style="width: 200px; padding: 6px 10px; margin: 0;">
                             <label style="color:#94a3b8; font-size:13px; font-weight:bold;">Mostrar:</label>
                             <select id="clientes-por-pagina" class="input-text-adv" style="width:auto; padding:6px 10px; margin:0;" onchange="cambiarPaginacionClientes()">
                                 <option value="10">10 filas</option>
@@ -289,8 +291,8 @@
                         <div class="excel-grid">
                             <div>
                                 <table class="table-custom">
-                                    <tr><th>Fecha</th><td><input type="date" id="cc-fecha" class="input-text-adv" style="margin-bottom:0;"></td><th>Inicio</th><td><input type="time" id="cc-inicio" class="input-text-adv" style="margin-bottom:0;"></td></tr>
-                                    <tr><th>Hora</th><td><input type="time" id="cc-hora" class="input-text-adv" style="margin-bottom:0;"></td><th>Fin</th><td><input type="time" id="cc-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
+                                    <tr><th>Fecha Inicio</th><td><input type="date" id="cc-fecha-inicio" class="input-text-adv" style="margin-bottom:0;"></td><th>Fecha Fin</th><td><input type="date" id="cc-fecha-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
+                                    <tr><th>Hora Inicio</th><td><input type="time" id="cc-hora-inicio" class="input-text-adv" style="margin-bottom:0;"></td><th>Hora Fin</th><td><input type="time" id="cc-hora-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
                                     <tr><th colspan="2">Cajero</th><td colspan="2"><input type="text" id="cc-cajero" class="input-text-adv" style="margin-bottom:0;"></td></tr>
                                     <tr><th colspan="2">Turno</th><td colspan="2"><select id="cc-turno" class="input-text-adv" style="margin-bottom:0;"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select></td></tr>
                                 </table>
@@ -303,7 +305,7 @@
                             </div>
                             <div>
                                 <table class="table-custom">
-                                    <tr><th>Ingreso</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>EGRESO</th></tr>
+                                    <tr><th>Ingreso</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>EGRESO (Ing.+Oro+Gan)</th></tr>
                                     <tr>
                                         <td><input type="number" id="cc-ingreso" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
                                         <td><input type="number" id="cc-oro" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
@@ -311,7 +313,7 @@
                                         <td><input type="number" id="cc-egreso" class="input-text-adv val-num" readonly style="color:#ef4444; font-weight:bold; margin-bottom:0;"></td>
                                     </tr>
                                     <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
-                                    <tr><th>Monto Esperado</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
+                                    <tr><th>Monto Esperado (Egre-Gast-Prop)</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
                                     <tr>
                                         <td><input type="number" id="cc-esperado" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
                                         <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
@@ -598,20 +600,38 @@
         </div>
     </div>
 
+    <div id="modal-editar-cliente" class="modal-overlay">
+        <div class="modal-content" style="border-color: #38bdf8;">
+            <h3 style="color:white; margin-top:0;">✏️ Editar Cliente</h3>
+            <input type="hidden" id="edit-client-id">
+            <div class="form-row" style="text-align:left;">
+                <label>Nuevo Nombre de Usuario</label>
+                <input type="text" id="edit-client-user" class="input-dark">
+            </div>
+            <div class="form-row" style="text-align:left;">
+                <label>Nueva Contraseña</label>
+                <input type="password" id="edit-client-pass" class="input-dark" placeholder="Dejar en blanco para no cambiar">
+            </div>
+            <button class="btn-save" style="width:100%; margin-top:15px; float:none;" onclick="guardarEdicionCliente()">GUARDAR CAMBIOS</button>
+            <button class="btn-action-small" style="margin-top:10px; width:100%; padding:12px; background-color:#374151;" onclick="cerrarModalGeneral('modal-editar-cliente')">Cancelar</button>
+        </div>
+    </div>
+
     <script>
         const socket = io();
         let usuarioSeleccionadoActivo = null;
         let raspaYaJugadaAdmin = false;
         let currentRotationAdmin = 0;
 
-        // VARIABLES GLOBALES DE PAGINACIÓN CLIENTES
+        // VARIABLES GLOBALES DE PAGINACIÓN Y BÚSQUEDA
         let clientesGlobal = [];
+        let clientesBuscador = []; 
         let paginaActualClientes = 1;
         let filasPorPaginaClientes = 10;
 
         socket.emit('identificar_admin');
 
-        // ESCUCHADOR BILLETERA
+        // BILLETERA
         socket.on('billetera_actualizada_en_vivo', (datos) => {
             const inputMonto = document.getElementById('wallet-monto');
             if(inputMonto) {
@@ -637,7 +657,7 @@
             if(targetBtn) targetBtn.classList.add('active-nav');
             
             const titulos = { 
-                chats: "Chats en Vivo", usuarios: "Operadores Internos", clientes: "Base de Clientes", 
+                chats: "Chats en Vivo", usuarios: "Operadores Internos", clientes: "Clientes", 
                 retiros: "Auditoría de Retiros", billetera: "Billetera y Saldos", creditos: "Solicitudes Créditos",
                 costos: "Costos Minijuegos", push: "Notificaciones Masivas", retencion: "Automatización de Retención", 
                 eventos: "Consola de Eventos y Minijuegos", apis: "Integraciones y Llaves de API", cierre: "Cierre de Caja", 
@@ -659,15 +679,141 @@
         }
 
         // ==========================================
+        // FUNCIONES MODALES GLOBALES
+        // ==========================================
+        function cerrarModalGeneral(id) {
+            document.getElementById(id).style.display = 'none';
+        }
+
+        // ==========================================
+        // FUNCIONES DE CLIENTES (BÚSQUEDA, EDICIÓN, PAGINACIÓN)
+        // ==========================================
+        function buscarCliente() {
+            const texto = document.getElementById('buscador-clientes').value.toLowerCase();
+            if (texto === '') {
+                clientesBuscador = [...clientesGlobal];
+            } else {
+                clientesBuscador = clientesGlobal.filter(c => c.usuarioCasino.toLowerCase().includes(texto));
+            }
+            paginaActualClientes = 1;
+            renderizarTablaClientes();
+        }
+
+        function renderizarTablaClientes() {
+            const tbody = document.querySelector('#section-clientes .data-table tbody');
+            tbody.innerHTML = '';
+            
+            let clientesAMostrar = clientesBuscador;
+            
+            if (filasPorPaginaClientes !== 'todos') {
+                const inicio = (paginaActualClientes - 1) * filasPorPaginaClientes;
+                const fin = inicio + parseInt(filasPorPaginaClientes);
+                clientesAMostrar = clientesBuscador.slice(inicio, fin);
+            }
+
+            clientesAMostrar.forEach(c => {
+                tbody.innerHTML += `
+                <tr>
+                    <td>${c.usuarioCasino}</td>
+                    <td style="color:#10b981;font-weight:bold;">$${c.saldo}</td>
+                    <td style="color:#ffaa00;font-weight:bold;">${c.creditos || 0}</td>
+                    <td>$${c.wager || 0}</td>
+                    <td>● Activo</td>
+                    <td style="display:flex; gap:5px; flex-wrap:wrap;">
+                        <button class="btn-action-small" onclick="cargarFichas('${c.usuarioCasino}')">💰 Saldo</button>
+                        <button class="btn-action-small warning" onclick="gestionarCreditosManual('${c._id}', '${c.usuarioCasino}')">🟡 Créditos</button>
+                        <button class="btn-action-small info" onclick="abrirModalEditarCliente('${c._id}', '${c.usuarioCasino}')">✏️ Editar</button>
+                    </td>
+                </tr>`;
+            });
+
+            renderizarControlesPaginacion();
+        }
+
+        function renderizarControlesPaginacion() {
+            const contenedor = document.getElementById('paginacion-clientes');
+            contenedor.innerHTML = '';
+            
+            if (filasPorPaginaClientes === 'todos' || clientesBuscador.length === 0) return;
+
+            const totalPaginas = Math.ceil(clientesBuscador.length / filasPorPaginaClientes);
+            
+            const btnAnt = document.createElement('button');
+            btnAnt.className = 'btn-action-small';
+            btnAnt.style.backgroundColor = '#1f2937';
+            btnAnt.style.color = paginaActualClientes === 1 ? '#4b5563' : 'white';
+            btnAnt.innerText = '◀ Anterior';
+            btnAnt.disabled = paginaActualClientes === 1;
+            btnAnt.onclick = () => { paginaActualClientes--; renderizarTablaClientes(); };
+            contenedor.appendChild(btnAnt);
+
+            const info = document.createElement('span');
+            info.style.color = '#94a3b8';
+            info.style.fontSize = '13px';
+            info.style.display = 'flex';
+            info.style.alignItems = 'center';
+            info.style.padding = '0 10px';
+            info.innerText = `Página ${paginaActualClientes} de ${totalPaginas || 1}`;
+            contenedor.appendChild(info);
+
+            const btnSig = document.createElement('button');
+            btnSig.className = 'btn-action-small';
+            btnSig.style.backgroundColor = '#1f2937';
+            btnSig.style.color = paginaActualClientes === totalPaginas || totalPaginas === 0 ? '#4b5563' : 'white';
+            btnSig.innerText = 'Siguiente ▶';
+            btnSig.disabled = paginaActualClientes === totalPaginas || totalPaginas === 0;
+            btnSig.onclick = () => { paginaActualClientes++; renderizarTablaClientes(); };
+            contenedor.appendChild(btnSig);
+        }
+
+        function cambiarPaginacionClientes() {
+            const select = document.getElementById('clientes-por-pagina');
+            filasPorPaginaClientes = select.value === 'todos' ? 'todos' : parseInt(select.value);
+            paginaActualClientes = 1; 
+            renderizarTablaClientes();
+        }
+
+        function abrirModalEditarCliente(id, username) {
+            document.getElementById('edit-client-id').value = id;
+            document.getElementById('edit-client-user').value = username;
+            document.getElementById('edit-client-pass').value = '';
+            document.getElementById('modal-editar-cliente').style.display = 'block';
+        }
+
+        async function guardarEdicionCliente() {
+            const id = document.getElementById('edit-client-id').value;
+            const nuevoUser = document.getElementById('edit-client-user').value.trim();
+            const nuevaPass = document.getElementById('edit-client-pass').value.trim();
+
+            if (!nuevoUser) return alert("El nombre no puede estar vacío.");
+
+            try {
+                const res = await fetch('/api/editar-cliente', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ id, nuevoUser, nuevaPass })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    alert('Cliente editado correctamente');
+                    document.getElementById('modal-editar-cliente').style.display = 'none';
+                    // Nota: el socket de cargar_datos_tablas refrescará todo en unos segundos si el backend lo emite.
+                } else {
+                    alert(data.message || 'Error al editar');
+                }
+            } catch (e) {
+                alert('Error de red');
+            }
+        }
+
+        // ==========================================
         // FUNCIONES DE CRÉDITOS Y COSTOS
         // ==========================================
-
         async function cargarSolicitudesCreditos() {
             try {
                 const res = await fetch('/api/transacciones-pendientes?tipo=credit_charge');
                 if(!res.ok) return;
                 const data = await res.json();
-                
                 const tbody = document.querySelector('#tabla-pendientes-creditos tbody');
                 tbody.innerHTML = '';
                 
@@ -675,7 +821,6 @@
                     tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No hay solicitudes pendientes.</td></tr>';
                     return;
                 }
-
                 data.transacciones.forEach(t => {
                     tbody.innerHTML += `
                         <tr>
@@ -683,52 +828,39 @@
                             <td style="font-weight:bold;">${t.userId.usuarioCasino || 'Usuario'}</td>
                             <td style="color:#10b981; font-weight:bold;">$${t.amount}</td>
                             <td><a href="${t.receiptUrl}" target="_blank" style="color:#38bdf8; text-decoration:none;">Ver Foto 🔗</a></td>
-                            <td>
-                                <button class="btn-action-small" onclick="aprobarCreditos('${t._id}', '${t.userId._id}')">✅ Aprobar</button>
-                            </td>
+                            <td><button class="btn-action-small" onclick="aprobarCreditos('${t._id}', '${t.userId._id}')">✅ Aprobar</button></td>
                         </tr>
                     `;
                 });
-            } catch (error) {
-                console.error("Error al cargar créditos pendientes", error);
-            }
+            } catch (error) { console.error("Error", error); }
         }
 
         async function aprobarCreditos(transactionId, userId) {
             if(!confirm("¿Aprobar esta carga de créditos?")) return;
-            
             try {
                 const res = await fetch('/api/aprobar-carga-creditos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ transactionId, cashierId: 'admin' })
                 });
                 const data = await res.json();
                 alert(data.message);
                 if(data.success) cargarSolicitudesCreditos();
-            } catch (error) {
-                alert("Error al aprobar.");
-            }
+            } catch (error) { alert("Error al aprobar."); }
         }
 
         async function gestionarCreditosManual(userId, nombre) {
             const accion = prompt(`Gestión manual para ${nombre}\\nEscribí 'add' para sumar o 'remove' para quitar créditos:`).toLowerCase();
             if (accion !== 'add' && accion !== 'remove') return alert("Acción inválida. Usa 'add' o 'remove'.");
-            
             const monto = prompt(`¿Cuántos créditos querés ${accion === 'add' ? 'sumar' : 'quitar'}?`);
             if (!monto || isNaN(monto)) return alert("Monto inválido.");
-
             try {
                 const res = await fetch('/api/gestion-manual-creditos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ userId, amount: Number(monto), action: accion })
                 });
                 const data = await res.json();
                 alert(data.message);
-            } catch (error) {
-                alert("Error técnico al gestionar créditos.");
-            }
+            } catch (error) { alert("Error técnico."); }
         }
 
         async function cargarCostosMinijuegos() {
@@ -745,33 +877,26 @@
                         }
                     });
                 }
-            } catch (error) {
-                console.error("Error al cargar costos", error);
-            }
+            } catch (error) { console.error("Error", error); }
         }
 
         async function actualizarCostoMinijuego(nombre, inputId) {
             const input = document.getElementById(inputId);
             const nuevoCosto = Number(input.value);
             const minigameId = input.dataset.minigameId;
-
-            if(!minigameId) return alert("Error: ID de minijuego no encontrado. Asegurate de que existan en la DB.");
-
+            if(!minigameId) return alert("Error: ID de minijuego no encontrado.");
             try {
                 const res = await fetch('/api/actualizar-costo-minijuego', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ minigameId, nuevoCosto })
                 });
                 const data = await res.json();
                 alert(data.message);
-            } catch (error) {
-                alert("Error al actualizar el costo.");
-            }
+            } catch (error) { alert("Error al actualizar."); }
         }
 
         // ==========================================
-        // CONFIGURACIÓN GENÉRICA (EXTRACCIÓN DE TABLAS)
+        // CONFIGURACIÓN GENÉRICA JUEGOS
         // ==========================================
         function getConfigFromDOM(tablaId) {
             const filas = document.querySelectorAll(`#${tablaId} tbody tr`);
@@ -793,22 +918,18 @@
             const res = await fetch(`/api/guardar-${juego}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
             if(res.redirected) return window.location.href = '/login.html';
             const data = await res.json();
-            if(data.exito) alert(`✅ ¡Configuración de ${juego.toUpperCase()} guardada con éxito!`);
+            if(data.exito) alert(`✅ ¡Configuración guardada!`);
         }
 
-        // ==========================================
-        // SIMULADORES DE MINIJUEGOS (ADMIN)
-        // ==========================================
         function simularJuego(juego) {
             const config = getConfigFromDOM(`tabla-config-${juego}`);
             const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
-            if (sumaProb !== 100) return alert("La probabilidad en la tabla debe sumar 100% para probar.");
+            if (sumaProb !== 100) return alert("Suma 100% requerida.");
 
             fetch(`/api/tirar-${juego}-prueba`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
             .then(res => res.json())
             .then(data => {
                 if(!data.exito) return alert("Error.");
-                
                 const r = document.getElementById(`res-${juego}`);
                 
                 if (juego === 'ruleta') {
@@ -854,7 +975,6 @@
             const config = getConfigFromDOM('tabla-config-raspa');
             if (config.reduce((acc, curr) => acc + curr.probabilidad, 0) !== 100) return alert("Suma debe dar 100%");
             raspaYaJugadaAdmin = true;
-            
             fetch('/api/tirar-raspa-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
             .then(res => res.json()).then(data => {
                 const doms = document.querySelectorAll('#tablero-prueba-raspa .raspa-block-card');
@@ -879,9 +999,6 @@
             }
         }
 
-        // ==========================================
-        // DIBUJAR RULETA (CANVAS)
-        // ==========================================
         function dibujarRuletaAdmin() {
             const canvas = document.getElementById('ruleta-admin-canvas'); if(!canvas) return;
             const config = getConfigFromDOM('tabla-config-ruleta');
@@ -900,86 +1017,12 @@
         }
 
         // ==========================================
-        // RECEPCIÓN DE DATOS INICIALES Y PAGINACIÓN
+        // SOCKETS Y ACTUALIZACIÓN EN VIVO
         // ==========================================
-        
-        function renderizarTablaClientes() {
-            const tbody = document.querySelector('#section-clientes .data-table tbody');
-            tbody.innerHTML = '';
-            
-            let clientesAMostrar = clientesGlobal;
-            
-            if (filasPorPaginaClientes !== 'todos') {
-                const inicio = (paginaActualClientes - 1) * filasPorPaginaClientes;
-                const fin = inicio + parseInt(filasPorPaginaClientes);
-                clientesAMostrar = clientesGlobal.slice(inicio, fin);
-            }
-
-            clientesAMostrar.forEach(c => {
-                tbody.innerHTML += `
-                <tr>
-                    <td>${c.usuarioCasino}</td>
-                    <td style="color:#10b981;font-weight:bold;">$${c.saldo}</td>
-                    <td style="color:#ffaa00;font-weight:bold;">${c.creditos || 0}</td>
-                    <td>$${c.wager || 0}</td>
-                    <td>● Activo</td>
-                    <td style="display:flex; gap:5px;">
-                        <button class="btn-action-small" onclick="cargarFichas('${c.usuarioCasino}')">💰 Saldo</button>
-                        <button class="btn-action-small warning" onclick="gestionarCreditosManual('${c._id}', '${c.usuarioCasino}')">🟡 Créditos</button>
-                    </td>
-                </tr>`;
-            });
-
-            renderizarControlesPaginacion();
-        }
-
-        function renderizarControlesPaginacion() {
-            const contenedor = document.getElementById('paginacion-clientes');
-            contenedor.innerHTML = '';
-            
-            if (filasPorPaginaClientes === 'todos' || clientesGlobal.length === 0) return;
-
-            const totalPaginas = Math.ceil(clientesGlobal.length / filasPorPaginaClientes);
-            
-            const btnAnt = document.createElement('button');
-            btnAnt.className = 'btn-action-small';
-            btnAnt.style.backgroundColor = '#1f2937';
-            btnAnt.style.color = paginaActualClientes === 1 ? '#4b5563' : 'white';
-            btnAnt.innerText = '◀ Anterior';
-            btnAnt.disabled = paginaActualClientes === 1;
-            btnAnt.onclick = () => { paginaActualClientes--; renderizarTablaClientes(); };
-            contenedor.appendChild(btnAnt);
-
-            const info = document.createElement('span');
-            info.style.color = '#94a3b8';
-            info.style.fontSize = '13px';
-            info.style.display = 'flex';
-            info.style.alignItems = 'center';
-            info.style.padding = '0 10px';
-            info.innerText = `Página ${paginaActualClientes} de ${totalPaginas || 1}`;
-            contenedor.appendChild(info);
-
-            const btnSig = document.createElement('button');
-            btnSig.className = 'btn-action-small';
-            btnSig.style.backgroundColor = '#1f2937';
-            btnSig.style.color = paginaActualClientes === totalPaginas || totalPaginas === 0 ? '#4b5563' : 'white';
-            btnSig.innerText = 'Siguiente ▶';
-            btnSig.disabled = paginaActualClientes === totalPaginas || totalPaginas === 0;
-            btnSig.onclick = () => { paginaActualClientes++; renderizarTablaClientes(); };
-            contenedor.appendChild(btnSig);
-        }
-
-        function cambiarPaginacionClientes() {
-            const select = document.getElementById('clientes-por-pagina');
-            filasPorPaginaClientes = select.value === 'todos' ? 'todos' : parseInt(select.value);
-            paginaActualClientes = 1; 
-            renderizarTablaClientes();
-        }
-
         socket.on('cargar_datos_tablas', (datos) => {
             if (datos.clientes) {
                 clientesGlobal = datos.clientes;
-                renderizarTablaClientes();
+                buscarCliente(); // Actualiza y aplica la búsqueda si había alguna
             }
             if (datos.retiros) {
                 const tbody = document.querySelector('#section-retiros .data-table tbody'); tbody.innerHTML = '';
@@ -1021,9 +1064,6 @@
             }
         });
 
-        // ==========================================
-        // LÓGICA DE CHATS EN VIVO ADMIN
-        // ==========================================
         socket.on('lista_usuarios_actualizada', (usuarios) => {
             const listaDiv = document.getElementById('lista-usuarios'); if (!listaDiv) return;
             listaDiv.innerHTML = '';
@@ -1070,9 +1110,6 @@
         }
         document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual(); });
 
-        // ==========================================
-        // RESTO DE FUNCIONES (Guardar configs, importador, cierres)
-        // ==========================================
         async function guardarConfig(seccion) {
             let datos = {};
             if (seccion === 'retencion') {
@@ -1113,7 +1150,9 @@
             } catch (error) { alert("Error técnico."); }
         }
 
+        // ==========================================
         // CIERRE DE CAJA
+        // ==========================================
         const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
         function addGastoRow() {
             const tr = document.createElement('tr');
@@ -1127,28 +1166,65 @@
             document.querySelector('#tabla-propinas tbody').appendChild(tr);
         }
         function calcCierre() {
-            let totG = 0; document.querySelectorAll('.gm').forEach(i => totG += Number(i.value) || 0); document.getElementById('tot-gastos').innerText = totG.toFixed(2); document.getElementById('cc-egreso').value = totG;
-            let totP = 0; document.querySelectorAll('.pm').forEach(i => totP += Number(i.value) || 0); document.getElementById('tot-propinas').innerText = totP.toFixed(2);
-            const ing = Number(document.getElementById('cc-ingreso').value) || 0; const real = Number(document.getElementById('cc-real').value) || 0;
-            const esp = ing - totG; document.getElementById('cc-esperado').value = esp;
-            const dif = real - esp; document.getElementById('cc-dif').value = dif; document.getElementById('cc-dif').style.color = dif < 0 ? '#ef4444' : '#10b981';
+            let totG = 0; document.querySelectorAll('.gm').forEach(i => totG += Number(i.value) || 0); 
+            document.getElementById('tot-gastos').innerText = totG.toFixed(2); 
+
+            let totP = 0; document.querySelectorAll('.pm').forEach(i => totP += Number(i.value) || 0); 
+            document.getElementById('tot-propinas').innerText = totP.toFixed(2);
+            
+            const ing = Number(document.getElementById('cc-ingreso').value) || 0; 
+            const oro = Number(document.getElementById('cc-oro').value) || 0; 
+            const ganamos = Number(document.getElementById('cc-ganamos').value) || 0; 
+
+            // CÁLCULOS SOLICITADOS
+            const egreso = ing + oro + ganamos;
+            document.getElementById('cc-egreso').value = egreso;
+            
+            const esperado = egreso - (totG + totP);
+            document.getElementById('cc-esperado').value = esperado;
+            
+            const real = Number(document.getElementById('cc-real').value) || 0;
+            const dif = real - esperado; 
+            
+            document.getElementById('cc-dif').value = dif; 
+            document.getElementById('cc-dif').style.color = dif < 0 ? '#ef4444' : '#10b981';
         }
         async function guardarCierreDB() {
-            if(!document.getElementById('cc-fecha').value) return alert("Ingresá la fecha.");
+            if(!document.getElementById('cc-fecha-inicio').value) return alert("Ingresá la fecha de inicio.");
             const gastos = []; document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 }));
             const propinas = []; document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 }));
             const payload = {
-                fecha: document.getElementById('cc-fecha').value, hora: document.getElementById('cc-hora').value, inicio: document.getElementById('cc-inicio').value, fin: document.getElementById('cc-fin').value, turno: document.getElementById('cc-turno').value, cajero: document.getElementById('cc-cajero').value,
-                ingreso: Number(document.getElementById('cc-ingreso').value) || 0, saldoOro: Number(document.getElementById('cc-oro').value) || 0, saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0, egreso: Number(document.getElementById('cc-egreso').value) || 0,
-                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0, montoRealFinal: Number(document.getElementById('cc-real').value) || 0, sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0, reserva: Number(document.getElementById('cc-reserva').value) || 0, gastos, propinas
+                fecha: document.getElementById('cc-fecha-inicio').value, // Para mantener filtros backend sin romper todo
+                fechaInicio: document.getElementById('cc-fecha-inicio').value,
+                fechaFin: document.getElementById('cc-fecha-fin').value,
+                horaInicio: document.getElementById('cc-hora-inicio').value, 
+                horaFin: document.getElementById('cc-hora-fin').value, 
+                turno: document.getElementById('cc-turno').value, 
+                cajero: document.getElementById('cc-cajero').value,
+                ingreso: Number(document.getElementById('cc-ingreso').value) || 0, 
+                saldoOro: Number(document.getElementById('cc-oro').value) || 0, 
+                saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0, 
+                egreso: Number(document.getElementById('cc-egreso').value) || 0,
+                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0, 
+                montoRealFinal: Number(document.getElementById('cc-real').value) || 0, 
+                sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0, 
+                reserva: Number(document.getElementById('cc-reserva').value) || 0, 
+                gastos, 
+                propinas
             };
             const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
             if(res.redirected) return window.location.href = '/login.html';
             if(res.ok) { alert("✅ Guardado!"); if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); }
         }
-        addGastoRow(); addPropinaRow(); document.getElementById('cc-fecha').valueAsDate = new Date();
+        
+        // Auto cargar fechas
+        addGastoRow(); addPropinaRow(); 
+        document.getElementById('cc-fecha-inicio').valueAsDate = new Date();
+        document.getElementById('cc-fecha-fin').valueAsDate = new Date();
 
+        // ==========================================
         // RESUMEN E HISTORIAL
+        // ==========================================
         const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
         async function buscarResumen() {
             const fecha = document.getElementById('res-fecha').value; if(!fecha) return;
@@ -1171,7 +1247,7 @@
                 const res = await fetch('/api/historial-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
                 if (!res.ok) throw new Error(); const cierres = await res.json();
                 if (cierres.length === 0) return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay cajas guardadas para la fecha ${fecha}.</p>`;
-                c.innerHTML = cierres.map(cl => `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;"><h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">📅 ${cl.fecha} | 🕒 ${cl.turno || 'S/T'} | 👤 ${cl.cajero || 'N/D'}</h4><div class="excel-grid"><div><table class="table-custom"><tr><th style="width:50%">Apertura</th><td>${cl.inicio || '--:--'}</td></tr><tr><th>Cierre</th><td>${cl.fin || '--:--'}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE GASTOS</h5><table class="table-custom"><thead><tr><th>Tipo</th><th>Destino</th><th>Monto</th></tr></thead><tbody>${(cl.gastos && cl.gastos.length > 0) ? cl.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos</td></tr>'}</tbody></table></div><div><table class="table-custom"><tr><th>Ingreso</th><th>Oro</th><th>Ganamos</th><th>Egreso</th></tr><tr><td style="text-align:right;">${f.format(cl.ingreso || 0)}</td><td style="text-align:right;">${f.format(cl.saldoOro || 0)}</td><td style="text-align:right;">${f.format(cl.saldoGanamos || 0)}</td><td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(cl.egreso || 0)}</td></tr></table><table class="table-custom" style="margin-top:15px;"><tr><th>Esperado (Teórico)</th><th>Real Final (Caja)</th><th>Diferencia</th></tr><tr><td style="text-align:right;">${f.format(cl.montoEsperado || 0)}</td><td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(cl.montoRealFinal || 0)}</td><td style="text-align:right; font-weight:bold; color:${(cl.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(cl.sobranteFaltante || 0)}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS</h5><table class="table-custom"><thead><tr><th>Usuario</th><th>Monto</th></tr></thead><tbody>${(cl.propinas && cl.propinas.length > 0) ? cl.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas</td></tr>'}</tbody></table></div></div></div>`).join('');
+                c.innerHTML = cierres.map(cl => `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;"><h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">📅 ${cl.fecha} | 🕒 ${cl.turno || 'S/T'} | 👤 ${cl.cajero || 'N/D'}</h4><div class="excel-grid"><div><table class="table-custom"><tr><th style="width:50%">Apertura</th><td>${cl.horaInicio || '--:--'}</td></tr><tr><th>Cierre</th><td>${cl.horaFin || '--:--'}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE GASTOS</h5><table class="table-custom"><thead><tr><th>Tipo</th><th>Destino</th><th>Monto</th></tr></thead><tbody>${(cl.gastos && cl.gastos.length > 0) ? cl.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos</td></tr>'}</tbody></table></div><div><table class="table-custom"><tr><th>Ingreso</th><th>Oro</th><th>Ganamos</th><th>Egreso</th></tr><tr><td style="text-align:right;">${f.format(cl.ingreso || 0)}</td><td style="text-align:right;">${f.format(cl.saldoOro || 0)}</td><td style="text-align:right;">${f.format(cl.saldoGanamos || 0)}</td><td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(cl.egreso || 0)}</td></tr></table><table class="table-custom" style="margin-top:15px;"><tr><th>Esperado (Teórico)</th><th>Real Final (Caja)</th><th>Diferencia</th></tr><tr><td style="text-align:right;">${f.format(cl.montoEsperado || 0)}</td><td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(cl.montoRealFinal || 0)}</td><td style="text-align:right; font-weight:bold; color:${(cl.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(cl.sobranteFaltante || 0)}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS</h5><table class="table-custom"><thead><tr><th>Usuario</th><th>Monto</th></tr></thead><tbody>${(cl.propinas && cl.propinas.length > 0) ? cl.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas</td></tr>'}</tbody></table></div></div></div>`).join('');
             } catch (e) { c.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center;"><p style="color:#cbd5e1;">Error al cargar el historial.</p></div>`; }
         }
     </script>
