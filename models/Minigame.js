@@ -26,4 +26,5 @@ minigameSchema.pre('save', function(next) {
     next();
 });
 
-module.exports = mongoose.model('Minigame', minigameSchema);
+// Esta línea es la corrección clave: verifica si el modelo ya fue compilado
+module.exports = mongoose.models.Minigame || mongoose.model('Minigame', minigameSchema);
