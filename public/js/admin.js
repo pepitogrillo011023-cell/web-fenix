@@ -9,6 +9,10 @@ let clientesBuscador = [];
 let paginaActualClientes = 1;
 let filasPorPaginaClientes = 10;
 
+// VARIABLES DEL MODAL DE GESTIÓN
+let gestionIdSeleccionado = null;
+let gestionUserSeleccionado = null;
+
 socket.emit('identificar_admin');
 
 // BILLETERA
@@ -100,8 +104,9 @@ function renderizarTablaClientes() {
             <td>$${c.wager || 0}</td>
             <td>● Activo</td>
             <td style="display:flex; gap:5px; flex-wrap:wrap;">
-                <button class="btn-action-small" onclick="cargarFichas('${c.usuarioCasino}')">💰 Saldo</button>
-                <button class="btn-action-small warning" onclick="gestionarCreditosManual('${c._id}', '${c.usuarioCasino}')">🟡 Créditos</button>
+                <button class="btn-action-small" onclick="abrirModalGestionFondos('${c._id}', '${c.usuarioCasino}', 'saldo')">💰 Saldo</button>
+                <button class="btn-action-small warning" onclick="abrirModalGestionFondos('${c._id}', '${c.usuarioCasino}', 'creditos')">🟡 Créditos</button>
+                
                 <button class="btn-action-small info" onclick="abrirModalEditarCliente('${c._id}', '${c.usuarioCasino}')">✏️ Editar</button>
             </td>
         </tr>`;
@@ -186,6 +191,75 @@ async function guardarEdicionCliente() {
 }
 
 // ==========================================
+// NUEVO: SISTEMA GESTIÓN DE SALDOS Y CRÉDITOS
+// ==========================================
+function abrirModalGestionFondos(id, username, tipo) {
+    gestionIdSeleccionado = id;
+    gestionUserSeleccionado = username;
+    
+    document.getElementById('gestion-tipo-saldo').value = tipo;
+    document.getElementById('gestion-usuario-texto').innerText = username + (tipo === 'saldo' ? ' (Fichas)' : ' (Créditos)');
+    document.getElementById('gestion-monto').value = '';
+    
+    document.getElementById('modal-gestion-creditos').style.display = 'flex';
+}
+
+function sumarInputModal(montoAAgregar) {
+    const input = document.getElementById('gestion-monto');
+    let montoActual = Number(input.value) || 0;
+    input.value = montoActual + montoAAgregar;
+}
+
+async function ejecutarGestion(accion) {
+    const monto = Number(document.getElementById('gestion-monto').value);
+    const tipo = document.getElementById('gestion-tipo-saldo').value;
+    
+    if (!monto || monto <= 0) return alert("Por favor, ingresá un monto mayor a 0.");
+    
+    // Deshabilitar botones para evitar dobles clics
+    const btnDepositar = document.querySelector('#modal-gestion-creditos .btn-save[style*="#10b981"]');
+    const btnRetirar = document.querySelector('#modal-gestion-creditos .btn-save[style*="#ef4444"]');
+    const textoDepositar = btnDepositar.innerText;
+    const textoRetirar = btnRetirar.innerText;
+    
+    btnDepositar.disabled = true; btnRetirar.disabled = true;
+    if(accion === 'add') btnDepositar.innerText = "PROCESANDO...";
+    if(accion === 'remove') btnRetirar.innerText = "PROCESANDO...";
+
+    try {
+        let res, data;
+        
+        if (tipo === 'creditos') {
+            res = await fetch('/api/gestion-manual-creditos', {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId: gestionIdSeleccionado, amount: monto, action: accion })
+            });
+        } else if (tipo === 'saldo') {
+            // Si es retirar, enviamos el monto en negativo si la API antigua solo sumaba.
+            // Si tu API maneja el retiro diferente, podés ajustar esto.
+            let montoFinal = (accion === 'remove') ? -Math.abs(monto) : Math.abs(monto);
+            res = await fetch('/api/cargar-saldo', { 
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+                body: JSON.stringify({ usuario: gestionUserSeleccionado, monto: montoFinal }) 
+            });
+        }
+        
+        if(res && res.redirected) return window.location.href = '/login.html';
+        data = await res.json();
+        
+        alert(data.message || data.mensaje || "Operación realizada con éxito.");
+        cerrarModalGeneral('modal-gestion-creditos');
+        
+    } catch (error) {
+        alert("Error técnico al conectar con el servidor.");
+    } finally {
+        // Restaurar botones
+        btnDepositar.disabled = false; btnRetirar.disabled = false;
+        btnDepositar.innerText = textoDepositar; btnRetirar.innerText = textoRetirar;
+    }
+}
+
+// ==========================================
 // FUNCIONES DE CRÉDITOS Y COSTOS
 // ==========================================
 async function cargarSolicitudesCreditos() {
@@ -225,21 +299,6 @@ async function aprobarCreditos(transactionId, userId) {
         alert(data.message);
         if(data.success) cargarSolicitudesCreditos();
     } catch (error) { alert("Error al aprobar."); }
-}
-
-async function gestionarCreditosManual(userId, nombre) {
-    const accion = prompt(`Gestión manual para ${nombre}\nEscribí 'add' para sumar o 'remove' para quitar créditos:`).toLowerCase();
-    if (accion !== 'add' && accion !== 'remove') return alert("Acción inválida. Usa 'add' o 'remove'.");
-    const monto = prompt(`¿Cuántos créditos querés ${accion === 'add' ? 'sumar' : 'quitar'}?`);
-    if (!monto || isNaN(monto)) return alert("Monto inválido.");
-    try {
-        const res = await fetch('/api/gestion-manual-creditos', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ userId, amount: Number(monto), action: accion })
-        });
-        const data = await res.json();
-        alert(data.message);
-    } catch (error) { alert("Error técnico."); }
 }
 
 async function cargarCostosMinijuegos() {
@@ -487,7 +546,39 @@ function enviarMensajeManual() {
     if (!texto || !usuarioSeleccionadoActivo) return;
     socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto }); input.value = '';
 }
-document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual(); });
+
+// ==========================================
+// NUEVO: ATAJOS DE TECLADO (ESC Y ENTER)
+// ==========================================
+document.addEventListener('keydown', (e) => { 
+    // Atajo para enviar mensaje con Enter
+    if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') {
+        enviarMensajeManual(); 
+    }
+
+    // Atajo para salir del chat activo con ESC
+    if (e.key === 'Escape' && usuarioSeleccionadoActivo !== null) {
+        cerrarChatActual();
+    }
+});
+
+function cerrarChatActual() {
+    usuarioSeleccionadoActivo = null;
+    
+    // Restaurar panel de chat a la vista por defecto
+    document.getElementById('active-chat-username').innerText = "Ningún usuario seleccionado";
+    document.getElementById('active-chat-messages').innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div>';
+    
+    const inputMsg = document.getElementById('admin-message-input');
+    inputMsg.disabled = true;
+    inputMsg.value = '';
+    document.getElementById('btn-enviar-msg').disabled = true;
+
+    // Quitar el color activo al usuario en la barra lateral
+    document.querySelectorAll('.user-item').forEach(item => {
+        item.classList.remove('selected-user');
+    });
+}
 
 async function guardarConfig(seccion) {
     let datos = {};
@@ -519,14 +610,6 @@ async function procesarDatos() {
         if(res.redirected) return window.location.href = '/login.html';
         const result = await res.json(); alert(result.mensaje); cerrarImportador();
     } catch (error) { alert("Error de comunicación."); }
-}
-async function cargarFichas(usuario) {
-    const monto = prompt(`Monto a cargar a ${usuario}:`); if (!monto || isNaN(monto)) return;
-    try {
-        const res = await fetch('/api/cargar-saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuario, monto: Number(monto) }) });
-        if(res.redirected) return window.location.href = '/login.html';
-        const result = await res.json(); alert(result.mensaje);
-    } catch (error) { alert("Error técnico."); }
 }
 
 // ==========================================
