@@ -333,7 +333,7 @@
                     <div class="event-tabs-header">
                         <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯<br>Ruleta</button>
                         <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫<br>Raspa/Gana</button>
-                        <button class="event-tab-btn" id="tab-ev-traga" onclick="cambiarSubJuego('traga')">🍒<br>Slots</button>
+                        <button class="event-tab-btn" id="tab-ev-tragamonedas" onclick="cambiarSubJuego('tragamonedas')">🍒<br>Slots</button>
                         <button class="event-tab-btn" id="tab-ev-cartas" onclick="cambiarSubJuego('cartas')">🃏<br>Cartas</button>
                         <button class="event-tab-btn" id="tab-ev-moneda" onclick="cambiarSubJuego('moneda')">🪙<br>Moneda</button>
                     </div>
@@ -399,11 +399,11 @@
                         </div>
                     </div>
 
-                    <div id="subview-traga" class="event-subview">
+                    <div id="subview-tragamonedas" class="event-subview">
                         <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Tragamonedas (Slots)</h4>
                         <div style="display: flex; gap: 30px; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 450px;">
-                                <table class="ruleta-table" id="tabla-config-traga">
+                                <table class="ruleta-table" id="tabla-config-tragamonedas">
                                     <thead><tr><th>ID</th><th>Línea Ganadora</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
                                     <tbody>
                                         <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
@@ -422,8 +422,8 @@
                                     <div class="slot-reel" id="slot-2">🎰</div>
                                     <div class="slot-reel" id="slot-3">🎰</div>
                                 </div>
-                                <button id="btn-spin-traga" class="btn-spin-admin" onclick="simularJuego('tragamonedas')">🕹️ Simular Tirada</button>
-                                <div id="res-traga" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
+                                <button id="btn-spin-tragamonedas" class="btn-spin-admin" onclick="simularJuego('tragamonedas')">🕹️ Simular Tirada</button>
+                                <div id="res-tragamonedas" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
                             </div>
                         </div>
                     </div>
@@ -723,12 +723,11 @@
                 datos.retiros.forEach(r => { tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`; });
             }
             
-            // Cargar Configs Minijuegos
-            ['ruleta', 'raspa', 'traga', 'cartas', 'moneda'].forEach(juego => {
-                let dbKey = juego === 'traga' ? 'tragamonedas' : juego;
-                if (datos[dbKey] && datos[dbKey].length > 0) {
+            // Cargar Configs Minijuegos (CORREGIDO)
+            ['ruleta', 'raspa', 'tragamonedas', 'cartas', 'moneda'].forEach(juego => {
+                if (datos[juego] && datos[juego].length > 0) {
                     const filas = document.querySelectorAll(`#tabla-config-${juego} tbody tr`);
-                    datos[dbKey].forEach((item, idx) => {
+                    datos[juego].forEach((item, idx) => {
                         if(filas[idx]) {
                             filas[idx].querySelector('.input-ruleta-text').value = item.premio;
                             filas[idx].querySelector('.input-ruleta-val').value = item.valor;
