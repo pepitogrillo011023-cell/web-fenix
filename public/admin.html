@@ -33,6 +33,8 @@
         
         .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; margin-top: 15px; transition: background 0.2s; }
         .btn-save:hover { background-color: #1d4ed8; }
+        .btn-action-small { background-color: #10b981; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-action-small.warning { background-color: #ffaa00; color: #000; }
 
         .chats-sidebar { width: 300px; background-color: #111827; border-right: 1px solid #1f2937; display: flex; flex-direction: column; }
         .chats-header { padding: 15px; font-weight: 600; border-bottom: 1px solid #1f2937; background-color: #1f2937; color: white; }
@@ -150,6 +152,7 @@
         <div class="menu-category">Finanzas</div>
         <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')">💸 Control de Retiros</button>
         <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
+        <button id="btn-nav-creditos" class="nav-btn" onclick="cambiarSeccion('creditos')" style="color:#ffaa00;">🟡 Solicitudes Créditos</button>
         <button id="btn-nav-cierre" class="nav-btn" onclick="cambiarSeccion('cierre')" style="color:#a3e635;">📊 Cierre de Caja</button>
         <button id="btn-nav-resumen" class="nav-btn" onclick="cambiarSeccion('resumen')" style="color:#a3e635;">📈 Resumen Cajas</button>
         <button id="btn-nav-historial" class="nav-btn" onclick="cambiarSeccion('historial')" style="color:#a3e635;">📅 Historial de Cajas</button>
@@ -159,6 +162,7 @@
         <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
         <div class="menu-category">Sistema</div>
         <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
+        <button id="btn-nav-costos" class="nav-btn" onclick="cambiarSeccion('costos')">🪙 Costos Minijuegos</button>
         <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar de Ganamos.net</button>
     </div>
 
@@ -188,8 +192,8 @@
             <div id="section-clientes" class="view-section">
                 <div class="panel-inside">
                     <h3 style="color:white; margin-bottom:15px;">Base de Clientes</h3>
-                    <table class="data-table">
-                        <thead><tr><th>Usuario Casino</th><th>Saldo Panel</th><th>Wager</th><th>Estado</th><th>Acción</th></tr></thead>
+                    <table class="data-table" id="tabla-clientes">
+                        <thead><tr><th>Usuario Casino</th><th>Saldo Panel</th><th>Créditos 🟡</th><th>Wager</th><th>Estado</th><th>Acciones</th></tr></thead>
                         <tbody></tbody>
                     </table>
                 </div>
@@ -202,6 +206,54 @@
                         <thead><tr><th>Fecha</th><th>Cliente</th><th>Monto</th><th>CBU/Alias</th><th>Estado</th></tr></thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+
+            <div id="section-creditos" class="view-section">
+                <div class="panel-inside">
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                        <h3 style="color:#ffaa00; margin:0;">Solicitudes de Créditos Pendientes</h3>
+                        <button class="btn-action-small" style="background:#1f2937; border:1px solid #374151;" onclick="cargarSolicitudesCreditos()">🔄 Actualizar</button>
+                    </div>
+                    <table class="data-table" id="tabla-pendientes-creditos">
+                        <thead><tr><th>ID Transacción</th><th>Cliente</th><th>Monto ($)</th><th>Comprobante</th><th>Acción</th></tr></thead>
+                        <tbody>
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="section-costos" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white; margin-bottom:15px;">Costos de Minijuegos (En Créditos)</h3>
+                    <p style="color:#94a3b8; font-size:13px; margin-bottom:20px;">Definí el costo de cada tirada extra una vez que el jugador consume su tiro diario gratuito.</p>
+                    <div class="api-grid" id="grid-costos">
+                        <div class="api-card">
+                            <div class="api-card-header">🎯 Ruleta</div>
+                            <div class="form-row"><label>Costo por Tirada (Créditos)</label><input type="number" id="costo-ruleta" class="input-text-adv" value="10"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Ruleta', 'costo-ruleta')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🎫 Raspa y Gana</div>
+                            <div class="form-row"><label>Costo por Tarjeta (Créditos)</label><input type="number" id="costo-raspa" class="input-text-adv" value="5"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Raspa', 'costo-raspa')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🍒 Tragamonedas (Slots)</div>
+                            <div class="form-row"><label>Costo por Giro (Créditos)</label><input type="number" id="costo-tragamonedas" class="input-text-adv" value="10"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Tragamonedas', 'costo-tragamonedas')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🃏 Carta de la Suerte</div>
+                            <div class="form-row"><label>Costo por Voltear (Créditos)</label><input type="number" id="costo-cartas" class="input-text-adv" value="5"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Cartas', 'costo-cartas')">Guardar Costo</button>
+                        </div>
+                        <div class="api-card">
+                            <div class="api-card-header">🪙 Cara o Cruz</div>
+                            <div class="form-row"><label>Costo por Lanzamiento (Créditos)</label><input type="number" id="costo-moneda" class="input-text-adv" value="2"></div>
+                            <button class="btn-action-small warning" onclick="actualizarCostoMinijuego('Moneda', 'costo-moneda')">Guardar Costo</button>
+                        </div>
+                    </div>
                 </div>
             </div>
             
@@ -551,7 +603,7 @@
                 inputMonto.style.textShadow = '0 0 25px #10b981';
                 setTimeout(() => { inputMonto.style.textShadow = 'none'; }, 1200);
             }
-            if(datos.montoTransferido) alert(`💸 ¡MERCADO PAGO EN VIVO!\\nIngresó un pago aprobado de $${datos.montoTransferido}.\\nSaldo reflejado: ${datos.saldoFormateado}`);
+            if(datos.montoTransferido) alert(`💸 ¡MERCADO PAGO EN VIVO!\nIngresó un pago aprobado de $${datos.montoTransferido}.\nSaldo reflejado: ${datos.saldoFormateado}`);
         });
         
         async function simularPago() { await fetch('/api/simular-pago-test', { method: 'POST' }); }
@@ -567,10 +619,20 @@
             if(targetSection) targetSection.classList.add('active-view');
             if(targetBtn) targetBtn.classList.add('active-nav');
             
-            const titulos = { chats: "Chats en Vivo", usuarios: "Operadores Internos", clientes: "Base de Clientes", retiros: "Auditoría de Retiros", billetera: "Billetera y Saldos", push: "Notificaciones Masivas", retencion: "Automatización de Retención", eventos: "Consola de Eventos y Minijuegos", apis: "Integraciones y Llaves de API", cierre: "Cierre de Caja", resumen: "Resumen Cajas", historial: "Historial de Cajas" };
+            const titulos = { 
+                chats: "Chats en Vivo", usuarios: "Operadores Internos", clientes: "Base de Clientes", 
+                retiros: "Auditoría de Retiros", billetera: "Billetera y Saldos", push: "Notificaciones Masivas", 
+                retencion: "Automatización de Retención", eventos: "Consola de Eventos y Minijuegos", 
+                apis: "Integraciones y Llaves de API", cierre: "Cierre de Caja", resumen: "Resumen Cajas", 
+                historial: "Historial de Cajas",
+                creditos: "Solicitudes de Créditos Pendientes",
+                costos: "Configuración Costos de Minijuegos" 
+            };
             document.getElementById('panel-title').innerText = "Panel de Control - " + (titulos[seccion] || "");
 
             if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
+            if (seccion === 'creditos') cargarSolicitudesCreditos();
+            if (seccion === 'costos') cargarCostosMinijuegos();
         }
 
         function cambiarSubJuego(juego) {
@@ -579,6 +641,122 @@
             document.getElementById('subview-' + juego).classList.add('active-subview');
             document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
             if (juego === 'ruleta') setTimeout(dibujarRuletaAdmin, 100);
+        }
+
+        // ==========================================
+        // FUNCIONES DE CRÉDITOS Y COSTOS (NUEVAS)
+        // ==========================================
+
+        async function cargarSolicitudesCreditos() {
+            try {
+                // Endpoint que necesitas asegurar en tu backend para traer las pending
+                const res = await fetch('/api/transacciones-pendientes?tipo=credit_charge');
+                if(!res.ok) return;
+                const data = await res.json();
+                
+                const tbody = document.querySelector('#tabla-pendientes-creditos tbody');
+                tbody.innerHTML = '';
+                
+                if(!data.transacciones || data.transacciones.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#64748b;">No hay solicitudes pendientes.</td></tr>';
+                    return;
+                }
+
+                data.transacciones.forEach(t => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td style="color:#94a3b8; font-size:11px;">${t._id}</td>
+                            <td style="font-weight:bold;">${t.userId.username || 'Usuario'}</td>
+                            <td style="color:#10b981; font-weight:bold;">$${t.amount}</td>
+                            <td><a href="${t.receiptUrl}" target="_blank" style="color:#38bdf8; text-decoration:none;">Ver Foto 🔗</a></td>
+                            <td>
+                                <button class="btn-action-small" onclick="aprobarCreditos('${t._id}', '${t.userId._id}')">✅ Aprobar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+            } catch (error) {
+                console.error("Error al cargar créditos pendientes", error);
+            }
+        }
+
+        async function aprobarCreditos(transactionId, userId) {
+            if(!confirm("¿Aprobar esta carga de créditos?")) return;
+            
+            try {
+                const res = await fetch('/api/aprobar-carga-creditos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    // Asumimos que el cajero actual es "admin", podés cambiarlo por el ID real del cajero logueado
+                    body: JSON.stringify({ transactionId, cashierId: 'admin' })
+                });
+                const data = await res.json();
+                alert(data.message);
+                if(data.success) cargarSolicitudesCreditos();
+            } catch (error) {
+                alert("Error al aprobar.");
+            }
+        }
+
+        async function gestionarCreditosManual(userId, nombre) {
+            const accion = prompt(`Gestión manual para ${nombre}\nEscribí 'add' para sumar o 'remove' para quitar créditos:`).toLowerCase();
+            if (accion !== 'add' && accion !== 'remove') return alert("Acción inválida. Usa 'add' o 'remove'.");
+            
+            const monto = prompt(`¿Cuántos créditos querés ${accion === 'add' ? 'sumar' : 'quitar'}?`);
+            if (!monto || isNaN(monto)) return alert("Monto inválido.");
+
+            try {
+                const res = await fetch('/api/gestion-manual-creditos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId, amount: Number(monto), action: accion })
+                });
+                const data = await res.json();
+                alert(data.message);
+                // Opcional: Podrías hacer que el socket recargue la tabla
+            } catch (error) {
+                alert("Error técnico al gestionar créditos.");
+            }
+        }
+
+        async function cargarCostosMinijuegos() {
+            try {
+                const res = await fetch('/api/configuracion-minijuegos');
+                if(!res.ok) return;
+                const data = await res.json();
+                if(data.success && data.minijuegos) {
+                    data.minijuegos.forEach(juego => {
+                        const input = document.getElementById(`costo-${juego.name.toLowerCase()}`);
+                        if(input) {
+                            input.value = juego.creditCost;
+                            // Guardamos el ID del minijuego en un dataset para usarlo al actualizar
+                            input.dataset.minigameId = juego._id;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error("Error al cargar costos", error);
+            }
+        }
+
+        async function actualizarCostoMinijuego(nombre, inputId) {
+            const input = document.getElementById(inputId);
+            const nuevoCosto = Number(input.value);
+            const minigameId = input.dataset.minigameId;
+
+            if(!minigameId) return alert("Error: ID de minijuego no encontrado. Asegurate de que existan en la DB.");
+
+            try {
+                const res = await fetch('/api/actualizar-costo-minijuego', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ minigameId, nuevoCosto })
+                });
+                const data = await res.json();
+                alert(data.message);
+            } catch (error) {
+                alert("Error al actualizar el costo.");
+            }
         }
 
         // ==========================================
@@ -716,14 +894,27 @@
         socket.on('cargar_datos_tablas', (datos) => {
             if (datos.clientes) {
                 const tbody = document.querySelector('#section-clientes .data-table tbody'); tbody.innerHTML = '';
-                datos.clientes.forEach(c => { tbody.innerHTML += `<tr><td>${c.usuarioCasino}</td><td style="color:#10b981;font-weight:bold;">$${c.saldo}</td><td>$${c.wager}</td><td>● Activo</td><td><button class="btn-save" style="margin:0; padding: 6px 12px; font-size:12px;" onclick="cargarFichas('${c.usuarioCasino}')">💰 Cargar</button></td></tr>`; });
+                datos.clientes.forEach(c => { 
+                    // ACTUALIZACIÓN: Se agregó la columna y gestión de Créditos
+                    tbody.innerHTML += `
+                    <tr>
+                        <td>${c.usuarioCasino}</td>
+                        <td style="color:#10b981;font-weight:bold;">$${c.saldo}</td>
+                        <td style="color:#ffaa00;font-weight:bold;">${c.creditos || 0}</td>
+                        <td>$${c.wager || 0}</td>
+                        <td>● Activo</td>
+                        <td style="display:flex; gap:5px;">
+                            <button class="btn-action-small" onclick="cargarFichas('${c.usuarioCasino}')">💰 Saldo</button>
+                            <button class="btn-action-small warning" onclick="gestionarCreditosManual('${c._id}', '${c.usuarioCasino}')">🟡 Créditos</button>
+                        </td>
+                    </tr>`; 
+                });
             }
             if (datos.retiros) {
                 const tbody = document.querySelector('#section-retiros .data-table tbody'); tbody.innerHTML = '';
                 datos.retiros.forEach(r => { tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`; });
             }
             
-            // Cargar Configs Minijuegos (CORREGIDO)
             ['ruleta', 'raspa', 'tragamonedas', 'cartas', 'moneda'].forEach(juego => {
                 if (datos[juego] && datos[juego].length > 0) {
                     const filas = document.querySelectorAll(`#tabla-config-${juego} tbody tr`);
