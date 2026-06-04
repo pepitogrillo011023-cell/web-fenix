@@ -1,8 +1,3 @@
-¡Entendido! Hemos completado el último archivo, agregando la nueva ruta para que el panel de administración pueda editar a los clientes (cambiar nombre de usuario y/o contraseña) directamente desde la base de datos.
-
-Aquí tienes el código completo de clientes.js, listo para reemplazar:
-
-JavaScript
 const mongoose = require('mongoose');
 
 module.exports = function(app, requireLogin, io, sharedState) {
