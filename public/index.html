@@ -6,160 +6,199 @@
     <title>Acceso - Casino Fénix</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; }
-        
-        .chat-window { width: 360px; height: 540px; background-color: #111827; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; border: 1px solid #1f2937; }
-        .chat-header { background-color: #1f2937; padding: 15px; color: #ffffff; font-weight: bold; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #374151; }
-        .header-title-wrapper { display: flex; align-items: center; gap: 10px; }
+        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; }
+        .app-container { background-color: #111827; width: 340px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1f2937; display: flex; flex-direction: column; }
+        .header { background-color: #1f2937; padding: 15px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151; }
+        .header-title { display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
         
-        .chat-body { flex: 1; display: flex; flex-direction: column; padding: 15px; overflow-y: auto; color: #cbd5e1; }
-        .screen { display: none; width: 100%; height: 100%; flex-direction: column; }
-        .active { display: flex; }
+        .auth-body { padding: 40px 25px; display: flex; flex-direction: column; align-items: center; }
+        .auth-body h3 { margin-top: 0; margin-bottom: 20px; font-size: 18px; color: white; }
+        .input-dark { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 15px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 12px; font-size: 14px; outline: none; transition: border 0.3s; }
+        .input-dark:focus { border-color: #38bdf8; }
+        .input-dark::placeholder { color: #64748b; }
+        .btn-primary { background-color: #2563eb; color: white; border: none; padding: 12px; border-radius: 8px; width: 100%; font-weight: bold; font-size: 14px; cursor: pointer; transition: background 0.3s; margin-top: 5px; }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-text { background: none; border: none; color: #94a3b8; font-size: 13px; cursor: pointer; margin-top: 15px; text-decoration: underline; }
+        .btn-text:hover { color: white; }
+        .btn-logout { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .btn-logout:hover { background-color: #ef4444; color: white; }
 
+        #vista-chat { display: none; height: 450px; flex-direction: column; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; background-color: #0b0f19; }
         .bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 14px; width: 100%; position: relative; }
         .bubble { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; word-wrap: break-word; box-sizing: border-box; }
         .bubble.bot { background-color: #1f2937; color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #374151; }
         .bubble.admin { background-color: #1e3a8a; color: #ffffff; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #2563eb; }
         .bubble.cliente { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
-
         .status-text { font-size: 10px; color: #64748b; align-self: flex-end; margin-right: 5px; margin-top: 4px; font-weight: bold; display: block; }
         .status-text.visto { color: #38bdf8; }
 
-        .login-input { width: 100%; padding: 12px; background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; color: white; text-align: center; margin-bottom: 15px; box-sizing: border-box; outline: none; }
-        .login-input:focus { border-color: #38bdf8; }
-        .btn-general { width: 100%; padding: 14px; background-color: #2563eb; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-general:hover { background-color: #1d4ed8; }
+        .chat-input-area { display: none; gap: 8px; border-top: 1px solid #1f2937; padding: 15px; background-color: #111827; width: 100%; box-sizing: border-box; }
         
-        /* ESTILOS NUEVOS PARA REGISTRO Y LOGOUT */
-        .btn-text { background: none; border: none; color: #94a3b8; font-size: 13px; cursor: pointer; margin-top: 15px; text-decoration: underline; width: 100%; text-align: center; }
-        .btn-text:hover { color: white; }
-        .btn-logout { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
-        .btn-logout:hover { background-color: #ef4444; color: white; }
-        .btn-success { background-color: #10b981; color: white; border: none; padding: 14px; width: 100%; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
-        .btn-success:hover { background-color: #059669; }
-
-        .deposit-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 8px; width: 100%; margin-top: auto; padding-top: 10px; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; }
+        .deposit-grid { display: grid; grid-template-columns: 1fr 1fr 0.8fr; gap: 8px; padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; }
         .btn-action { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 5px; border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px; }
         .btn-action:hover { background-color: #2563eb; }
-
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; }
-
-        .chat-input-area { display: none; gap: 8px; border-top: 1px solid #1f2937; padding-top: 10px; margin-top: auto; width: 100%; box-sizing: border-box; }
-        .client-text-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 8px; padding: 10px; color: white; font-size: 13px; outline: none; }
-        .btn-send-client { background-color: #2563eb; border: none; color: white; padding: 0 15px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 13px; }
         
-        /* ESTILOS INTERFAZ VISUAL DE LA RULETA */
-        .modal-ruleta-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
-        .modal-ruleta-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 330px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.4); text-align: center; box-sizing: border-box; }
-        .ruleta-container { position: relative; width: 280px; height: 280px; margin: 0 auto; }
-        .ruleta-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 40px; color: #ffaa00; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
-        #ruleta-canvas { transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1f2937; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        .hidden { display: none !important; }
+
+        /* MODALES DE MINIJUEGOS */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
+        .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 330px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.4); text-align: center; box-sizing: border-box; }
         .btn-spin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
         .btn-spin:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        /* ESTILOS INTERFAZ VISUAL DEL RASPA Y GANA */
-        .modal-raspa-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
-        .modal-raspa-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 335px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #10b981; box-shadow: 0 0 30px rgba(16, 185, 129, 0.4); text-align: center; box-sizing: border-box; }
+        /* Ruleta */
+        .ruleta-container { position: relative; width: 280px; height: 280px; margin: 0 auto; }
+        .ruleta-pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); z-index: 10; font-size: 40px; color: #ffaa00; text-shadow: 0 2px 4px rgba(0,0,0,0.8); }
+        #ruleta-canvas { transition: transform 5s cubic-bezier(0.25, 0.1, 0.15, 1); width: 100%; height: 100%; border-radius: 50%; border: 3px solid #1f2937; box-shadow: 0 0 15px rgba(0,0,0,0.5); }
+        /* Raspa */
         .raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: 100%; margin: 20px 0; }
-        .raspa-block-card { width: 92px; height: 80px; background-color: #1f2937; border: 2px dashed #10b981; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; box-sizing: border-box; }
+        .raspa-block-card { width: 85px; height: 80px; background-color: #1f2937; border: 2px dashed #10b981; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; box-sizing: border-box; }
         .raspa-block-card.scratched { background-color: #0b0f19; border-style: solid; border-color: #2563eb; }
         .raspa-block-card.others-revealed { background-color: #111827; border-style: solid; border-color: #374151; opacity: 0.65; }
         .raspa-cover-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #374151, #1f2937); display: flex; justify-content: center; align-items: center; color: #94a3b8; font-weight: bold; font-size: 22px; transition: opacity 0.4s; z-index: 2; }
         .raspa-prize-text { font-size: 10px; font-weight: bold; color: white; text-align: center; padding: 2px; line-height: 1.2; }
         .raspa-value-text { font-size: 11px; font-weight: bold; color: #38bdf8; margin-top: 3px; }
-        
-        .hidden { display: none !important; }
+        /* Slots */
+        .slot-machine { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .slot-reel { width: 70px; height: 90px; background-color: #1f2937; border: 2px solid #ffaa00; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 40px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+        /* Cartas */
+        .card-flip { width: 140px; height: 200px; margin: 20px auto; perspective: 1000px; cursor: pointer; }
+        .card-inner { width: 100%; height: 100%; position: relative; transition: transform 0.8s; transform-style: preserve-3d; }
+        .card-inner.flipped { transform: rotateY(180deg); }
+        .card-front, .card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px solid #ffaa00; box-sizing: border-box; }
+        .card-front { background: linear-gradient(135deg, #1f2937, #111827); color: #ffaa00; font-size: 60px; }
+        .card-back { background-color: white; color: black; transform: rotateY(180deg); padding: 10px; }
+        /* Moneda */
+        .coin-flip { width: 150px; height: 150px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 6px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1.5s ease-out; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="chat-window">
-        <div class="chat-header">
-            <div class="header-title-wrapper">
+    <div class="app-container">
+        <div class="header">
+            <div class="header-title">
                 <div class="status-dot"></div>
-                <span id="header-title">Chat Asistencia (En línea)</span>
+                <span id="header-title-text">Chat Asistencia (En línea)</span>
             </div>
             <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Salir</button>
         </div>
-        
-        <div class="chat-body" id="chat-flow-container">
+
+        <div id="vista-login" class="auth-body active">
+            <h3>Acceso de Clientes</h3>
+            <input type="text" id="login-user" class="input-dark" placeholder="Tu usuario de casino...">
+            <input type="password" id="login-pass" class="input-dark" placeholder="Tu contraseña...">
+            <button class="btn-primary" id="btn-login" onclick="iniciarSesion()">Ingresar al Chat</button>
+            <button class="btn-text" onclick="cambiarVista('registro')">¿No tenés cuenta? Crear usuario</button>
+        </div>
+
+        <div id="vista-registro" class="auth-body hidden">
+            <h3>Crear Nuevo Usuario</h3>
+            <input type="text" id="reg-user" class="input-dark" placeholder="Elegí tu nombre...">
+            <input type="password" id="reg-pass" class="input-dark" placeholder="Elegí una contraseña...">
+            <button class="btn-primary" id="btn-registro" style="background-color: #10b981;" onclick="registrarUsuario()">Crear Cuenta y Entrar</button>
+            <button class="btn-text" onclick="cambiarVista('login')">Ya tengo cuenta. Ingresar.</button>
+        </div>
+
+        <div id="vista-chat">
+            <div class="chat-messages" id="messages-area">
+                <div style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">Conectando con un operador...</div>
+            </div>
             
-            <div id="screen-login" class="screen active" style="justify-content: center; align-items: center; height: 100%;">
-                <h2 style="color:white; margin-bottom: 25px; font-size: 18px; text-align: center;">Acceso de Clientes</h2>
-                <input type="text" id="username" class="login-input" placeholder="Tu usuario de casino...">
-                <input type="password" id="password" class="login-input" placeholder="Tu contraseña...">
-                <button id="btn-login" class="btn-general" onclick="validarAcceso()">Ingresar al Chat</button>
-                <button class="btn-text" onclick="mostrarPantalla('screen-registro')">¿No tenés cuenta? Crear usuario</button>
+            <div id="container-menu-options" class="menu-grid" style="display: none;">
+                <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
+                <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
+                <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
+                <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
+                <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7); border:none; box-shadow: 0 0 15px rgba(168,85,247,0.3); color: white;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos Diarios</button>
             </div>
 
-            <div id="screen-registro" class="screen" style="justify-content: center; align-items: center; height: 100%;">
-                <h2 style="color:white; margin-bottom: 25px; font-size: 18px; text-align: center;">Crear Nuevo Usuario</h2>
-                <input type="text" id="reg-user" class="login-input" placeholder="Elegí tu nombre...">
-                <input type="password" id="reg-pass" class="login-input" placeholder="Elegí una contraseña...">
-                <button id="btn-registro" class="btn-success" onclick="registrarUsuario()">Crear Cuenta y Entrar</button>
-                <button class="btn-text" onclick="mostrarPantalla('screen-login')">Ya tengo cuenta. Ingresar.</button>
+            <div id="container-games-options" class="menu-grid" style="display: none; grid-template-columns: 1fr 1fr 1fr;">
+                <button class="btn-action" style="background: linear-gradient(135deg, #ff007f, #ffaa00); border:none;" onclick="abrirModal('ruleta')">🎯 Ruleta</button>
+                <button class="btn-action" style="background: linear-gradient(135deg, #10b981, #3b82f6); border:none;" onclick="abrirModal('raspa')">🎫 Raspa</button>
+                <button class="btn-action" style="background: linear-gradient(135deg, #ec4899, #8b5cf6); border:none;" onclick="abrirModal('traga')">🍒 Slots</button>
+                <button class="btn-action" style="background: linear-gradient(135deg, #f43f5e, #f97316); border:none; grid-column: span 1.5;" onclick="abrirModal('cartas')">🃏 Carta Suerte</button>
+                <button class="btn-action" style="background: linear-gradient(135deg, #eab308, #84cc16); border:none; grid-column: span 1.5;" onclick="abrirModal('moneda')">🪙 Cara/Cruz</button>
+                <button class="btn-action" style="background-color: #374151; padding: 12px 10px; font-size:14px; grid-column: span 3;" onclick="irAlMenuPrincipal()">↩️ Volver al Menú Principal</button>
             </div>
 
-            <div id="screen-conversation" class="screen" style="height: 100%;">
-                <div id="messages-area" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; padding-bottom: 10px;"></div>
-                
-                <div id="container-menu-options" class="menu-grid" style="display: none;">
-                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
-                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
-                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
-                    <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
-                    
-                    <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7); border:none; box-shadow: 0 0 15px rgba(168,85,247,0.3); color: white;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos Diarios</button>
-                </div>
+            <div id="container-deposit-options" class="deposit-grid" style="display: none;">
+                <button class="btn-action" onclick="ejecutarAccionDeposito('Subir Comprobante')">📁 Subir Comprobante</button>
+                <button class="btn-action" onclick="ejecutarAccionDeposito('Reportar Pago')">📄 Reportar Pago</button>
+                <button class="btn-action" style="background-color: #374151;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
+            </div>
 
-                <div id="container-games-options" class="menu-grid" style="display: none;">
-                    <button class="btn-action" style="padding: 20px 10px; font-size:14px; background: linear-gradient(135deg, #ff007f, #ffaa00); border:none; color:white; font-weight: bold;" onclick="abrirModalRuleta()">🎯 Ruleta de Premios</button>
-                    <button class="btn-action" style="padding: 20px 10px; font-size:14px; background: linear-gradient(135deg, #10b981, #3b82f6); border:none; color:white; font-weight: bold;" onclick="abrirModalRaspa()">🎫 Raspa y Gana</button>
-                    <button class="btn-action" style="background-color: #374151; padding: 12px 10px; font-size:14px; grid-column: span 2;" onclick="irAlMenuPrincipal()">↩️ Volver al Menú Principal</button>
-                </div>
-
-                <div id="container-deposit-options" class="deposit-grid" style="display: none;">
-                    <button class="btn-action" onclick="ejecutarAccionDeposito('Subir Comprobante')">📁 Subir Comprobante</button>
-                    <button class="btn-action" onclick="ejecutarAccionDeposito('Reportar Pago')">📄 Reportar Pago</button>
-                    <button class="btn-action" style="background-color: #374151;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
-                </div>
-
-                <div id="container-chat-input" class="chat-input-area">
-                    <input type="text" id="client-raw-input" class="client-text-input" placeholder="Escribí tu mensaje acá...">
-                    <button class="btn-send-client" onclick="enviarMensajeLibreCliente()">Enviar</button>
-                    <button class="btn-action" style="background-color: #374151; padding: 0 10px; border-radius: 8px;" onclick="irAlMenuPrincipal()">↩️</button>
-                </div>
+            <div id="container-chat-input" class="chat-input-area">
+                <input type="text" id="client-raw-input" class="input-dark" style="margin:0;" placeholder="Escribí acá...">
+                <button class="btn-primary" style="margin:0; width:auto; padding: 0 15px;" onclick="enviarMensajeLibreCliente()">Enviar</button>
+                <button class="btn-action" style="background-color: #374151; padding: 0 10px; margin-top:0;" onclick="irAlMenuPrincipal()">↩️</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-ruleta" class="modal-ruleta-overlay">
-        <div class="modal-ruleta-content">
-            <h3 style="color:white; margin-top:0; font-size: 22px;">🎰 ¡Tu Tiro Diario!</h3>
-            <div class="ruleta-container">
-                <div class="ruleta-pointer">▼</div>
-                <canvas id="ruleta-canvas" width="280" height="280"></canvas>
-            </div>
-            <button id="btn-spin" class="btn-spin" onclick="iniciarGiro()">GIRAR AHORA</button>
-            <button id="btn-close-ruleta" class="btn-action" style="margin-top:10px; width:100%; display:none; background-color:#374151;" onclick="cerrarRuletaModal()">Volver</button>
+    <div id="modal-ruleta" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🎰 Ruleta de Premios</h3>
+            <div class="ruleta-container"><div class="ruleta-pointer">▼</div><canvas id="ruleta-canvas" width="280" height="280"></canvas></div>
+            <button id="btn-spin-ruleta" class="btn-spin" onclick="jugarRuleta()">GIRAR AHORA</button>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('ruleta')">Volver</button>
         </div>
     </div>
 
-    <div id="modal-raspa" class="modal-raspa-overlay">
-        <div class="modal-raspa-content">
+    <div id="modal-raspa" class="modal-overlay">
+        <div class="modal-content" style="border-color: #10b981;">
             <h3 style="color:white; margin-top:0; font-size: 22px;">🎫 Raspa y Gana</h3>
-            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Elegí 1 casillero para raspar y descubrir tu premio diario.</p>
-            
+            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Elegí 1 casillero para raspar.</p>
             <div class="raspa-grid-board" id="client-tablero-raspa">
-                <div class="raspa-block-card" onclick="rasparCasilleroCliente(0)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroCliente(1)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroCliente(2)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroCliente(3)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroCliente(4)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroCliente(5)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="jugarRaspa(0)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="jugarRaspa(1)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="jugarRaspa(2)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="jugarRaspa(3)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="jugarRaspa(4)"><div class="raspa-cover-layer">?</div></div>
+                <div class="raspa-block-card" onclick="jugarRaspa(5)"><div class="raspa-cover-layer">?</div></div>
             </div>
-            <button id="btn-close-raspa" class="btn-action" style="margin-top:15px; width:100%; display:none; background-color:#374151; padding: 10px;" onclick="cerrarRaspaModal()">Volver al Menú</button>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:15px; width:100%; background-color:#374151;" onclick="cerrarModal('raspa')">Volver al Menú</button>
+        </div>
+    </div>
+
+    <div id="modal-traga" class="modal-overlay">
+        <div class="modal-content" style="border-color: #ec4899;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🍒 Tragamonedas</h3>
+            <div class="slot-machine">
+                <div class="slot-reel" id="client-slot-1">🎰</div>
+                <div class="slot-reel" id="client-slot-2">🎰</div>
+                <div class="slot-reel" id="client-slot-3">🎰</div>
+            </div>
+            <button id="btn-spin-traga" class="btn-spin" style="background: linear-gradient(90deg, #ec4899, #8b5cf6);" onclick="jugarTragamonedas()">TIRAR PALANCA</button>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('traga')">Volver</button>
+        </div>
+    </div>
+
+    <div id="modal-cartas" class="modal-overlay">
+        <div class="modal-content" style="border-color: #f97316;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🃏 Carta de la Suerte</h3>
+            <div class="card-flip" onclick="jugarCartas()">
+                <div class="card-inner" id="client-card">
+                    <div class="card-front">?</div>
+                    <div class="card-back">
+                        <div id="client-card-val" style="font-size:40px; font-weight:bold;">🃏</div>
+                        <div id="client-card-desc" style="font-size:14px; margin-top:10px;"></div>
+                    </div>
+                </div>
+            </div>
+            <p style="color: #64748b; font-size:12px; margin:5px 0;">Tocá la carta para revelar tu premio.</p>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('cartas')">Volver</button>
+        </div>
+    </div>
+
+    <div id="modal-moneda" class="modal-overlay">
+        <div class="modal-content" style="border-color: #eab308;">
+            <h3 style="color:white; margin-top:0; font-size: 22px;">🪙 Cara o Cruz</h3>
+            <div class="coin-flip" id="client-coin" onclick="jugarMoneda()">🪙</div>
+            <p style="color: #64748b; font-size:12px; margin:5px 0;">Tocá la moneda para lanzarla.</p>
+            <button class="btn-action btn-close-modal hidden" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('moneda')">Volver</button>
         </div>
     </div>
 
@@ -168,115 +207,91 @@
         const msgArea = document.getElementById('messages-area');
         window.usuarioLogueado = null; 
 
-        // VARIABLES DE LOS MINIJUEGOS
-        let ruletaConfig = [];
-        let currentRotation = 0;
-        let raspaConfig = [];
-        let raspaYaJugada = false;
-
-        // CONTROL DE PANTALLAS
-        function mostrarPantalla(id) {
-            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-        }
+        // VARIABLES GLOBALES JUEGOS
+        let ruletaConfig = []; let raspaConfig = [];
+        let currentRotation = 0; let raspaYaJugada = false;
+        let tragaJugado = false; let cartasJugado = false; let monedaJugado = false;
 
         // ==========================================
-        // REGISTRO Y LOGIN
+        // VISTAS Y NAVEGACIÓN
         // ==========================================
-        async function registrarUsuario() {
-            const u = document.getElementById('reg-user').value.trim();
-            const p = document.getElementById('reg-pass').value.trim();
-            
-            if(!u || !p) return alert("Por favor, completá ambos campos.");
+        function cambiarVista(vista) {
+            document.getElementById('vista-login').classList.add('hidden');
+            document.getElementById('vista-registro').classList.add('hidden');
+            document.getElementById('vista-chat').classList.add('hidden');
+            document.getElementById('btn-cerrar-sesion').classList.add('hidden');
 
-            const btn = document.getElementById('btn-registro');
-            btn.innerText = 'Creando...'; btn.disabled = true;
-
-            try {
-                const res = await fetch('/api/registrar-cliente', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: u, password: p })
-                });
-                
-                const data = await res.json();
-                btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false;
-
-                if (data.exito) {
-                    alert("¡Cuenta creada con éxito! Ingresando al chat...");
-                    document.getElementById('username').value = u;
-                    document.getElementById('password').value = p;
-                    validarAcceso(); // Ingresa automáticamente
-                } else {
-                    alert(data.mensaje);
-                }
-            } catch (e) {
-                btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false;
-                alert("Error de conexión al registrarse.");
+            if (vista === 'login') document.getElementById('vista-login').classList.remove('hidden');
+            if (vista === 'registro') document.getElementById('vista-registro').classList.remove('hidden');
+            if (vista === 'chat') {
+                document.getElementById('vista-chat').style.display = 'flex';
+                document.getElementById('btn-cerrar-sesion').classList.remove('hidden');
             }
         }
 
+        // ==========================================
+        // AUTENTICACIÓN
+        // ==========================================
+        async function registrarUsuario() {
+            const u = document.getElementById('reg-user').value.trim(); const p = document.getElementById('reg-pass').value.trim();
+            if(!u || !p) return alert("Por favor, completá ambos campos.");
+            const btn = document.getElementById('btn-registro'); btn.innerText = 'Creando...'; btn.disabled = true;
+
+            try {
+                const res = await fetch('/api/registrar-cliente', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: u, password: p }) });
+                const data = await res.json();
+                btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false;
+                if (data.exito) {
+                    alert("¡Cuenta creada con éxito! Ingresando al chat...");
+                    document.getElementById('login-user').value = u; document.getElementById('login-pass').value = p;
+                    validarAcceso(); 
+                } else alert(data.mensaje);
+            } catch (e) { btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false; alert("Error al registrarse."); }
+        }
+
         function validarAcceso() {
-            const usuarioInput = document.getElementById('username').value.trim();
-            const passwordInput = document.getElementById('password').value.trim();
-            
-            if (usuarioInput === '' || passwordInput === '') return alert('Por favor, ingresá tu usuario y contraseña.');
+            const u = document.getElementById('login-user').value.trim(); const p = document.getElementById('login-pass').value.trim();
+            if (!u || !p) return alert('Ingresá usuario y contraseña.');
+            const btn = document.getElementById('btn-login'); btn.innerText = 'Validando...'; btn.disabled = true;
 
-            const btn = document.getElementById('btn-login');
-            btn.innerText = 'Validando...'; btn.disabled = true;
-
-            fetch('/api/validar-cliente', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario: usuarioInput, password: passwordInput })
-            })
-            .then(res => res.json())
-            .then(data => {
+            fetch('/api/validar-cliente', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: u, password: p }) })
+            .then(res => res.json()).then(data => {
                 btn.innerText = 'Ingresar al Chat'; btn.disabled = false;
                 if(data.exito) {
-                    window.usuarioLogueado = usuarioInput; 
-                    socket.emit('identificar_usuario', { usuario: usuarioInput });
-                    document.getElementById('btn-cerrar-sesion').classList.remove('hidden');
-                } else {
-                    alert('Usuario o contraseña incorrectos. Consultá con soporte.');
-                }
-            })
-            .catch(err => {
-                btn.innerText = 'Ingresar al Chat'; btn.disabled = false;
-                alert('Hubo un error al conectar con el servidor.');
-            });
+                    window.usuarioLogueado = u; 
+                    socket.emit('identificar_usuario', { usuario: u });
+                } else alert('Usuario o contraseña incorrectos.');
+            }).catch(err => { btn.innerText = 'Ingresar al Chat'; btn.disabled = false; alert('Error con el servidor.'); });
         }
 
         function cerrarSesion() {
-            socket.disconnect(); 
-            socket.connect(); 
+            socket.disconnect(); socket.connect(); 
             window.usuarioLogueado = null;
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('header-title').innerText = "Chat Asistencia (En línea)";
-            document.getElementById('btn-cerrar-sesion').classList.add('hidden');
+            document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
+            document.getElementById('header-title-text').innerText = "Chat Asistencia (En línea)";
             msgArea.innerHTML = '';
-            mostrarPantalla('screen-login');
+            cambiarVista('login');
         }
 
-        document.getElementById('password').addEventListener('keypress', function (e) { if (e.key === 'Enter') validarAcceso(); });
+        document.getElementById('login-pass').addEventListener('keypress', function (e) { if (e.key === 'Enter') validarAcceso(); });
         document.getElementById('reg-pass').addEventListener('keypress', function (e) { if (e.key === 'Enter') registrarUsuario(); });
 
         socket.on('resultado_validacion', (respuesta) => {
             if (respuesta.exito) {
-                document.getElementById('header-title').innerText = "Hola, " + respuesta.usuario;
-                mostrarPantalla('screen-conversation');
+                document.getElementById('header-title-text').innerText = "Hola, " + respuesta.usuario;
+                cambiarVista('chat');
                 irAlMenuPrincipal();
             }
         });
 
         // ==========================================
-        // LÓGICA DEL MENÚ Y CHAT
+        // CHAT Y MENÚ
         // ==========================================
         function irAlMenuPrincipal() {
             document.getElementById('container-deposit-options').style.display = 'none';
             document.getElementById('container-chat-input').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('container-menu-options').style.display = 'grid';
-            
             let msgBot = 'Volviste al menú principal. ¿En qué te podemos ayudar?';
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot"><b>Club Zeus:</b><br>${msgBot}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
@@ -285,26 +300,23 @@
 
         function mostrarSubMenuMinijuegos() {
             document.getElementById('container-menu-options').style.display = 'none';
-            document.getElementById('container-deposit-options').style.display = 'none';
-            document.getElementById('container-chat-input').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'grid';
         }
 
         function seleccionarOpcion(opcion) {
             document.getElementById('container-menu-options').style.display = 'none';
-
             if (opcion === 'Depósito') {
                 document.getElementById('container-deposit-options').style.display = 'grid';
-                let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><b>Titular:</b> BAIRES LOGISTICAS AUDIOVISUALES S.A.<br><br>Realizá la transferencia y enviá el comprobante 📄`;
+                let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><br>Enviá el comprobante 📄`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
             } else if (opcion === 'Soporte') {
                 document.getElementById('container-chat-input').style.display = 'flex';
-                let msgBot = `🛠️ <b>Conectado con Soporte:</b> Podés escribir tu consulta acá abajo. Un asesor te va a responder de inmediato.`;
+                let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
             } else {
-                let msgBot = `⏳ Derivando a un asesor... Elegiste la opción de <b>${opcion}</b>. Aguardá un instante en línea por favor.`;
+                let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
                 setTimeout(irAlMenuPrincipal, 4000); 
@@ -313,233 +325,150 @@
         }
 
         function ejecutarAccionDeposito(accion) {
-            let confirmacionBot = "";
-            if(accion === 'Subir Comprobante') confirmacionBot = "📁 Archivo recibido con éxito. Aguarde a que un cajero verifique su saldo.";
-            if(accion === 'Reportar Pago') confirmacionBot = "✅ Pago reportado. El administrador revisará la transferencia a la brevedad.";
-
-            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${confirmacionBot}</div></div>`;
+            let msg = accion === 'Subir Comprobante' ? "📁 Archivo recibido." : "✅ Pago reportado.";
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msg}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
-            socket.emit('cliente_accion', { estado: accion, mensajeCliente: accion, mensajeBot: confirmacionBot });
+            socket.emit('cliente_accion', { estado: accion, mensajeCliente: accion, mensajeBot: msg });
         }
 
         function enviarMensajeLibreCliente() {
-            const input = document.getElementById('client-raw-input');
-            const texto = input.value.trim();
-            if (texto === '') return;
+            const input = document.getElementById('client-raw-input'); const texto = input.value.trim(); if (texto === '') return;
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${texto}</div><span class="status-text">✓ Enviado</span></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
-            socket.emit('cliente_envia_mensaje_libre', { mensaje: texto });
-            input.value = '';
+            socket.emit('cliente_envia_mensaje_libre', { mensaje: texto }); input.value = '';
         }
 
-        document.getElementById('client-raw-input').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') enviarMensajeLibreCliente();
-        });
+        document.getElementById('client-raw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') enviarMensajeLibreCliente(); });
 
         socket.on('recibir_mensaje_admin', (datos) => {
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${datos.mensaje}</div></div>`;
-            marcarMensajesLocalesComoVistos();
+            document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
             msgArea.scrollTop = msgArea.scrollHeight;
         });
 
         socket.on('tus_mensajes_fueron_leidos', () => {
-            marcarMensajesLocalesComoVistos();
+            document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
         });
 
-        function marcarMensajesLocalesComoVistos() {
-            const marcas = document.querySelectorAll('.status-text');
-            marcas.forEach(m => {
-                m.innerText = '✓ Visto';
-                m.classList.add('visto');
+        // ==========================================
+        // SISTEMA DE MINIJUEGOS Y MODALES
+        // ==========================================
+        function abrirModal(juego) {
+            fetch(`/api/${juego === 'traga' ? 'tragamonedas' : juego}-config`).then(res => res.json()).then(data => {
+                if(!data.exito || data.config.length === 0) return alert("Juego en mantenimiento.");
+                
+                if(juego === 'ruleta') {
+                    ruletaConfig = data.config; currentRotation = 0;
+                    const c = document.getElementById('ruleta-canvas'); const ctx = c.getContext('2d');
+                    ctx.clearRect(0,0,c.width,c.height); const sl = (2*Math.PI)/ruletaConfig.length; const cols = ['#ff007f','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'];
+                    for(let i=0; i<ruletaConfig.length; i++) {
+                        ctx.beginPath(); ctx.fillStyle = cols[i%cols.length]; ctx.moveTo(140,140); ctx.arc(140,140,138,i*sl,(i+1)*sl); ctx.fill(); ctx.stroke();
+                        ctx.save(); ctx.translate(140,140); ctx.rotate(i*sl+sl/2); ctx.textAlign="right"; ctx.fillStyle="white"; ctx.font="bold 13px sans-serif"; ctx.fillText(ruletaConfig[i].premio.substring(0,15), 125, 5); ctx.restore();
+                    }
+                    c.style.transition='none'; c.style.transform='rotate(0deg)'; void c.offsetWidth; c.style.transition='transform 5s cubic-bezier(0.25,0.1,0.15,1)';
+                    document.getElementById('btn-spin-ruleta').disabled = false;
+                }
+                else if (juego === 'raspa') {
+                    raspaConfig = data.config; raspaYaJugada = false;
+                    document.getElementById('client-tablero-raspa').innerHTML = Array(6).fill('<div class="raspa-block-card" onclick="jugarRaspa(arguments[0])"><div class="raspa-cover-layer">?</div></div>').map((s,i) => s.replace('arguments[0]', i)).join('');
+                }
+                else if (juego === 'traga') { tragaJugado = false; document.getElementById('btn-spin-traga').disabled = false; ['1','2','3'].forEach(i => document.getElementById(`client-slot-${i}`).innerText='🎰'); }
+                else if (juego === 'cartas') { cartasJugado = false; document.getElementById('client-card').classList.remove('flipped'); }
+                else if (juego === 'moneda') { monedaJugado = false; document.getElementById('client-coin').style.transform='rotateY(0deg)'; document.getElementById('client-coin').innerText='🪙'; }
+
+                document.querySelectorAll('.btn-close-modal').forEach(b => b.classList.add('hidden'));
+                document.getElementById(`modal-${juego}`).style.display = 'block';
             });
         }
 
-        // ==========================================
-        // LÓGICA DE LA RULETA VISUAL
-        // ==========================================
-        async function abrirModalRuleta() {
-            const res = await fetch('/api/ruleta-config');
-            const data = await res.json();
-            if(!data.exito || data.config.length === 0) {
-                alert("La ruleta no está configurada por el administrador."); return;
-            }
-            ruletaConfig = data.config;
-            dibujarRuleta(ruletaConfig);
-            
-            document.getElementById('ruleta-canvas').style.transition = 'none';
-            document.getElementById('ruleta-canvas').style.transform = `rotate(${currentRotation}deg)`;
-            void document.getElementById('ruleta-canvas').offsetWidth; 
-            
-            document.getElementById('ruleta-canvas').style.transition = 'transform 5s cubic-bezier(0.25, 0.1, 0.15, 1)';
-            document.getElementById('btn-spin').disabled = false;
-            document.getElementById('btn-close-ruleta').style.display = 'none';
-            document.getElementById('modal-ruleta').style.display = 'block';
-        }
-
-        function cerrarRuletaModal() {
-            document.getElementById('modal-ruleta').style.display = 'none';
+        function cerrarModal(juego) {
+            document.getElementById(`modal-${juego}`).style.display = 'none';
             irAlMenuPrincipal();
         }
 
-        function dibujarRuleta(config) {
-            const canvas = document.getElementById('ruleta-canvas');
-            const ctx = canvas.getContext('2d');
-            const center = canvas.width / 2;
-            const radius = center - 2; 
-            const sliceAngle = (2 * Math.PI) / config.length;
-            const colors = ['#ff007f', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for(let i=0; i<config.length; i++) {
-                const angle = i * sliceAngle;
-                ctx.beginPath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.moveTo(center, center);
-                ctx.arc(center, center, radius, angle, angle + sliceAngle);
-                ctx.fill();
-                ctx.lineWidth = 2;
-                ctx.strokeStyle = "#0b0f19";
-                ctx.stroke();
-
-                ctx.save();
-                ctx.translate(center, center);
-                ctx.rotate(angle + sliceAngle / 2); 
-                ctx.textAlign = "right";
-                ctx.fillStyle = "white";
-                ctx.font = "bold 13px 'Segoe UI', sans-serif";
-                let text = config[i].premio;
-                if(text.length > 15) text = text.substring(0, 15) + "..";
-                ctx.fillText(text, radius - 15, 5); 
-                ctx.restore();
-            }
+        function anunciarVictoria(emoji, titulo, msg) {
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${emoji} Jugué: ${titulo}</div><span class="status-text">✓ Enviado</span></div>`;
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${msg}</div></div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+            socket.emit('cliente_accion', { estado: 'Menú' }); 
         }
 
-        function iniciarGiro() {
-            document.getElementById('btn-spin').disabled = true;
-
-            fetch('/api/tirar-ruleta', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario: window.usuarioLogueado })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(!data.exito) {
-                    alert(data.mensaje);
-                    cerrarRuletaModal();
-                    return;
-                }
-
-                const winnerIndex = ruletaConfig.findIndex(item => item.id === data.premio.id);
-                const sliceDegree = 360 / ruletaConfig.length;
-                const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
-                const targetRotation = 270 - centerOfWinner;
-                const currentMod = currentRotation % 360;
-                let needed = targetRotation - currentMod;
-                if (needed < 0) needed += 360; 
-
-                currentRotation += needed + (360 * 5); 
-
-                const canvas = document.getElementById('ruleta-canvas');
-                canvas.style.transform = `rotate(${currentRotation}deg)`;
-
-                setTimeout(() => {
-                    document.getElementById('btn-close-ruleta').style.display = 'block';
-                    
-                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Jugué a la Ruleta de Premios</div><span class="status-text">✓ Enviado</span></div>`;
-                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
-                    msgArea.scrollTop = msgArea.scrollHeight;
-                    socket.emit('cliente_accion', { estado: 'Menú' }); 
-                }, 5300);
-            })
-            .catch(err => {
-                alert("Error de conexión.");
-                cerrarRuletaModal();
+        // --- RUEDAS Y TIRADAS ---
+        function jugarRuleta() {
+            document.getElementById('btn-spin-ruleta').disabled = true;
+            fetch('/api/tirar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
+            .then(r => r.json()).then(data => {
+                if(!data.exito) { alert(data.mensaje); return cerrarModal('ruleta'); }
+                const wIdx = ruletaConfig.findIndex(i => i.id === data.premio.id); const sl = 360/ruletaConfig.length;
+                let needed = (270 - ((wIdx*sl)+(sl/2))) - (currentRotation%360); if(needed<0) needed+=360;
+                currentRotation += needed + (360*5);
+                document.getElementById('ruleta-canvas').style.transform = `rotate(${currentRotation}deg)`;
+                setTimeout(() => { document.querySelector('#modal-ruleta .btn-close-modal').classList.remove('hidden'); anunciarVictoria('🎯', 'Ruleta', data.mensaje); }, 5300);
             });
         }
 
-        // ==========================================
-        // LÓGICA DEL RASPA Y GANA VISUAL
-        // ==========================================
-        function abrirModalRaspa() {
-            fetch('/api/raspa-config')
-            .then(res => res.json())
-            .then(data => {
-                if(!data.exito || data.config.length === 0) return alert("El Raspa y Gana no está configurado.");
-                raspaConfig = data.config;
-                raspaYaJugada = false;
-
-                const tablero = document.getElementById('client-tablero-raspa');
-                tablero.innerHTML = `
-                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(0)"><div class="raspa-cover-layer">?</div></div>
-                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(1)"><div class="raspa-cover-layer">?</div></div>
-                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(2)"><div class="raspa-cover-layer">?</div></div>
-                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(3)"><div class="raspa-cover-layer">?</div></div>
-                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(4)"><div class="raspa-cover-layer">?</div></div>
-                    <div class="raspa-block-card" onclick="rasparCasilleroCliente(5)"><div class="raspa-cover-layer">?</div></div>
-                `;
-                document.getElementById('btn-close-raspa').style.display = 'none';
-                document.getElementById('modal-raspa').style.display = 'block';
-            });
-        }
-
-        function cerrarRaspaModal() {
-            document.getElementById('modal-raspa').style.display = 'none';
-            irAlMenuPrincipal();
-        }
-
-        function rasparCasilleroCliente(indexClickeado) {
-            if(raspaYaJugada) return;
-            raspaYaJugada = true;
-
-            const casillerosDOM = document.querySelectorAll('.raspa-block-card');
-            casillerosDOM[indexClickeado].querySelector('.raspa-cover-layer').innerText = "⏳";
-
-            fetch('/api/tirar-raspa', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ usuario: window.usuarioLogueado })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if(!data.exito) {
-                    alert(data.mensaje);
-                    cerrarRaspaModal();
-                    return;
-                }
-
-                const ganador = data.premio;
-                const poolPremiosRestantes = raspaConfig.filter(item => item.id !== ganador.id);
-                poolPremiosRestantes.sort(() => Math.random() - 0.5);
-
-                const cardGanadora = casillerosDOM[indexClickeado];
-                cardGanadora.classList.add('scratched');
-                cardGanadora.querySelector('.raspa-cover-layer').style.opacity = '0';
-                cardGanadora.innerHTML += `<div class="raspa-prize-text">${ganador.premio}</div><div class="raspa-value-text">$${ganador.valor}</div>`;
-
+        function jugarRaspa(idx) {
+            if(raspaYaJugada) return; raspaYaJugada = true;
+            const cards = document.querySelectorAll('#client-tablero-raspa .raspa-block-card'); cards[idx].querySelector('.raspa-cover-layer').innerText = "⏳";
+            fetch('/api/tirar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
+            .then(r => r.json()).then(data => {
+                if(!data.exito) { alert(data.mensaje); return cerrarModal('raspa'); }
+                const pools = raspaConfig.filter(i => i.id !== data.premio.id).sort(() => Math.random() - 0.5);
+                cards[idx].classList.add('scratched'); cards[idx].querySelector('.raspa-cover-layer').style.opacity = '0';
+                cards[idx].innerHTML += `<div class="raspa-prize-text">${data.premio.premio}</div><div class="raspa-value-text">$${data.premio.valor}</div>`;
                 setTimeout(() => {
-                    let rIndex = 0;
-                    casillerosDOM.forEach((card, i) => {
-                        if(i !== indexClickeado) {
-                            card.classList.add('others-revealed');
-                            card.querySelector('.raspa-cover-layer').style.opacity = '0';
-                            const premioDeRelleno = poolPremiosRestantes[rIndex];
-                            card.innerHTML += `<div class="raspa-prize-text">${premioDeRelleno.premio}</div><div class="raspa-value-text">$${premioDeRelleno.valor}</div>`;
-                            rIndex++;
-                        }
-                    });
-
-                    document.getElementById('btn-close-raspa').style.display = 'block';
-
-                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎫 Jugué al Raspa y Gana Diario</div><span class="status-text">✓ Enviado</span></div>`;
-                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
-                    msgArea.scrollTop = msgArea.scrollHeight;
-                    socket.emit('cliente_accion', { estado: 'Menú' }); 
+                    let rIdx = 0; cards.forEach((c, i) => { if(i!==idx) { c.classList.add('others-revealed'); c.querySelector('.raspa-cover-layer').style.opacity='0'; c.innerHTML += `<div class="raspa-prize-text">${pools[rIdx].premio}</div><div class="raspa-value-text">$${pools[rIdx].valor}</div>`; rIdx++; }});
+                    document.querySelector('#modal-raspa .btn-close-modal').classList.remove('hidden'); anunciarVictoria('🎫', 'Raspa y Gana', data.mensaje);
                 }, 800);
-            })
-            .catch(err => {
-                alert("Error de conexión al raspar.");
-                cerrarRaspaModal();
+            });
+        }
+
+        function jugarTragamonedas() {
+            if(tragaJugado) return;
+            document.getElementById('btn-spin-traga').disabled = true;
+            fetch('/api/tirar-tragamonedas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
+            .then(r => r.json()).then(data => {
+                if(!data.exito) { alert(data.mensaje); return cerrarModal('traga'); }
+                tragaJugado = true;
+                document.getElementById('client-slot-1').innerText="⏳"; document.getElementById('client-slot-2').innerText="⏳"; document.getElementById('client-slot-3').innerText="⏳";
+                setTimeout(() => {
+                    let icons = ['🍒','💎','🔔','🍋','❌'];
+                    document.getElementById('client-slot-1').innerText = icons[Math.floor(Math.random()*icons.length)];
+                    document.getElementById('client-slot-2').innerText = icons[Math.floor(Math.random()*icons.length)];
+                    document.getElementById('client-slot-3').innerText = data.premio.premio.substring(0,2) || "🎰";
+                    document.querySelector('#modal-traga .btn-close-modal').classList.remove('hidden');
+                    anunciarVictoria('🍒', 'Slots', data.mensaje);
+                }, 1500);
+            });
+        }
+
+        function jugarCartas() {
+            if(cartasJugado) return;
+            fetch('/api/tirar-cartas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
+            .then(r => r.json()).then(data => {
+                if(!data.exito) { alert(data.mensaje); return cerrarModal('cartas'); }
+                cartasJugado = true;
+                document.getElementById('client-card').classList.add('flipped');
+                document.getElementById('client-card-val').innerText = data.premio.premio.substring(0,2) || "🃏";
+                document.getElementById('client-card-desc').innerText = data.premio.premio;
+                document.querySelector('#modal-cartas .btn-close-modal').classList.remove('hidden');
+                anunciarVictoria('🃏', 'Carta de la Suerte', data.mensaje);
+            });
+        }
+
+        function jugarMoneda() {
+            if(monedaJugado) return;
+            fetch('/api/tirar-moneda', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
+            .then(r => r.json()).then(data => {
+                if(!data.exito) { alert(data.mensaje); return cerrarModal('moneda'); }
+                monedaJugado = true;
+                const c = document.getElementById('client-coin');
+                c.style.transform = `rotateY(${180 * 5}deg)`;
+                setTimeout(() => {
+                    c.innerText = data.premio.premio.includes('Cara') ? '🟡' : (data.premio.premio.includes('Cruz') ? '⚪' : '💥');
+                    document.querySelector('#modal-moneda .btn-close-modal').classList.remove('hidden');
+                    anunciarVictoria('🪙', 'Cara o Cruz', data.mensaje);
+                }, 1500);
             });
         }
     </script>
