@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-// Importamos los modelos necesarios para el sistema de créditos
+// Importamos los modelos necesarios
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 
@@ -109,6 +109,17 @@ module.exports = function(app, requireLogin) {
     // 💳 RUTAS DE GESTIÓN DE CRÉDITOS (NUEVO BLOQUE)
     // ==============================================================
 
+    // RUTA GET: Obtener transacciones pendientes
+    app.get('/api/transacciones-pendientes', requireLogin, async (req, res) => {
+        try {
+            const tipo = req.query.tipo;
+            const transacciones = await Transaction.find({ type: tipo, status: 'pending' }).populate('userId', 'username');
+            res.json({ transacciones });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
+
     // 1. CLIENTE: Solicitar carga de créditos (Reportar pago)
     app.post('/api/solicitar-carga-creditos', requireLogin, async (req, res) => {
         try {
@@ -145,40 +156,42 @@ module.exports = function(app, requireLogin) {
             transaccion.resolvedAt = new Date();
             await transaccion.save();
 
-            // Sumar créditos al cliente
-            const usuario = await User.findById(transaccion.userId);
-            usuario.credits += transaccion.amount;
-            await usuario.save();
+            // Sumar créditos al cliente (Cambiamos User por Cliente según tu estructura)
+            const Cliente = mongoose.model('Cliente');
+            const cliente = await Cliente.findById(transaccion.userId);
+            cliente.creditos = (cliente.creditos || 0) + transaccion.amount;
+            await cliente.save();
 
-            res.json({ success: true, message: 'Créditos aprobados y cargados al usuario exitosamente.', nuevosCreditos: usuario.credits });
+            res.json({ success: true, message: 'Créditos aprobados y cargados al usuario exitosamente.', nuevosCreditos: cliente.creditos });
         } catch (error) {
             res.status(500).json({ success: false, message: 'Error al aprobar los créditos.', error: error.message });
         }
     });
 
-    // 3. CAJERO/ADMIN: Cargar o retirar créditos manualmente (Acción Rápida en el Panel)
+    // 3. CAJERO/ADMIN: Cargar o retirar créditos manualmente
     app.post('/api/gestion-manual-creditos', requireLogin, async (req, res) => {
         try {
-            const { userId, amount, action } = req.body; // action: 'add' o 'remove'
-            const usuario = await User.findById(userId);
+            const { userId, amount, action } = req.body; 
+            const Cliente = mongoose.model('Cliente');
+            const cliente = await Cliente.findById(userId);
 
-            if (!usuario) {
+            if (!cliente) {
                 return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
             }
 
             if (action === 'add') {
-                usuario.credits += amount;
+                cliente.creditos = (cliente.creditos || 0) + amount;
             } else if (action === 'remove') {
-                if (usuario.credits < amount) {
-                    return res.status(400).json({ success: false, message: 'El usuario no tiene suficientes créditos para retirar esa cantidad.' });
+                if ((cliente.creditos || 0) < amount) {
+                    return res.status(400).json({ success: false, message: 'El usuario no tiene suficientes créditos.' });
                 }
-                usuario.credits -= amount;
+                cliente.creditos -= amount;
             } else {
-                return res.status(400).json({ success: false, message: 'Acción no válida. Usa "add" o "remove".' });
+                return res.status(400).json({ success: false, message: 'Acción no válida.' });
             }
 
-            await usuario.save();
-            res.json({ success: true, message: `Créditos actualizados exitosamente. Saldo actual: ${usuario.credits} créditos.` });
+            await cliente.save();
+            res.json({ success: true, message: `Créditos actualizados. Saldo: ${cliente.creditos} créditos.` });
         } catch (error) {
             res.status(500).json({ success: false, message: 'Error al gestionar los créditos manualmente.', error: error.message });
         }
