@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
 
-// Importar modelo Minigame (corregido para evitar OverwriteModelError)
+// Importar modelo Minigame
 const Minigame = require('./models/Minigame');
 
 const app = express();
@@ -48,6 +48,7 @@ const PanelConfig = mongoose.model('PanelConfig', new mongoose.Schema({
 
 const CierreCaja = mongoose.model('CierreCaja', new mongoose.Schema({
     fecha: String, hora: String, inicio: String, fin: String, turno: String, cajero: String,
+    fechaInicio: String, fechaFin: String, horaInicio: String, horaFin: String,
     ingreso: Number, saldoOro: Number, saldoGanamos: Number, egreso: Number,
     montoEsperado: Number, montoRealFinal: Number, sobranteFaltante: Number, reserva: Number,
     gastos: Array, propinas: Array
@@ -77,16 +78,15 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 }
 
 // ==============================================================
-// ⚙️ 3. MIDDLEWARES Y ARCHIVOS ESTÁTICOS
+// ⚙️ 3. MIDDLEWARES, SESIÓN Y SEGURIDAD (CORREGIDO)
 // ==============================================================
-app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); 
 app.use(session({
     secret: 'CasinoFenix2026_Seguro',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 } 
+    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 horas de sesión
 }));
 
 const requireLogin = (req, res, next) => {
@@ -94,7 +94,7 @@ const requireLogin = (req, res, next) => {
 };
 
 // ==============================================================
-// 🔐 4. RUTAS DE ACCESO (LOGIN / LOGOUT)
+// 🔐 4. RUTAS DE ACCESO (DEBEN ESTAR ANTES DEL STATIC)
 // ==============================================================
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -111,12 +111,16 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
+// INTERCEPTAMOS EL PANEL DE ADMIN PARA PEDIR LOGIN
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+// AHORA SÍ, SERVIR ARCHIVOS ESTÁTICOS PÚBLICOS
+app.use(express.static(path.join(__dirname, 'public')));
+
 // ==============================================================
-// 📦 5. MEMORIA COMPARTIDA (SHARED STATE)
+// 📦 5. MEMORIA COMPARTIDA Y WEBHOOKS
 // ==============================================================
 const sharedState = {
     usuariosConectados: [],
@@ -124,9 +128,6 @@ const sharedState = {
     usuarioSeleccionadoActivoAdmin: null
 };
 
-// ==============================================================
-// 💳 6. BILLETERA WEBHOOK
-// ==============================================================
 app.post('/api/webhook/billetera', async (req, res) => {
     res.status(200).send("OK");
     try {
@@ -166,19 +167,34 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
         });
         res.json({ exito: true });
     } else {
-        res.status(500).json({ exito: false, mensaje: 'No hay administrador conectado por Sockets actualmente.' });
+        res.status(500).json({ exito: false, mensaje: 'No hay administrador conectado.' });
+    }
+});
+
+// NUEVA RUTA DIRECTA PARA GUARDAR EL COSTO DE LOS MINIJUEGOS POR NOMBRE
+app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res) => {
+    try {
+        const { name, nuevoCosto } = req.body;
+        const minijuego = await Minigame.findOneAndUpdate({ name: name }, { creditCost: nuevoCosto }, { new: true });
+        
+        if (!minijuego) {
+            return res.status(404).json({ success: false, message: `Minijuego '${name}' no encontrado en la base de datos.` });
+        }
+        res.json({ success: true, message: `El costo de ${name} ha sido actualizado a ${nuevoCosto} Créditos.` });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
     }
 });
 
 // ==============================================================
-// 🚀 7. IMPORTACIÓN DE RUTAS MODULARES
+// 🚀 6. IMPORTACIÓN DE RUTAS MODULARES
 // ==============================================================
 require('./routes/finanzas')(app, requireLogin, io, sharedState);
 require('./routes/clientes')(app, requireLogin, io, sharedState);
 require('./routes/eventos')(app, requireLogin, io, sharedState);
 
 // ==============================================================
-// 🔌 8. COMUNICACIÓN EN VIVO (SOCKETS)
+// 🔌 7. COMUNICACIÓN EN VIVO (SOCKETS)
 // ==============================================================
 io.on('connection', (socket) => {
     
@@ -249,7 +265,7 @@ io.on('connection', (socket) => {
             exito: true, 
             usuario: datos.usuario, 
             historial: clienteDB.historialChat,
-            creditos: clienteDB.creditos || 0 
+            creditos: clienteDB.creditos || 0
         });
         
         if (sharedState.adminSocketId) {
@@ -315,7 +331,7 @@ io.on('connection', (socket) => {
 });
 
 // ==============================================================
-// 🛠️ INICIALIZADOR DE DATOS
+// 🛠️ 8. INICIALIZADOR DE DATOS
 // ==============================================================
 async function inicializarDatosDePrueba() {
     const juegos = ['Ruleta', 'Raspa', 'Tragamonedas', 'Cartas', 'Moneda'];
@@ -327,7 +343,6 @@ async function inicializarDatosDePrueba() {
     const countCl = await Cliente.countDocuments();
     if(countCl === 0) { await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save(); }
     
-    // Configuraciones iniciales (Ruleta, etc) se mantienen iguales...
     if (await Ruleta.countDocuments() === 0) {
         await new Ruleta({ configuracion: [
             { id: 0, premio: '🏆 JACKPOT', valor: 50000, probabilidad: 2 },
