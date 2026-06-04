@@ -7,11 +7,9 @@
     <script src="/socket.io/socket.io.js"></script>
     <style>
         body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', sans-serif; color: #cbd5e1; display: flex; height: 100vh; overflow: hidden; }
-        
         .sidebar { width: 240px; background-color: #111827; border-right: 1px solid #1f2937; padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; flex-shrink: 0; }
         .sidebar h2 { color: #f8fafc; font-size: 18px; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
         .menu-category { font-size: 11px; font-weight: bold; color: #4b5563; text-transform: uppercase; margin-top: 15px; letter-spacing: 1px; }
-        
         .nav-btn { background: none; border: none; color: #94a3b8; text-align: left; padding: 10px 12px; font-size: 13.5px; font-weight: 600; cursor: pointer; border-radius: 6px; width: 100%; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
         .nav-btn.active-nav { color: #38bdf8; background-color: #1f2937; box-shadow: inset 4px 0 0 #38bdf8; }
         .nav-btn:hover { background-color: #1f2937; color: white; }
@@ -23,23 +21,16 @@
 
         .main-content { flex: 1; display: flex; flex-direction: column; background-color: #0f172a; }
         .top-bar { height: 60px; background-color: #111827; border-bottom: 1px solid #1f2937; display: flex; align-items: center; padding: 0 30px; font-weight: bold; color: #f8fafc; justify-content: space-between; }
-        
         .workspace { flex: 1; display: flex; overflow: hidden; position: relative; }
         .view-section { display: none; width: 100%; height: 100%; flex-direction: column; }
         .view-section.active-view { display: flex; }
 
         .panel-inside { flex: 1; padding: 30px; overflow-y: auto; }
-        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 25px; }
         .stat-card { background-color: #111827; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; text-align: center; }
-        .stat-card .num { font-size: 26px; font-weight: bold; color: white; margin-top: 5px; }
-
         .data-table { width: 100%; border-collapse: collapse; background-color: #111827; border-radius: 12px; overflow: hidden; border: 1px solid #1f2937; }
         .data-table th { background-color: #1f2937; color: #38bdf8; padding: 14px; text-align: left; font-size: 13px; }
         .data-table td { padding: 14px; border-bottom: 1px solid #1f2937; color: white; font-size: 13px; }
         
-        .btn-action-table { padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; border: none; cursor: pointer; margin-right: 5px; }
-        .btn-edit { background-color: #e2e8f0; color: #1e293b; }
-        .btn-delete { background-color: #ef4444; color: white; }
         .btn-save { background-color: #2563eb; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; margin-top: 15px; transition: background 0.2s; }
         .btn-save:hover { background-color: #1d4ed8; }
 
@@ -63,15 +54,14 @@
         .read-receipt.seen { color: #38bdf8; }
         .monitor-input-area { padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; display: flex; gap: 10px; }
         .admin-chat-input { flex: 1; background-color: #1f2937; border: 1px solid #374151; border-radius: 6px; padding: 12px; color: white; outline: none; }
-        .admin-chat-input:focus { border-color: #38bdf8; }
 
-        .event-tabs-header { display: flex; gap: 10px; background-color: #111827; padding: 10px; border-radius: 10px; border: 1px solid #1f2937; margin-bottom: 20px; }
-        .event-tab-btn { background: none; border: none; color: #94a3b8; padding: 10px 16px; font-weight: bold; font-size: 13px; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+        .event-tabs-header { display: flex; gap: 10px; background-color: #111827; padding: 10px; border-radius: 10px; border: 1px solid #1f2937; margin-bottom: 20px; overflow-x: auto; }
+        .event-tab-btn { background: none; border: none; color: #94a3b8; padding: 10px 16px; font-weight: bold; font-size: 13px; cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 100px; }
         .event-tab-btn.active-event-tab { background-color: #1f2937; color: #38bdf8; border: 1px solid #374151; }
         .event-subview { display: none; background-color: #111827; border: 1px solid #1f2937; padding: 25px; border-radius: 12px; }
         .event-subview.active-subview { display: flex; flex-direction: column; }
         
-        .ruleta-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15); border: 1px solid #ffaa00; }
+        .ruleta-table { width: 100%; border-collapse: separate; border-spacing: 0; border-radius: 8px; overflow: hidden; box-shadow: 0 0 15px rgba(255, 170, 0, 0.15); border: 1px solid #ffaa00; margin-bottom: 10px; }
         .ruleta-table th { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; padding: 14px; text-align: left; font-size: 14px; text-transform: uppercase; letter-spacing: 1px; }
         .ruleta-table td { padding: 12px; border-bottom: 1px solid #1f2937; color: white; background-color: #0b0f19; }
         .input-ruleta-text { background-color: #1f2937; border: 1px solid #ffaa00; color: #ffaa00; font-weight: bold; padding: 8px; border-radius: 6px; width: 150px; font-size: 13px; outline: none; }
@@ -84,7 +74,7 @@
         .btn-spin-admin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 14px; cursor: pointer; margin-top: 20px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
         .btn-spin-admin:disabled { opacity: 0.5; cursor: not-allowed; }
 
-        .raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 320px; margin: 15px 0; }
+        .raspa-grid-board { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: 100%; max-width: 320px; margin: 15px auto; }
         .raspa-block-card { width: 100px; height: 85px; background-color: #1f2937; border: 2px dashed #ffaa00; border-radius: 8px; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; position: relative; overflow: hidden; transition: all 0.3s; }
         .raspa-block-card.scratched { background-color: #0b0f19; border-style: solid; border-color: #2563eb; }
         .raspa-block-card.others-revealed { background-color: #111827; border-style: solid; border-color: #374151; opacity: 0.75; }
@@ -135,6 +125,17 @@
         .resumen-table th.col-tot { background-color: #9ca3af; color: #111827; }
         .resumen-table td { padding: 12px; font-weight: bold; border: 1px solid #1f2937; background-color: #1e293b; color: white; }
         .resumen-table td.header-row { background-color: #701a35; color: white; text-align: left; }
+
+        /* ESTILOS SIMULADORES NUEVOS (Tragamonedas, Cartas, Moneda) */
+        .slot-machine { display: flex; justify-content: center; gap: 10px; margin: 20px 0; }
+        .slot-reel { width: 70px; height: 90px; background-color: #1f2937; border: 2px solid #ffaa00; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 40px; box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+        .card-flip { width: 120px; height: 160px; margin: 20px auto; perspective: 1000px; }
+        .card-inner { width: 100%; height: 100%; position: relative; transition: transform 0.8s; transform-style: preserve-3d; }
+        .card-inner.flipped { transform: rotateY(180deg); }
+        .card-front, .card-back { width: 100%; height: 100%; position: absolute; backface-visibility: hidden; border-radius: 12px; display: flex; flex-direction: column; justify-content: center; align-items: center; border: 2px solid #ffaa00; box-sizing: border-box; }
+        .card-front { background: linear-gradient(135deg, #1f2937, #111827); color: #ffaa00; font-size: 50px; }
+        .card-back { background-color: white; color: black; transform: rotateY(180deg); padding: 10px; }
+        .coin-flip { width: 120px; height: 120px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 4px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 50px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1s; }
     </style>
 </head>
 <body>
@@ -220,7 +221,6 @@
             <div id="section-cierre" class="view-section">
                 <div class="panel-inside">
                     <h3 style="color:white; margin-top:0;">Registro Operativo - Cierre de Caja</h3>
-                    
                     <div class="excel-card">
                         <div class="excel-grid">
                             <div>
@@ -228,9 +228,7 @@
                                     <tr><th>Fecha</th><td><input type="date" id="cc-fecha" class="input-text-adv" style="margin-bottom:0;"></td><th>Inicio</th><td><input type="time" id="cc-inicio" class="input-text-adv" style="margin-bottom:0;"></td></tr>
                                     <tr><th>Hora</th><td><input type="time" id="cc-hora" class="input-text-adv" style="margin-bottom:0;"></td><th>Fin</th><td><input type="time" id="cc-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
                                     <tr><th colspan="2">Cajero</th><td colspan="2"><input type="text" id="cc-cajero" class="input-text-adv" style="margin-bottom:0;"></td></tr>
-                                    <tr><th colspan="2">Turno</th><td colspan="2">
-                                        <select id="cc-turno" class="input-text-adv" style="margin-bottom:0;"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select>
-                                    </td></tr>
+                                    <tr><th colspan="2">Turno</th><td colspan="2"><select id="cc-turno" class="input-text-adv" style="margin-bottom:0;"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select></td></tr>
                                 </table>
                                 <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">GASTOS JORNADA</h4>
                                 <table class="table-custom" id="tabla-gastos"><thead><tr><th>Tipo</th><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
@@ -278,30 +276,12 @@
                         <h3 style="margin:0; color:#38bdf8;">INGRESAR FECHA PARA RESUMEN:</h3>
                         <input type="date" id="res-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarResumen()">
                     </div>
-
-                    <table class="resumen-table">
-                        <thead>
-                            <tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr>
-                        </thead>
-                        <tbody id="res-diario">
-                            </tbody>
-                    </table>
-
+                    <table class="resumen-table"><thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead><tbody id="res-diario"></tbody></table>
                     <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:20px;">
-                        <table class="resumen-table">
-                            <thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead>
-                            <tbody id="res-mensual-salidas"></tbody>
-                        </table>
-
+                        <table class="resumen-table"><thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead><tbody id="res-mensual-salidas"></tbody></table>
                         <div>
-                            <table class="resumen-table" style="margin-bottom:15px;">
-                                <thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead>
-                                <tbody id="res-mensual-fichas"></tbody>
-                            </table>
-                            <table class="resumen-table">
-                                <thead><tr><th style="background:#4c0519;">BONOS</th><th style="background:#701a35;">NUEVOS (BB)</th><th style="background:#b45309;">RECOMENDADOS (BR)</th></tr></thead>
-                                <tbody id="res-mensual-bonos"></tbody>
-                            </table>
+                            <table class="resumen-table" style="margin-bottom:15px;"><thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead><tbody id="res-mensual-fichas"></tbody></table>
+                            <table class="resumen-table"><thead><tr><th style="background:#4c0519;">BONOS</th><th style="background:#701a35;">NUEVOS (BB)</th><th style="background:#b45309;">RECOMENDADOS (BR)</th></tr></thead><tbody id="res-mensual-bonos"></tbody></table>
                         </div>
                     </div>
                 </div>
@@ -310,13 +290,10 @@
             <div id="section-historial" class="view-section">
                 <div class="panel-inside">
                     <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #1f2937;">
-                        <h3 style="margin:0; color:#38bdf8;">SELECCIONAR FECHA PARA HISTORIAL:</h3>
+                        <h3 style="margin:0; color:#38bdf8;">SELECCIONAR FECHA PARA HISTORIAL COMPLETO:</h3>
                         <input type="date" id="hist-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarHistorialCajas()">
                     </div>
-                    
-                    <div id="historial-resultados">
-                        <p style="color:#64748b; font-size:14px; text-align:center; margin-top:40px;">Por favor, seleccioná una fecha para ver las planillas de caja guardadas.</p>
-                    </div>
+                    <div id="historial-resultados"><p style="color:#64748b; font-size:14px; text-align:center; margin-top:40px;">Por favor, seleccioná una fecha para ver las planillas de caja guardadas.</p></div>
                 </div>
             </div>
 
@@ -339,28 +316,13 @@
             <div id="section-retencion" class="view-section">
                 <div class="panel-inside">
                     <h4 style="color:white; font-size: 20px; margin: 0 0 5px 0;">Automatización de Retención</h4>
-                    <p style="color: #64748b; font-size:13.5px; margin: 0 0 20px 0;">Activá las alertas por inactividad. Estos cambios se guardarán permanentemente en la base de datos.</p>
+                    <p style="color: #64748b; font-size:13.5px; margin: 0 0 20px 0;">Activá las alertas por inactividad.</p>
                     <div class="retencion-container">
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-0" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div>
-                            <input type="text" id="ret-txt-0" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-1" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div>
-                            <input type="text" id="ret-txt-1" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-2" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div>
-                            <input type="text" id="ret-txt-2" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-3"><span class="slider"></span></label><span>Inactivo 15 días</span></div>
-                            <input type="text" id="ret-txt-3" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁">
-                        </div>
-                        <div class="retencion-block">
-                            <div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-4"><span class="slider"></span></label><span>Inactivo 30 días</span></div>
-                            <input type="text" id="ret-txt-4" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy.">
-                        </div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-0" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div><input type="text" id="ret-txt-0" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-1" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div><input type="text" id="ret-txt-1" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-2" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div><input type="text" id="ret-txt-2" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-3"><span class="slider"></span></label><span>Inactivo 15 días</span></div><input type="text" id="ret-txt-3" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁"></div>
+                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-4"><span class="slider"></span></label><span>Inactivo 30 días</span></div><input type="text" id="ret-txt-4" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy."></div>
                     </div>
                     <button class="btn-save" onclick="guardarConfig('retencion')">Guardar Reglas</button>
                 </div>
@@ -371,6 +333,9 @@
                     <div class="event-tabs-header">
                         <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯<br>Ruleta</button>
                         <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫<br>Raspa/Gana</button>
+                        <button class="event-tab-btn" id="tab-ev-traga" onclick="cambiarSubJuego('traga')">🍒<br>Slots</button>
+                        <button class="event-tab-btn" id="tab-ev-cartas" onclick="cambiarSubJuego('cartas')">🃏<br>Cartas</button>
+                        <button class="event-tab-btn" id="tab-ev-moneda" onclick="cambiarSubJuego('moneda')">🪙<br>Moneda</button>
                     </div>
 
                     <div id="subview-ruleta" class="event-subview active-subview">
@@ -380,57 +345,142 @@
                                 <table class="ruleta-table" id="tabla-config-ruleta">
                                     <thead><tr><th>ID</th><th>Premio / Segmento</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
                                     <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🏆 JACKPOT"></td><td><input type="text" class="input-ruleta-val" value="50000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="2"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🔥 Premio Mayor"></td><td><input type="text" class="input-ruleta-val" value="10000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="8"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="⭐ Premio Medio"></td><td><input type="text" class="input-ruleta-val" value="5000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="12"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🍀 Premio Chico"></td><td><input type="text" class="input-ruleta-val" value="2000"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="18"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="✨ Consolación"></td><td><input type="text" class="input-ruleta-val" value="500"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="20"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()" value="🎁 Sorpresa"></td><td><input type="text" class="input-ruleta-val" value="100"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()" value="40"> %</td></tr>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
                                     </tbody>
                                 </table>
-                                <button class="btn-save" onclick="guardarRuleta()">Guardar Configuración Ruleta</button>
+                                <button class="btn-save" onclick="guardarEvento('ruleta')">Guardar Configuración Ruleta</button>
                             </div>
                             <div style="width: 280px; text-align: center;">
                                 <div class="ruleta-container">
                                     <div class="ruleta-pointer">▼</div>
                                     <canvas id="ruleta-admin-canvas" width="240" height="240"></canvas>
                                 </div>
-                                <button id="btn-spin-admin" class="btn-spin-admin" onclick="iniciarGiroPrueba()">🎲 Simular Tiro Ruleta</button>
-                                <div id="resultado-prueba" style="margin-top:10px; color:#ffaa00; font-weight:bold; font-size:13px;"></div>
+                                <button id="btn-spin-admin" class="btn-spin-admin" onclick="simularJuego('ruleta')">🎲 Simular Tiro</button>
+                                <div id="res-ruleta" style="margin-top:10px; color:#ffaa00; font-weight:bold; font-size:13px;"></div>
                             </div>
                         </div>
                     </div>
 
                     <div id="subview-raspa" class="event-subview">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Raspa y Gana Diario</h4>
-                        <div style="display: flex; gap: 40px; flex-wrap: wrap;">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Raspa y Gana</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
                             <div style="flex: 1; min-width: 450px;">
                                 <table class="ruleta-table" id="tabla-config-raspa">
                                     <thead><tr><th>ID</th><th>Premio / Tarjeta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
                                     <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" value="💎 MEGA BONO"></td><td><input type="text" class="input-ruleta-val" value="30000"></td><td><input type="text" class="prob-input" value="3"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" value="👑 Premio Alto"></td><td><input type="text" class="input-ruleta-val" value="15000"></td><td><input type="text" class="prob-input" value="7"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" value="💵 Premio Intermedio"></td><td><input type="text" class="input-ruleta-val" value="4000"></td><td><input type="text" class="prob-input" value="15"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" value="📦 Premio Base"></td><td><input type="text" class="input-ruleta-val" value="1500"></td><td><input type="text" class="prob-input" value="25"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" value="🪙 Recompensa Menor"></td><td><input type="text" class="input-ruleta-val" value="600"></td><td><input type="text" class="prob-input" value="20"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" value="🎈 Suerte Loca"></td><td><input type="text" class="input-ruleta-val" value="200"></td><td><input type="text" class="prob-input" value="30"> %</td></tr>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
                                     </tbody>
                                 </table>
-                                <button class="btn-save" onclick="guardarRaspa()">Guardar Configuración Raspa</button>
+                                <button class="btn-save" onclick="guardarEvento('raspa')">Guardar Configuración Raspa</button>
                             </div>
-
-                            <div style="width: 320px; background-color: #0b0f19; border: 1px solid #1f2937; border-radius: 12px; padding: 20px; display: flex; flex-direction: column; align-items: center; border-color: #ffaa00;">
-                                <h4 style="margin: 0 0 10px 0; color: #ffaa00; font-size: 14px;">Simulador Tarjeta de Pruebas</h4>
+                            <div style="width: 280px; text-align: center; background: #0b0f19; border: 1px solid #ffaa00; border-radius: 12px; padding: 20px;">
+                                <h4 style="margin: 0; color: #ffaa00;">Simulador</h4>
                                 <div class="raspa-grid-board" id="tablero-prueba-raspa">
-                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(0)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(1)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(2)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(3)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(4)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="rasparCasilleroSimulado(5)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(0)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(1)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(2)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(3)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(4)"><div class="raspa-cover-layer">?</div></div>
+                                    <div class="raspa-block-card" onclick="simularRaspa(5)"><div class="raspa-cover-layer">?</div></div>
                                 </div>
-                                <button class="btn-save" style="background: #1f2937; border: 1px solid #374151; color: white;" onclick="reiniciarTableroRaspaPrueba()">🔄 Limpiar y Volver a Probar</button>
-                                <div id="resultado-raspa-prueba" style="margin-top: 15px; color: #38bdf8; font-weight: bold; text-align: center; min-height: 35px; font-size:12px;"></div>
+                                <button class="btn-spin-admin" style="background: #1f2937; border: 1px solid #374151; color: white;" onclick="resetSimulador('raspa')">🔄 Reiniciar</button>
+                                <div id="res-raspa" style="margin-top: 15px; color: #38bdf8; font-weight: bold; font-size:12px; min-height: 35px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-traga" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Tragamonedas (Slots)</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-traga">
+                                    <thead><tr><th>ID</th><th>Línea Ganadora</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('tragamonedas')">Guardar Configuración Slots</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="slot-machine">
+                                    <div class="slot-reel" id="slot-1">🎰</div>
+                                    <div class="slot-reel" id="slot-2">🎰</div>
+                                    <div class="slot-reel" id="slot-3">🎰</div>
+                                </div>
+                                <button id="btn-spin-traga" class="btn-spin-admin" onclick="simularJuego('tragamonedas')">🕹️ Simular Tirada</button>
+                                <div id="res-traga" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-cartas" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Carta de la Suerte</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-cartas">
+                                    <thead><tr><th>ID</th><th>Carta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('cartas')">Guardar Configuración Cartas</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="card-flip" onclick="simularJuego('cartas')">
+                                    <div class="card-inner" id="card-inner-admin">
+                                        <div class="card-front">?</div>
+                                        <div class="card-back">
+                                            <div id="card-val" style="font-size:30px; font-weight:bold;">🃏</div>
+                                            <div id="card-desc" style="font-size:12px; margin-top:10px;">Click para Voltear</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <button id="btn-spin-cartas" class="btn-spin-admin" onclick="resetSimulador('cartas')">🔄 Reiniciar Carta</button>
+                                <div id="res-cartas" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="subview-moneda" class="event-subview">
+                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Cara o Cruz</h4>
+                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
+                            <div style="flex: 1; min-width: 450px;">
+                                <table class="ruleta-table" id="tabla-config-moneda">
+                                    <thead><tr><th>ID</th><th>Lado / Resultado</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
+                                    <tbody>
+                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
+                                    </tbody>
+                                </table>
+                                <button class="btn-save" onclick="guardarEvento('moneda')">Guardar Configuración Moneda</button>
+                            </div>
+                            <div style="width: 280px; text-align: center;">
+                                <div class="coin-flip" id="coin-admin" onclick="simularJuego('moneda')">🪙</div>
+                                <button id="btn-spin-moneda" class="btn-spin-admin" onclick="resetSimulador('moneda')">🔄 Reiniciar Moneda</button>
+                                <div id="res-moneda" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
                             </div>
                         </div>
                     </div>
@@ -492,7 +542,7 @@
 
         socket.emit('identificar_admin');
 
-        // ESCUCHADOR EN VIVO PARA MERCADO PAGO VIA WEBHOOKS + SOCKETS
+        // ESCUCHADOR BILLETERA
         socket.on('billetera_actualizada_en_vivo', (datos) => {
             const inputMonto = document.getElementById('wallet-monto');
             if(inputMonto) {
@@ -501,254 +551,14 @@
                 inputMonto.style.textShadow = '0 0 25px #10b981';
                 setTimeout(() => { inputMonto.style.textShadow = 'none'; }, 1200);
             }
-            if(datos.montoTransferido) {
-                alert(`💸 ¡MERCADO PAGO EN VIVO!\\nIngresó un pago aprobado de $${datos.montoTransferido}.\\nSaldo reflejado: ${datos.saldoFormateado}`);
-            }
+            if(datos.montoTransferido) alert(`💸 ¡MERCADO PAGO EN VIVO!\\nIngresó un pago aprobado de $${datos.montoTransferido}.\\nSaldo reflejado: ${datos.saldoFormateado}`);
         });
         
         async function simularPago() { await fetch('/api/simular-pago-test', { method: 'POST' }); }
 
-        // CONTROL ACCIONES DE GUARDADO
-        async function guardarConfig(seccion) {
-            let datosParaGuardar = {};
-
-            if (seccion === 'retencion') {
-                datosParaGuardar = [];
-                for(let i=0; i<5; i++) {
-                    const chk = document.getElementById('ret-chk-'+i);
-                    const txt = document.getElementById('ret-txt-'+i);
-                    if(chk && txt) datosParaGuardar.push({ activo: chk.checked, mensaje: txt.value });
-                }
-            } 
-            else if (seccion === 'apis') {
-                datosParaGuardar = {
-                    url: document.getElementById('api-url').value,
-                    user: document.getElementById('api-user').value,
-                    pass: document.getElementById('api-pass').value,
-                    openai: document.getElementById('api-openai').value,
-                    model: document.getElementById('api-model').value,
-                    webhookActive: document.getElementById('api-webhook-active').checked,
-                    webhookUrl: document.getElementById('api-webhook-url').value,
-                    webhookPass: document.getElementById('api-webhook-pass').value
-                };
-            }
-            else if (seccion === 'push') {
-                datosParaGuardar = {
-                    titulo: document.getElementById('push-titulo').value,
-                    mensaje: document.getElementById('push-mensaje').value
-                };
-            }
-            else if (seccion === 'billetera') {
-                datosParaGuardar = {
-                    monto: document.getElementById('wallet-monto').value
-                };
-            }
-
-            try {
-                const res = await fetch('/api/guardar-config', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ seccion: seccion, datos: datosParaGuardar })
-                });
-                const result = await res.json();
-                if (result.exito) alert('✅ ¡Los cambios se guardaron permanentemente en la base de datos!');
-                else alert('Error al intentar guardar los datos.');
-            } catch (error) {
-                alert('Error de conexión.');
-            }
-        }
-
-        // IMPORTADOR Y FICHAS
-        function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
-        function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; document.getElementById('dataPaste').value = ''; }
-        
-        async function procesarDatos() {
-            const texto = document.getElementById('dataPaste').value;
-            if (!texto.trim()) return alert("Pegá datos válidos.");
-            try {
-                const res = await fetch('/importar-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datosCrudos: texto }) });
-                const result = await res.json();
-                alert(result.mensaje);
-                cerrarImportador();
-            } catch (error) { alert("Error de comunicación."); }
-        }
-
-        async function cargarFichas(usuario) {
-            const monto = prompt(`Monto a cargar en balance del panel para ${usuario}:`);
-            if (!monto || isNaN(monto)) return;
-            try {
-                const res = await fetch('/api/cargar-saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuario, monto: Number(monto) }) });
-                const result = await res.json();
-                alert(result.mensaje);
-            } catch (error) { alert("Error técnico."); }
-        }
-
-        // CONTROL INTERACTIVO RULETA
-        function getRuletaConfigFromDOM() {
-            const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
-            const configuracion = [];
-            filas.forEach((fila, index) => {
-                const premio = fila.querySelector('.input-ruleta-text').value;
-                const valor = Number(fila.querySelector('.input-ruleta-val').value);
-                const prob = Number(fila.querySelector('.prob-input').value);
-                configuracion.push({ id: index, premio: premio, valor: valor, probabilidad: prob });
-            });
-            return configuracion;
-        }
-
-        function dibujarRuletaAdmin() {
-            const canvas = document.getElementById('ruleta-admin-canvas');
-            if(!canvas) return;
-            
-            const config = getRuletaConfigFromDOM();
-            const ctx = canvas.getContext('2d');
-            const center = canvas.width / 2;
-            const radius = center - 5; 
-            const sliceAngle = (2 * Math.PI) / (config.length || 1);
-            const colors = ['#ff007f', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
-
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            for(let i=0; i<config.length; i++) {
-                const angle = i * sliceAngle;
-                ctx.beginPath();
-                ctx.fillStyle = colors[i % colors.length];
-                ctx.moveTo(center, center);
-                ctx.arc(center, center, radius, angle, angle + sliceAngle);
-                ctx.fill();
-                ctx.strokeStyle = "#0b0f19";
-                ctx.lineWidth = 2;
-                ctx.stroke();
-
-                ctx.save();
-                ctx.translate(center, center);
-                ctx.rotate(angle + sliceAngle / 2);
-                ctx.textAlign = "right";
-                ctx.fillStyle = "white";
-                ctx.font = "bold 11px sans-serif";
-                ctx.fillText(config[i].premio.substring(0,12), radius - 10, 5);
-                ctx.restore();
-            }
-        }
-
-        async function guardarRuleta() {
-            const config = getRuletaConfigFromDOM();
-            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
-            if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
-            const res = await fetch('/api/guardar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
-            const data = await res.json();
-            if(data.exito) alert('✅ ¡Ruleta guardada con éxito!');
-        }
-
-        function iniciarGiroPrueba() {
-            const config = getRuletaConfigFromDOM();
-            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
-            if (sumaProb !== 100) return alert("La suma de probabilidad debe dar 100%.");
-
-            const btn = document.getElementById('btn-spin-admin');
-            btn.disabled = true;
-            fetch('/api/tirar-ruleta-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
-            .then(res => {
-                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
-                return res.json();
-            })
-            .then(data => {
-                if(!data.exito) { btn.disabled = false; return alert("Error al simular ruleta"); }
-                const winnerIndex = config.findIndex(item => item.id === data.premio.id);
-                const sliceDegree = 360 / config.length;
-                const centerOfWinner = (winnerIndex * sliceDegree) + (sliceDegree / 2);
-                const targetRotation = 270 - centerOfWinner;
-                const currentMod = currentRotationAdmin % 360;
-                let needed = targetRotation - currentMod;
-                if (needed < 0) needed += 360;
-                currentRotationAdmin += needed + (360 * 4);
-                document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotationAdmin}deg)`;
-                setTimeout(() => { btn.disabled = false; document.getElementById('resultado-prueba').innerText = `Cae en: ${data.premio.premio}`; }, 5100);
-            }).catch(e => { btn.disabled = false; console.error("Error Ruleta:", e); });
-        }
-
-        // CONTROL INTERACTIVO RASPA Y GANA
-        function getRaspaConfigFromDOM() {
-            const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
-            const configuracion = [];
-            filas.forEach((fila, index) => {
-                const premio = fila.querySelector('.input-ruleta-text').value;
-                const valor = Number(fila.querySelector('.input-ruleta-val').value);
-                const prob = Number(fila.querySelector('.prob-input').value);
-                configuracion.push({ id: index, premio: premio, valor: valor, probabilidad: prob });
-            });
-            return configuracion;
-        }
-
-        async function guardarRaspa() {
-            const config = getRaspaConfigFromDOM();
-            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
-            if (sumaProb !== 100) return alert(`La suma total da ${sumaProb}%. Debe dar 100% exacto.`);
-            const res = await fetch('/api/guardar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
-            if(res.redirected) return window.location.href = '/login.html';
-            const data = await res.json();
-            if(data.exito) alert('✅ ¡Configuración del Raspa y Gana guardada en la base de datos!');
-        }
-
-        function rasparCasilleroSimulado(indexClickeado) {
-            if(raspaYaJugadaAdmin) return;
-            const configFull = getRaspaConfigFromDOM();
-            const sumaProb = configFull.reduce((acc, curr) => acc + curr.probabilidad, 0);
-            if (sumaProb !== 100) return alert("Para probar, la probabilidad en la tabla debe sumar 100%.");
-
-            raspaYaJugadaAdmin = true;
-            const casillerosDOM = document.querySelectorAll('.raspa-block-card');
-            
-            fetch('/api/tirar-raspa-prueba', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ configuracion: configFull })
-            })
-            .then(res => {
-                if(res.redirected) { window.location.href = '/login.html'; throw new Error("Sesión expirada"); }
-                return res.json();
-            })
-            .then(data => {
-                if(!data.exito) return;
-                const winner = data.premio;
-                const poolPremiosRestantes = configFull.filter(item => item.id !== winner.id);
-                poolPremiosRestantes.sort(() => Math.random() - 0.5);
-
-                const cardGanadora = casillerosDOM[indexClickeado];
-                cardGanadora.classList.add('scratched');
-                cardGanadora.querySelector('.raspa-cover-layer').style.opacity = '0';
-                cardGanadora.innerHTML += `<div class="raspa-prize-text">${winner.premio}</div><div class="raspa-value-text">$${winner.valor}</div>`;
-                document.getElementById('resultado-raspa-prueba').innerHTML = `¡Raspada Simulada!<br>Ganaste: <span style="color:#ffaa00;">${winner.premio} ($${winner.valor})</span>`;
-
-                setTimeout(() => {
-                    let rIndex = 0;
-                    casillerosDOM.forEach((card, i) => {
-                        if(i !== indexClickeado) {
-                            card.classList.add('others-revealed');
-                            card.querySelector('.raspa-cover-layer').style.opacity = '0';
-                            const premioDeRelleno = poolPremiosRestantes[rIndex];
-                            card.innerHTML += `<div class="raspa-prize-text">${premioDeRelleno.premio}</div><div class="raspa-value-text">$${premioDeRelleno.valor}</div>`;
-                            rIndex++;
-                        }
-                    });
-                }, 800);
-            }).catch(e => console.error("Error Raspa:", e));
-        }
-
-        function reiniciarTableroRaspaPrueba() {
-            raspaYaJugadaAdmin = false;
-            document.getElementById('resultado-raspa-prueba').innerText = "";
-            const tablero = document.getElementById('tablero-prueba-raspa');
-            tablero.innerHTML = `
-                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(0)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(1)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(2)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(3)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(4)"><div class="raspa-cover-layer">?</div></div>
-                <div class="raspa-block-card" onclick="rasparCasilleroSimulado(5)"><div class="raspa-cover-layer">?</div></div>
-            `;
-        }
-
-        // ENRUTADOR SECCIONES
+        // ==========================================
+        // GESTIÓN DE PESTAÑAS (ENRUTADOR)
+        // ==========================================
         function cambiarSeccion(seccion) {
             document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
@@ -757,13 +567,10 @@
             if(targetSection) targetSection.classList.add('active-view');
             if(targetBtn) targetBtn.classList.add('active-nav');
             
-            const titulos = { chats: "Panel de Control - Chats en Vivo", usuarios: "Panel de Control - Operadores Internos", clientes: "Panel de Control - Base de Clientes Casino", retiros: "Panel de Control - Auditoría Financiera de Retiros", billetera: "Panel de Control - Pasarela de Cuentas y Saldos", push: "Panel de Control - Notificaciones Masivas y Canales", retencion: "Panel de Control - Automatización de Retención", eventos: "Panel de Control - Consola de Eventos y Minijuegos", apis: "Panel de Control - Integraciones y Llaves de API", cierre: "Panel de Control - Cierre de Caja", resumen: "Panel de Control - Resumen Cajas", historial: "Panel de Control - Historial de Cajas" };
-            document.getElementById('panel-title').innerText = titulos[seccion] || "Panel de Control";
+            const titulos = { chats: "Chats en Vivo", usuarios: "Operadores Internos", clientes: "Base de Clientes", retiros: "Auditoría de Retiros", billetera: "Billetera y Saldos", push: "Notificaciones Masivas", retencion: "Automatización de Retención", eventos: "Consola de Eventos y Minijuegos", apis: "Integraciones y Llaves de API", cierre: "Cierre de Caja", resumen: "Resumen Cajas", historial: "Historial de Cajas" };
+            document.getElementById('panel-title').innerText = "Panel de Control - " + (titulos[seccion] || "");
 
-            // Se dibuja la ruleta si la pestaña es Eventos Especiales
-            if (seccion === 'eventos') {
-                setTimeout(dibujarRuletaAdmin, 100);
-            }
+            if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
         }
 
         function cambiarSubJuego(juego) {
@@ -771,83 +578,193 @@
             document.querySelectorAll('.event-tab-btn').forEach(b => b.classList.remove('active-event-tab'));
             document.getElementById('subview-' + juego).classList.add('active-subview');
             document.getElementById('tab-ev-' + juego).classList.add('active-event-tab');
-            
             if (juego === 'ruleta') setTimeout(dibujarRuletaAdmin, 100);
         }
 
+        // ==========================================
+        // CONFIGURACIÓN GENÉRICA (EXTRACCIÓN DE TABLAS)
+        // ==========================================
+        function getConfigFromDOM(tablaId) {
+            const filas = document.querySelectorAll(`#${tablaId} tbody tr`);
+            const configuracion = [];
+            filas.forEach((fila, index) => {
+                const premio = fila.querySelector('.input-ruleta-text').value;
+                const valor = Number(fila.querySelector('.input-ruleta-val').value) || 0;
+                const prob = Number(fila.querySelector('.prob-input').value) || 0;
+                if(premio !== "") configuracion.push({ id: index, premio, valor, probabilidad: prob });
+            });
+            return configuracion;
+        }
+
+        async function guardarEvento(juego) {
+            const config = getConfigFromDOM(`tabla-config-${juego}`);
+            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
+            if (sumaProb !== 100 && config.length > 0) return alert(`La suma de probabilidad da ${sumaProb}%. Debe dar 100% exacto.`);
+            
+            const res = await fetch(`/api/guardar-${juego}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) });
+            if(res.redirected) return window.location.href = '/login.html';
+            const data = await res.json();
+            if(data.exito) alert(`✅ ¡Configuración de ${juego.toUpperCase()} guardada con éxito!`);
+        }
+
+        // ==========================================
+        // SIMULADORES DE MINIJUEGOS (ADMIN)
+        // ==========================================
+        function simularJuego(juego) {
+            const config = getConfigFromDOM(`tabla-config-${juego}`);
+            const sumaProb = config.reduce((acc, curr) => acc + curr.probabilidad, 0);
+            if (sumaProb !== 100) return alert("La probabilidad en la tabla debe sumar 100% para probar.");
+
+            fetch(`/api/tirar-${juego}-prueba`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
+            .then(res => res.json())
+            .then(data => {
+                if(!data.exito) return alert("Error.");
+                
+                const r = document.getElementById(`res-${juego}`);
+                
+                if (juego === 'ruleta') {
+                    document.getElementById('btn-spin-admin').disabled = true;
+                    const wIdx = config.findIndex(item => item.id === data.premio.id);
+                    const sliceDegree = 360 / config.length;
+                    const centerOfWinner = (wIdx * sliceDegree) + (sliceDegree / 2);
+                    let needed = (270 - centerOfWinner) - (currentRotationAdmin % 360);
+                    if (needed < 0) needed += 360;
+                    currentRotationAdmin += needed + (360 * 4);
+                    document.getElementById('ruleta-admin-canvas').style.transform = `rotate(${currentRotationAdmin}deg)`;
+                    setTimeout(() => { document.getElementById('btn-spin-admin').disabled = false; r.innerText = `Cayó en: ${data.premio.premio}`; }, 5100);
+                } 
+                else if (juego === 'tragamonedas') {
+                    document.getElementById('slot-1').innerText = "⏳"; document.getElementById('slot-2').innerText = "⏳"; document.getElementById('slot-3').innerText = "⏳";
+                    setTimeout(() => {
+                        let icons = ['🍒','💎','🔔','🍋','❌','🎰'];
+                        document.getElementById('slot-1').innerText = icons[Math.floor(Math.random()*icons.length)];
+                        document.getElementById('slot-2').innerText = icons[Math.floor(Math.random()*icons.length)];
+                        document.getElementById('slot-3').innerText = data.premio.premio.substring(0,2) || "🎰";
+                        r.innerHTML = `Resultado: <br><span style="color:white;">${data.premio.premio}</span> ($${data.premio.valor})`;
+                    }, 1500);
+                }
+                else if (juego === 'cartas') {
+                    document.getElementById('card-inner-admin').classList.add('flipped');
+                    document.getElementById('card-val').innerText = data.premio.premio.substring(0,2) || "🃏";
+                    document.getElementById('card-desc').innerText = data.premio.premio;
+                    r.innerHTML = `Ganaste: $${data.premio.valor}`;
+                }
+                else if (juego === 'moneda') {
+                    const c = document.getElementById('coin-admin');
+                    c.style.transform = `rotateY(${180 * 5}deg)`;
+                    setTimeout(() => {
+                        c.innerText = data.premio.premio.includes('Cara') ? '🟡' : (data.premio.premio.includes('Cruz') ? '⚪' : '💥');
+                        r.innerHTML = `Lado: ${data.premio.premio} <br> ($${data.premio.valor})`;
+                    }, 1000);
+                }
+            });
+        }
+
+        function simularRaspa(idx) {
+            if(raspaYaJugadaAdmin) return;
+            const config = getConfigFromDOM('tabla-config-raspa');
+            if (config.reduce((acc, curr) => acc + curr.probabilidad, 0) !== 100) return alert("Suma debe dar 100%");
+            raspaYaJugadaAdmin = true;
+            
+            fetch('/api/tirar-raspa-prueba', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ configuracion: config }) })
+            .then(res => res.json()).then(data => {
+                const doms = document.querySelectorAll('#tablero-prueba-raspa .raspa-block-card');
+                doms[idx].classList.add('scratched');
+                doms[idx].querySelector('.raspa-cover-layer').style.opacity = '0';
+                doms[idx].innerHTML += `<div class="raspa-prize-text">${data.premio.premio}</div><div class="raspa-value-text">$${data.premio.valor}</div>`;
+                document.getElementById('res-raspa').innerHTML = `Ganaste: ${data.premio.premio} ($${data.premio.valor})`;
+            });
+        }
+
+        function resetSimulador(juego) {
+            if (juego === 'raspa') {
+                raspaYaJugadaAdmin = false; document.getElementById('res-raspa').innerText = "";
+                document.getElementById('tablero-prueba-raspa').innerHTML = Array(6).fill('<div class="raspa-block-card" onclick="simularRaspa(arguments[0])"><div class="raspa-cover-layer">?</div></div>').map((s,i) => s.replace('arguments[0]', i)).join('');
+            } else if (juego === 'cartas') {
+                document.getElementById('card-inner-admin').classList.remove('flipped');
+                document.getElementById('res-cartas').innerText = "";
+            } else if (juego === 'moneda') {
+                document.getElementById('coin-admin').style.transform = 'rotateY(0deg)';
+                document.getElementById('coin-admin').innerText = '🪙';
+                document.getElementById('res-moneda').innerText = "";
+            }
+        }
+
+        // ==========================================
+        // DIBUJAR RULETA (CANVAS)
+        // ==========================================
+        function dibujarRuletaAdmin() {
+            const canvas = document.getElementById('ruleta-admin-canvas'); if(!canvas) return;
+            const config = getConfigFromDOM('tabla-config-ruleta');
+            const ctx = canvas.getContext('2d'); const center = canvas.width / 2; const radius = center - 5; 
+            const sliceAngle = (2 * Math.PI) / (config.length || 1);
+            const colors = ['#ff007f', '#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for(let i=0; i<config.length; i++) {
+                ctx.beginPath(); ctx.fillStyle = colors[i % colors.length]; ctx.moveTo(center, center);
+                ctx.arc(center, center, radius, i * sliceAngle, (i+1) * sliceAngle); ctx.fill();
+                ctx.strokeStyle = "#0b0f19"; ctx.lineWidth = 2; ctx.stroke();
+                ctx.save(); ctx.translate(center, center); ctx.rotate((i * sliceAngle) + sliceAngle / 2); 
+                ctx.textAlign = "right"; ctx.fillStyle = "white"; ctx.font = "bold 11px sans-serif";
+                ctx.fillText(config[i].premio.substring(0,12), radius - 10, 5); ctx.restore();
+            }
+        }
+
+        // ==========================================
+        // RECEPCIÓN DE DATOS INICIALES (CARGA TABLAS)
+        // ==========================================
         socket.on('cargar_datos_tablas', (datos) => {
             if (datos.clientes) {
-                const tbody = document.querySelector('#section-clientes .data-table tbody');
-                tbody.innerHTML = '';
-                datos.clientes.forEach(c => {
-                    tbody.innerHTML += `<tr><td>${c.usuarioCasino}</td><td style="color:#10b981;font-weight:bold;">$${c.saldo}</td><td>$${c.wager}</td><td>● Activo</td><td><button class="btn-save" style="margin:0; padding: 6px 12px; font-size:12px;" onclick="cargarFichas('${c.usuarioCasino}')">💰 Cargar</button></td></tr>`;
-                });
+                const tbody = document.querySelector('#section-clientes .data-table tbody'); tbody.innerHTML = '';
+                datos.clientes.forEach(c => { tbody.innerHTML += `<tr><td>${c.usuarioCasino}</td><td style="color:#10b981;font-weight:bold;">$${c.saldo}</td><td>$${c.wager}</td><td>● Activo</td><td><button class="btn-save" style="margin:0; padding: 6px 12px; font-size:12px;" onclick="cargarFichas('${c.usuarioCasino}')">💰 Cargar</button></td></tr>`; });
             }
             if (datos.retiros) {
-                const tbody = document.querySelector('#section-retiros .data-table tbody');
-                tbody.innerHTML = '';
-                datos.retiros.forEach(r => {
-                    tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`;
-                });
+                const tbody = document.querySelector('#section-retiros .data-table tbody'); tbody.innerHTML = '';
+                datos.retiros.forEach(r => { tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`; });
             }
             
-            if (datos.ruleta && datos.ruleta.length > 0) {
-                const filas = document.querySelectorAll('#tabla-config-ruleta tbody tr');
-                datos.ruleta.forEach((item, idx) => {
-                    if(filas[idx]) {
-                        filas[idx].querySelector('.input-ruleta-text').value = item.premio;
-                        filas[idx].querySelector('.input-ruleta-val').value = item.valor;
-                        filas[idx].querySelector('.prob-input').value = item.probabilidad;
-                    }
-                });
-                setTimeout(dibujarRuletaAdmin, 500);
-            }
-            
-            if (datos.raspa && datos.raspa.length > 0) {
-                const filas = document.querySelectorAll('#tabla-config-raspa tbody tr');
-                datos.raspa.forEach((item, idx) => {
-                    if(filas[idx]) {
-                        filas[idx].querySelector('.input-ruleta-text').value = item.premio;
-                        filas[idx].querySelector('.input-ruleta-val').value = item.valor;
-                        filas[idx].querySelector('.prob-input').value = item.probabilidad;
-                    }
-                });
-            }
+            // Cargar Configs Minijuegos
+            ['ruleta', 'raspa', 'traga', 'cartas', 'moneda'].forEach(juego => {
+                let dbKey = juego === 'traga' ? 'tragamonedas' : juego;
+                if (datos[dbKey] && datos[dbKey].length > 0) {
+                    const filas = document.querySelectorAll(`#tabla-config-${juego} tbody tr`);
+                    datos[dbKey].forEach((item, idx) => {
+                        if(filas[idx]) {
+                            filas[idx].querySelector('.input-ruleta-text').value = item.premio;
+                            filas[idx].querySelector('.input-ruleta-val').value = item.valor;
+                            filas[idx].querySelector('.prob-input').value = item.probabilidad;
+                        }
+                    });
+                }
+            });
+            setTimeout(dibujarRuletaAdmin, 500);
 
             if (datos.panelConfig) {
                 const c = datos.panelConfig;
-                
                 if (c.retencion && c.retencion.length === 5) {
                     for(let i=0; i<5; i++) {
-                        const chk = document.getElementById('ret-chk-'+i);
-                        const txt = document.getElementById('ret-txt-'+i);
-                        if (chk) chk.checked = c.retencion[i].activo;
-                        if (txt) txt.value = c.retencion[i].mensaje;
+                        const chk = document.getElementById('ret-chk-'+i); const txt = document.getElementById('ret-txt-'+i);
+                        if (chk) chk.checked = c.retencion[i].activo; if (txt) txt.value = c.retencion[i].mensaje;
                     }
                 }
                 if (c.apis) {
                     if(document.getElementById('api-url') && c.apis.url) document.getElementById('api-url').value = c.apis.url;
                     if(document.getElementById('api-user') && c.apis.user) document.getElementById('api-user').value = c.apis.user;
-                    if(document.getElementById('api-pass') && c.apis.pass) document.getElementById('api-pass').value = c.apis.pass;
-                    if(document.getElementById('api-openai') && c.apis.openai) document.getElementById('api-openai').value = c.apis.openai;
-                    if(document.getElementById('api-model') && c.apis.model) document.getElementById('api-model').value = c.apis.model;
                     if(document.getElementById('api-webhook-active') && c.apis.webhookActive !== undefined) document.getElementById('api-webhook-active').checked = c.apis.webhookActive;
-                    if(document.getElementById('api-webhook-url') && c.apis.webhookUrl) document.getElementById('api-webhook-url').value = c.apis.webhookUrl;
-                    if(document.getElementById('api-webhook-pass') && c.apis.webhookPass) document.getElementById('api-webhook-pass').value = c.apis.webhookPass;
                 }
                 if (c.push) {
-                    if(document.getElementById('push-titulo') && c.push.titulo) document.getElementById('push-titulo').value = c.push.titulo;
-                    if(document.getElementById('push-mensaje') && c.push.mensaje) document.getElementById('push-mensaje').value = c.push.mensaje;
+                    if(document.getElementById('push-titulo')) document.getElementById('push-titulo').value = c.push.titulo || "";
+                    if(document.getElementById('push-mensaje')) document.getElementById('push-mensaje').value = c.push.mensaje || "";
                 }
-                if (c.billetera && document.getElementById('wallet-monto') && c.billetera.monto) {
-                    document.getElementById('wallet-monto').value = c.billetera.monto;
-                }
+                if (c.billetera && document.getElementById('wallet-monto')) document.getElementById('wallet-monto').value = c.billetera.monto || "$0,00 ARS";
             }
         });
 
+        // ==========================================
+        // LÓGICA DE CHATS EN VIVO ADMIN
+        // ==========================================
         socket.on('lista_usuarios_actualizada', (usuarios) => {
-            const listaDiv = document.getElementById('lista-usuarios');
-            if (!listaDiv) return;
+            const listaDiv = document.getElementById('lista-usuarios'); if (!listaDiv) return;
             listaDiv.innerHTML = '';
             usuarios.forEach(user => {
                 let tieneMensajesSinLeer = user.historial.some(h => h.emisor === 'cliente' && h.leido === false);
@@ -860,8 +777,7 @@
                 item.onclick = () => {
                     usuarioSeleccionadoActivo = user.nombre;
                     document.getElementById('active-chat-username').innerText = "Monitoreando a: " + user.nombre;
-                    document.getElementById('admin-message-input').disabled = false;
-                    document.getElementById('btn-enviar-msg').disabled = false;
+                    document.getElementById('admin-message-input').disabled = false; document.getElementById('btn-enviar-msg').disabled = false;
                     socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
                     renderizarHistorialChat(user.historial);
                 };
@@ -871,18 +787,15 @@
         });
 
         function renderizarHistorialChat(historial) {
-            const areaMsg = document.getElementById('active-chat-messages');
-            if (!areaMsg) return;
+            const areaMsg = document.getElementById('active-chat-messages'); if (!areaMsg) return;
             areaMsg.innerHTML = ''; 
             historial.forEach(h => {
-                const wrap = document.createElement('div');
-                wrap.className = 'admin-bubble-wrapper';
-                const b = document.createElement('div');
+                const wrap = document.createElement('div'); wrap.className = 'admin-bubble-wrapper'; const b = document.createElement('div');
                 if (h.emisor === 'bot') { b.className = 'admin-bubble b-bot'; b.innerHTML = `🤖 <b>Bot:</b><br>${h.mensaje}`; wrap.appendChild(b); }
                 if (h.emisor === 'admin') { b.className = 'admin-bubble b-admin'; b.innerHTML = `👨‍💼 <b>Vos:</b><br>${h.mensaje}`; wrap.appendChild(b); }
                 if (h.emisor === 'cliente') { 
-                    let checkLectura = h.leido ? '<span class="read-receipt seen">✓ Visto</span>' : '<span class="read-receipt">✓ Enviado</span>';
-                    b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}`; wrap.appendChild(b); wrap.innerHTML += checkLectura;
+                    let check = h.leido ? '<span class="read-receipt seen">✓ Visto</span>' : '<span class="read-receipt">✓ Enviado</span>';
+                    b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}`; wrap.appendChild(b); wrap.innerHTML += check;
                 }
                 areaMsg.appendChild(wrap);
             });
@@ -890,253 +803,115 @@
         }
 
         function enviarMensajeManual() {
-            const input = document.getElementById('admin-message-input');
-            const texto = input.value.trim();
+            const input = document.getElementById('admin-message-input'); const texto = input.value.trim();
             if (!texto || !usuarioSeleccionadoActivo) return;
-            socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto });
-            input.value = '';
+            socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto }); input.value = '';
+        }
+        document.addEventListener('keydown', (e) => { if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual(); });
+
+        // ==========================================
+        // RESTO DE FUNCIONES (Guardar configs, importador, cierres)
+        // ==========================================
+        async function guardarConfig(seccion) {
+            let datos = {};
+            if (seccion === 'retencion') {
+                datos = [];
+                for(let i=0; i<5; i++) {
+                    const chk = document.getElementById('ret-chk-'+i); const txt = document.getElementById('ret-txt-'+i);
+                    if(chk && txt) datos.push({ activo: chk.checked, mensaje: txt.value });
+                }
+            } 
+            else if (seccion === 'apis') datos = { url: document.getElementById('api-url').value, user: document.getElementById('api-user').value, webhookActive: document.getElementById('api-webhook-active').checked };
+            else if (seccion === 'push') datos = { titulo: document.getElementById('push-titulo').value, mensaje: document.getElementById('push-mensaje').value };
+            else if (seccion === 'billetera') datos = { monto: document.getElementById('wallet-monto').value };
+
+            try {
+                const res = await fetch('/api/guardar-config', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ seccion: seccion, datos: datos }) });
+                if(res.redirected) return window.location.href = '/login.html';
+                const result = await res.json();
+                if (result.exito) alert('✅ ¡Guardado!');
+            } catch (error) { alert('Error de conexión.'); }
         }
 
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') enviarMensajeManual();
-        });
+        function abrirImportador() { document.getElementById('modalImportador').style.display = 'block'; }
+        function cerrarImportador() { document.getElementById('modalImportador').style.display = 'none'; document.getElementById('dataPaste').value = ''; }
+        async function procesarDatos() {
+            const texto = document.getElementById('dataPaste').value; if (!texto.trim()) return alert("Pegá datos válidos.");
+            try {
+                const res = await fetch('/importar-datos', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datosCrudos: texto }) });
+                if(res.redirected) return window.location.href = '/login.html';
+                const result = await res.json(); alert(result.mensaje); cerrarImportador();
+            } catch (error) { alert("Error de comunicación."); }
+        }
+        async function cargarFichas(usuario) {
+            const monto = prompt(`Monto a cargar a ${usuario}:`); if (!monto || isNaN(monto)) return;
+            try {
+                const res = await fetch('/api/cargar-saldo', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuario, monto: Number(monto) }) });
+                if(res.redirected) return window.location.href = '/login.html';
+                const result = await res.json(); alert(result.mensaje);
+            } catch (error) { alert("Error técnico."); }
+        }
 
-        // ==========================================
-        // LÓGICA DEL CIERRE DE CAJA (FRONTEND)
-        // ==========================================
+        // CIERRE DE CAJA
         const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
-        
         function addGastoRow() {
             const tr = document.createElement('tr');
             let options = opcionesGasto.map(o => `<option value="${o}">${o}</option>`).join('');
-            tr.innerHTML = `
-                <td><select class="input-text-adv gt" onchange="calcCierre()" style="margin-bottom:0;">${options}</select></td>
-                <td><input type="text" class="input-text-adv gu" style="margin-bottom:0;"></td>
-                <td><input type="number" class="input-text-adv val-num gm" oninput="calcCierre()" style="margin-bottom:0;"></td>
-                <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>
-            `;
+            tr.innerHTML = `<td><select class="input-text-adv gt" onchange="calcCierre()" style="margin-bottom:0;">${options}</select></td><td><input type="text" class="input-text-adv gu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num gm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
             document.querySelector('#tabla-gastos tbody').appendChild(tr);
         }
-
         function addPropinaRow() {
             const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td><input type="text" class="input-text-adv pu" style="margin-bottom:0;"></td>
-                <td><input type="number" class="input-text-adv val-num pm" oninput="calcCierre()" style="margin-bottom:0;"></td>
-                <td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>
-            `;
+            tr.innerHTML = `<td><input type="text" class="input-text-adv pu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num pm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
             document.querySelector('#tabla-propinas tbody').appendChild(tr);
         }
-
         function calcCierre() {
-            let totGastos = 0;
-            document.querySelectorAll('.gm').forEach(i => totGastos += Number(i.value) || 0);
-            document.getElementById('tot-gastos').innerText = totGastos.toFixed(2);
-            document.getElementById('cc-egreso').value = totGastos;
-
-            let totPropinas = 0;
-            document.querySelectorAll('.pm').forEach(i => totPropinas += Number(i.value) || 0);
-            document.getElementById('tot-propinas').innerText = totPropinas.toFixed(2);
-
-            const ingreso = Number(document.getElementById('cc-ingreso').value) || 0;
-            const real = Number(document.getElementById('cc-real').value) || 0;
-            
-            const esperado = ingreso - totGastos;
-            document.getElementById('cc-esperado').value = esperado;
-            
-            const dif = real - esperado;
-            document.getElementById('cc-dif').value = dif;
-            document.getElementById('cc-dif').style.color = dif < 0 ? '#ef4444' : '#10b981';
+            let totG = 0; document.querySelectorAll('.gm').forEach(i => totG += Number(i.value) || 0); document.getElementById('tot-gastos').innerText = totG.toFixed(2); document.getElementById('cc-egreso').value = totG;
+            let totP = 0; document.querySelectorAll('.pm').forEach(i => totP += Number(i.value) || 0); document.getElementById('tot-propinas').innerText = totP.toFixed(2);
+            const ing = Number(document.getElementById('cc-ingreso').value) || 0; const real = Number(document.getElementById('cc-real').value) || 0;
+            const esp = ing - totG; document.getElementById('cc-esperado').value = esp;
+            const dif = real - esp; document.getElementById('cc-dif').value = dif; document.getElementById('cc-dif').style.color = dif < 0 ? '#ef4444' : '#10b981';
         }
-
         async function guardarCierreDB() {
-            if(!document.getElementById('cc-fecha').value) return alert("Por favor ingresá la fecha.");
-            
-            const gastos = [];
-            document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => {
-                gastos.push({
-                    tipo: tr.querySelector('.gt').value,
-                    usuario: tr.querySelector('.gu').value,
-                    monto: Number(tr.querySelector('.gm').value) || 0
-                });
-            });
-
-            const propinas = [];
-            document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => {
-                propinas.push({
-                    usuario: tr.querySelector('.pu').value,
-                    monto: Number(tr.querySelector('.pm').value) || 0
-                });
-            });
-
+            if(!document.getElementById('cc-fecha').value) return alert("Ingresá la fecha.");
+            const gastos = []; document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 }));
+            const propinas = []; document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 }));
             const payload = {
-                fecha: document.getElementById('cc-fecha').value,
-                hora: document.getElementById('cc-hora').value,
-                inicio: document.getElementById('cc-inicio').value,
-                fin: document.getElementById('cc-fin').value,
-                turno: document.getElementById('cc-turno').value,
-                cajero: document.getElementById('cc-cajero').value,
-                ingreso: Number(document.getElementById('cc-ingreso').value) || 0,
-                saldoOro: Number(document.getElementById('cc-oro').value) || 0,
-                saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0,
-                egreso: Number(document.getElementById('cc-egreso').value) || 0,
-                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0,
-                montoRealFinal: Number(document.getElementById('cc-real').value) || 0,
-                sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0,
-                reserva: Number(document.getElementById('cc-reserva').value) || 0,
-                gastos, propinas
+                fecha: document.getElementById('cc-fecha').value, hora: document.getElementById('cc-hora').value, inicio: document.getElementById('cc-inicio').value, fin: document.getElementById('cc-fin').value, turno: document.getElementById('cc-turno').value, cajero: document.getElementById('cc-cajero').value,
+                ingreso: Number(document.getElementById('cc-ingreso').value) || 0, saldoOro: Number(document.getElementById('cc-oro').value) || 0, saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0, egreso: Number(document.getElementById('cc-egreso').value) || 0,
+                montoEsperado: Number(document.getElementById('cc-esperado').value) || 0, montoRealFinal: Number(document.getElementById('cc-real').value) || 0, sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0, reserva: Number(document.getElementById('cc-reserva').value) || 0, gastos, propinas
             };
-
             const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-            if(res.ok) {
-                alert("✅ Cierre Guardado en la Base de Datos!");
-                if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen();
-            }
-        }
-
-        addGastoRow(); addPropinaRow();
-        document.getElementById('cc-fecha').valueAsDate = new Date();
-
-        // ==========================================
-        // LÓGICA DE RESUMEN DE CAJAS
-        // ==========================================
-        const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
-
-        async function buscarResumen() {
-            const fecha = document.getElementById('res-fecha').value;
-            if(!fecha) return;
-            const res = await fetch('/api/resumen-cajas/' + fecha);
             if(res.redirected) return window.location.href = '/login.html';
-            
-            if(!res.ok) {
-                alert("Error al contactar al servidor. Revisa si server.js se actualizó bien en Render.");
-                return;
-            }
+            if(res.ok) { alert("✅ Guardado!"); if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); }
+        }
+        addGastoRow(); addPropinaRow(); document.getElementById('cc-fecha').valueAsDate = new Date();
 
-            const data = await res.json();
-            const d = data.dia;
-            const m = data.mes;
-
-            // DIARIO
+        // RESUMEN E HISTORIAL
+        const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+        async function buscarResumen() {
+            const fecha = document.getElementById('res-fecha').value; if(!fecha) return;
+            const res = await fetch('/api/resumen-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
+            const data = await res.json(); const d = data.dia; const m = data.mes;
             document.getElementById('res-diario').innerHTML = `
                 <tr><td class="header-row">Ingreso Inicial</td><td>${f.format(d.manana.ingreso)}</td><td>${f.format(d.tarde.ingreso)}</td><td>${f.format(d.noche.ingreso)}</td><td style="color:#9ca3af">${f.format(d.total.ingreso)}</td></tr>
                 <tr><td class="header-row">Saldo Oro</td><td>${f.format(d.manana.oro)}</td><td>${f.format(d.tarde.oro)}</td><td>${f.format(d.noche.oro)}</td><td style="color:#9ca3af">${f.format(d.total.oro)}</td></tr>
                 <tr><td class="header-row">Saldo Ganamos</td><td>${f.format(d.manana.ganamos)}</td><td>${f.format(d.tarde.ganamos)}</td><td>${f.format(d.noche.ganamos)}</td><td style="color:#9ca3af">${f.format(d.total.ganamos)}</td></tr>
-                <tr><td class="header-row">Total Retiros (Egresos)</td><td>${f.format(d.manana.retiros)}</td><td>${f.format(d.tarde.retiros)}</td><td>${f.format(d.noche.retiros)}</td><td style="color:#9ca3af">${f.format(d.total.retiros)}</td></tr>
-                <tr><td class="header-row">Monto Real Final</td><td>${f.format(d.manana.real)}</td><td>${f.format(d.tarde.real)}</td><td>${f.format(d.noche.real)}</td><td style="color:#9ca3af">${f.format(d.total.real)}</td></tr>
-            `;
-
-            // MENSUAL - SALIDAS
-            const totSalidas = m.salidas.lean + m.salidas.nahue + m.salidas.brai + m.salidas.tati;
-            document.getElementById('res-salida-tot').innerText = f.format(totSalidas);
-            document.getElementById('res-mensual-salidas').innerHTML = `
-                <tr><td class="header-row">TOTAL SALIDAS LEAN</td><td colspan="2">${f.format(m.salidas.lean)}</td></tr>
-                <tr><td class="header-row">TOTAL SALIDAS NAHUE</td><td colspan="2">${f.format(m.salidas.nahue)}</td></tr>
-                <tr><td class="header-row">TOTAL SALIDAS BRAI</td><td colspan="2">${f.format(m.salidas.brai)}</td></tr>
-                <tr><td class="header-row">TOTAL SALIDAS TATI</td><td colspan="2">${f.format(m.salidas.tati)}</td></tr>
-                <tr><td class="header-row" style="background:#1d4ed8;">TOTAL SALDO ORO</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.oro)}</td></tr>
-                <tr><td class="header-row" style="background:#1d4ed8;">TOTAL SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.ganamos)}</td></tr>
-            `;
-
-            // MENSUAL - FICHAS
-            document.getElementById('res-mensual-fichas').innerHTML = `
-                <tr><td class="header-row">MEGAFARAON</td><td>${f.format(m.fichas.mega)}</td></tr>
-                <tr><td class="header-row">GANAMOS</td><td>${f.format(m.fichas.ganamos)}</td></tr>
-                <tr><td class="header-row">ORO</td><td>${f.format(m.fichas.oro)}</td></tr>
-            `;
-
-            // MENSUAL - BONOS
-            document.getElementById('res-mensual-bonos').innerHTML = `
-                <tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr>
-                <tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>
-            `;
+                <tr><td class="header-row">Total Retiros</td><td>${f.format(d.manana.retiros)}</td><td>${f.format(d.tarde.retiros)}</td><td>${f.format(d.noche.retiros)}</td><td style="color:#9ca3af">${f.format(d.total.retiros)}</td></tr>
+                <tr><td class="header-row">Monto Real Final</td><td>${f.format(d.manana.real)}</td><td>${f.format(d.tarde.real)}</td><td>${f.format(d.noche.real)}</td><td style="color:#9ca3af">${f.format(d.total.real)}</td></tr>`;
+            document.getElementById('res-salida-tot').innerText = f.format(m.salidas.lean + m.salidas.nahue + m.salidas.brai + m.salidas.tati);
+            document.getElementById('res-mensual-salidas').innerHTML = `<tr><td class="header-row">TOTAL LEAN</td><td colspan="2">${f.format(m.salidas.lean)}</td></tr><tr><td class="header-row">TOTAL NAHUE</td><td colspan="2">${f.format(m.salidas.nahue)}</td></tr><tr><td class="header-row">TOTAL BRAI</td><td colspan="2">${f.format(m.salidas.brai)}</td></tr><tr><td class="header-row">TOTAL TATI</td><td colspan="2">${f.format(m.salidas.tati)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO ORO</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.oro)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.ganamos)}</td></tr>`;
+            document.getElementById('res-mensual-fichas').innerHTML = `<tr><td class="header-row">MEGAFARAON</td><td>${f.format(m.fichas.mega)}</td></tr><tr><td class="header-row">GANAMOS</td><td>${f.format(m.fichas.ganamos)}</td></tr><tr><td class="header-row">ORO</td><td>${f.format(m.fichas.oro)}</td></tr>`;
+            document.getElementById('res-mensual-bonos').innerHTML = `<tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr><tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>`;
         }
-
-        // ==========================================
-        // NUEVO: HISTORIAL DE CAJAS COMPLETAS
-        // ==========================================
         async function buscarHistorialCajas() {
-            const fecha = document.getElementById('hist-fecha').value;
-            const container = document.getElementById('historial-resultados');
-            if(!fecha) return;
-
+            const fecha = document.getElementById('hist-fecha').value; const c = document.getElementById('historial-resultados'); if(!fecha) return;
             try {
-                const res = await fetch('/api/historial-cajas/' + fecha);
-                if(res.redirected) return window.location.href = '/login.html';
-                
-                // Si la respuesta no es OK (ej. 404 porque el server no se actualizó bien)
-                if (!res.ok) throw new Error(`El servidor devolvió un error ${res.status}.`);
-
-                const cierres = await res.json();
-
-                if (cierres.length === 0) {
-                    container.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay cajas guardadas para la fecha ${fecha}.</p>`;
-                    return;
-                }
-
-                container.innerHTML = cierres.map(c => `
-                    <div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;">
-                        <h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">
-                            📅 Fecha: ${c.fecha} | 🕒 Turno: ${c.turno || 'S/T'} | 👤 Cajero: ${c.cajero || 'N/D'}
-                        </h4>
-                        
-                        <div class="excel-grid">
-                            <div>
-                                <table class="table-custom">
-                                    <tr><th style="width:50%">Hora de Apertura</th><td>${c.inicio || '--:--'}</td></tr>
-                                    <tr><th>Hora de Cierre</th><td>${c.fin || '--:--'}</td></tr>
-                                </table>
-                                
-                                <h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE DE GASTOS / SALIDAS</h5>
-                                <table class="table-custom">
-                                    <thead><tr><th>Tipo</th><th>Usuario/Destino</th><th>Monto</th></tr></thead>
-                                    <tbody>
-                                        ${(c.gastos && c.gastos.length > 0) ? c.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos registrados</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <div>
-                                <table class="table-custom">
-                                    <tr><th>Ingreso Declarado</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>Egreso Total</th></tr>
-                                    <tr>
-                                        <td style="text-align:right;">${f.format(c.ingreso || 0)}</td>
-                                        <td style="text-align:right;">${f.format(c.saldoOro || 0)}</td>
-                                        <td style="text-align:right;">${f.format(c.saldoGanamos || 0)}</td>
-                                        <td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(c.egreso || 0)}</td>
-                                    </tr>
-                                </table>
-
-                                <table class="table-custom" style="margin-top:15px;">
-                                    <tr><th>Monto Esperado (Teórico)</th><th>Monto Real Final (Caja)</th><th>Diferencia</th></tr>
-                                    <tr>
-                                        <td style="text-align:right;">${f.format(c.montoEsperado || 0)}</td>
-                                        <td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(c.montoRealFinal || 0)}</td>
-                                        <td style="text-align:right; font-weight:bold; color:${(c.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(c.sobranteFaltante || 0)}</td>
-                                    </tr>
-                                </table>
-
-                                <h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS REPARTIDAS</h5>
-                                <table class="table-custom">
-                                    <thead><tr><th>Usuario</th><th>Monto</th></tr></thead>
-                                    <tbody>
-                                        ${(c.propinas && c.propinas.length > 0) ? c.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas registradas</td></tr>'}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-
-            } catch (error) {
-                console.error("Error al cargar historial:", error);
-                container.innerHTML = `
-                    <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center; margin-top: 20px;">
-                        <h4 style="color:#ef4444; margin:0 0 10px 0;">Error de Comunicación con el Servidor</h4>
-                        <p style="color:#cbd5e1; font-size:14px; margin:0;">El panel no puede encontrar la ruta de historiales. <br><br><strong>Importante:</strong> Asegurate de haber subido el archivo <code>server.js</code> y que la plataforma Render haya terminado de actualizar ("Deploy live").</p>
-                    </div>
-                `;
-            }
+                const res = await fetch('/api/historial-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
+                if (!res.ok) throw new Error(); const cierres = await res.json();
+                if (cierres.length === 0) return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay cajas guardadas para la fecha ${fecha}.</p>`;
+                c.innerHTML = cierres.map(cl => `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;"><h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">📅 ${cl.fecha} | 🕒 ${cl.turno || 'S/T'} | 👤 ${cl.cajero || 'N/D'}</h4><div class="excel-grid"><div><table class="table-custom"><tr><th style="width:50%">Apertura</th><td>${cl.inicio || '--:--'}</td></tr><tr><th>Cierre</th><td>${cl.fin || '--:--'}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE GASTOS</h5><table class="table-custom"><thead><tr><th>Tipo</th><th>Destino</th><th>Monto</th></tr></thead><tbody>${(cl.gastos && cl.gastos.length > 0) ? cl.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos</td></tr>'}</tbody></table></div><div><table class="table-custom"><tr><th>Ingreso</th><th>Oro</th><th>Ganamos</th><th>Egreso</th></tr><tr><td style="text-align:right;">${f.format(cl.ingreso || 0)}</td><td style="text-align:right;">${f.format(cl.saldoOro || 0)}</td><td style="text-align:right;">${f.format(cl.saldoGanamos || 0)}</td><td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(cl.egreso || 0)}</td></tr></table><table class="table-custom" style="margin-top:15px;"><tr><th>Esperado (Teórico)</th><th>Real Final (Caja)</th><th>Diferencia</th></tr><tr><td style="text-align:right;">${f.format(cl.montoEsperado || 0)}</td><td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(cl.montoRealFinal || 0)}</td><td style="text-align:right; font-weight:bold; color:${(cl.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(cl.sobranteFaltante || 0)}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS</h5><table class="table-custom"><thead><tr><th>Usuario</th><th>Monto</th></tr></thead><tbody>${(cl.propinas && cl.propinas.length > 0) ? cl.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas</td></tr>'}</tbody></table></div></div></div>`).join('');
+            } catch (e) { c.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center;"><p style="color:#cbd5e1;">Error al cargar el historial.</p></div>`; }
         }
     </script>
 </body>
