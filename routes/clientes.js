@@ -1,3 +1,8 @@
+¡Entendido! Hemos completado el último archivo, agregando la nueva ruta para que el panel de administración pueda editar a los clientes (cambiar nombre de usuario y/o contraseña) directamente desde la base de datos.
+
+Aquí tienes el código completo de clientes.js, listo para reemplazar:
+
+JavaScript
 const mongoose = require('mongoose');
 
 module.exports = function(app, requireLogin, io, sharedState) {
@@ -122,6 +127,42 @@ module.exports = function(app, requireLogin, io, sharedState) {
             res.json({ mensaje: `¡Se actualizaron ${actualizados} usuarios!` });
         } catch (error) {
             res.status(500).json({ mensaje: 'Hubo un error en el servidor.' });
+        }
+    });
+
+    // ==============================================================
+    // ✏️ NUEVA RUTA: EDITAR CLIENTE (PANEL ADMIN)
+    // ==============================================================
+    app.post('/api/editar-cliente', requireLogin, async (req, res) => {
+        try {
+            const { id, nuevoUser, nuevaPass } = req.body;
+            
+            // 1. Verificar que no se intente usar un nombre que ya pertenece a otro
+            const existeUser = await Cliente.findOne({ usuarioCasino: nuevoUser, _id: { $ne: id } });
+            if (existeUser) {
+                return res.status(400).json({ success: false, message: 'El nombre de usuario ya está en uso por otro cliente.' });
+            }
+
+            // 2. Preparar los datos a actualizar
+            const updateData = { usuarioCasino: nuevoUser };
+            
+            // Si el admin escribió una contraseña nueva, la actualizamos
+            if (nuevaPass && nuevaPass.trim() !== '') {
+                updateData.password = nuevaPass.trim(); 
+            }
+
+            // 3. Guardar en base de datos
+            await Cliente.findByIdAndUpdate(id, updateData);
+            
+            // 4. Actualizar las tablas del panel en tiempo real (si está conectado)
+            if (sharedState && sharedState.adminSocketId && io) {
+                const clientesDB = await Cliente.find();
+                io.to(sharedState.adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+            }
+
+            res.json({ success: true, message: 'Cliente actualizado correctamente.' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error interno al actualizar el cliente.', error: error.message });
         }
     });
 };
