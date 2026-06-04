@@ -26,8 +26,10 @@
         .btn-logout { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .btn-logout:hover { background-color: #ef4444; color: white; }
 
-        #vista-chat { display: none; height: 450px; flex-direction: column; }
-        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; background-color: #0b0f19; }
+        /* AJUSTES CHAT: Oculto por defecto, más grande cuando se muestra */
+        #vista-chat { display: none; height: 100%; flex-direction: column; }
+        .chat-messages { display: none; flex: 1; padding: 20px; overflow-y: auto; background-color: #0b0f19; height: 450px; }
+        
         .bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 14px; width: 100%; position: relative; }
         .bubble { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; word-wrap: break-word; box-sizing: border-box; }
         .bubble.bot { background-color: #1f2937; color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 2px; border: 1px solid #374151; }
@@ -50,6 +52,11 @@
         .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 330px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.4); text-align: center; box-sizing: border-box; }
         .btn-spin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
         .btn-spin:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* MODAL VICTORIA GENÉRICO */
+        .modal-victoria { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 99999; justify-content: center; align-items: center; }
+        .victoria-content { background: #111827; padding: 30px; border-radius: 20px; border: 2px solid #ffaa00; text-align: center; max-width: 280px; box-shadow: 0 0 40px rgba(255, 170, 0, 0.3); }
+        .victoria-emoji { font-size: 60px; margin-bottom: 10px; }
 
         /* Ruleta */
         .ruleta-container { position: relative; width: 280px; height: 280px; margin: 0 auto; }
@@ -84,7 +91,7 @@
             <div class="header-title">
                 <div class="status-dot"></div>
                 <span id="header-title-text">Chat Asistencia (En línea)</span>
-                <span id="badge-creditos" class="badge-creditos">🟡 <span id="txt-creditos">0</span> CR</span>
+                <span id="badge-creditos" class="badge-creditos hidden">🟡 <span id="txt-creditos">0</span> CR</span>
             </div>
             <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Salir</button>
         </div>
@@ -144,10 +151,19 @@
         </div>
     </div>
 
+    <div id="modal-victoria" class="modal-victoria">
+        <div class="victoria-content">
+            <div class="victoria-emoji" id="vic-emoji">🎉</div>
+            <h2 style="color:white;">¡RESULTADO!</h2>
+            <p id="vic-msg" style="color:#cbd5e1;"></p>
+            <button class="btn-spin" onclick="cerrarModalVictoria()">Aceptar</button>
+        </div>
+    </div>
+
     <div id="modal-cargar-creditos" class="modal-overlay">
         <div class="modal-content" style="border-color: #ffaa00;">
             <h3 style="color:white; margin-top:0; font-size: 20px;">🟡 Comprar Créditos</h3>
-            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos.</p>
+            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos de minijuegos.</p>
             <input type="number" id="input-creditos-monto" class="input-dark" placeholder="Monto transferido ($)...">
             <input type="url" id="input-creditos-url" class="input-dark" placeholder="URL de la imagen del comprobante...">
             <button class="btn-spin" style="background: #ffaa00; color: #000; margin-top:10px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4);" onclick="solicitarCargaCreditos()">ENVIAR REPORTE</button>
@@ -228,7 +244,26 @@
         let ruletaConfig = []; let raspaConfig = [];
         let currentRotation = 0; let raspaYaJugada = false;
         let tragaJugado = false; let cartasJugado = false; let monedaJugado = false;
-        let misCreditos = 0; // NUEVA VARIABLE
+        let misCreditos = 0;
+
+        // Cargar costos al iniciar sesión
+        async function cargarCostosMinijuegos() {
+            try {
+                const res = await fetch('/api/configuracion-minijuegos');
+                const data = await res.json();
+                if(data.success && data.minijuegos) {
+                    data.minijuegos.forEach(j => {
+                        const btns = { "Ruleta": "btn-spin-ruleta", "Tragamonedas": "btn-spin-traga" };
+                        const btnId = btns[j.name];
+                        if(btnId) {
+                            const btn = document.getElementById(btnId);
+                            if(btn) btn.innerText = `GIRAR POR ${j.creditCost} CR`;
+                        }
+                        // Para Raspa, Cartas y Moneda la acción se hace al tocar los elementos directamente
+                    });
+                }
+            } catch(e) { console.error(e); }
+        }
 
         // ==========================================
         // VISTAS Y NAVEGACIÓN
@@ -288,7 +323,7 @@
             window.usuarioLogueado = null;
             document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
             document.getElementById('header-title-text').innerText = "Chat Asistencia (En línea)";
-            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar
+            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar créditos al salir
             msgArea.innerHTML = '';
             cambiarVista('login');
         }
@@ -300,25 +335,35 @@
             if (respuesta.exito) {
                 document.getElementById('header-title-text').innerText = "Hola, " + respuesta.usuario;
                 
-                // Mostrar y actualizar créditos
                 misCreditos = respuesta.creditos || 0;
                 document.getElementById('txt-creditos').innerText = misCreditos;
                 document.getElementById('badge-creditos').classList.remove('hidden');
-                
+
+                cargarCostosMinijuegos(); // Llama a la carga de costos
+
                 msgArea.innerHTML = '';
                 if(respuesta.historial && respuesta.historial.length > 0) {
                     respuesta.historial.forEach(h => {
-                        if (h.emisor === 'bot') msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${h.mensaje}</div></div>`;
-                        else if (h.emisor === 'admin') msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${h.mensaje}</div></div>`;
-                        else if (h.emisor === 'cliente') {
+                        if (h.emisor === 'bot') {
+                            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${h.mensaje}</div></div>`;
+                        } else if (h.emisor === 'admin') {
+                            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${h.mensaje}</div></div>`;
+                        } else if (h.emisor === 'cliente') {
                             let check = h.leido ? '<span class="status-text visto">✓ Visto</span>' : '<span class="status-text">✓ Enviado</span>';
                             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${h.mensaje}</div>${check}</div>`;
                         }
                     });
                 }
+                
                 cambiarVista('chat');
                 irAlMenuPrincipal();
             }
+        });
+
+        // Escuchar actualización de créditos
+        socket.on('actualizar_creditos', (data) => {
+            misCreditos = data.nuevosCreditos;
+            document.getElementById('txt-creditos').innerText = misCreditos;
         });
 
         // ==========================================
@@ -329,10 +374,21 @@
             document.getElementById('container-chat-input').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('container-menu-options').style.display = 'grid';
+            
+            // Ocultar chat en menú principal
+            document.getElementById('messages-area').style.display = 'none';
+            
             let msgBot = 'Volviste al menú principal. ¿En qué te podemos ayudar?';
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot"><b>Club Zeus:</b><br>${msgBot}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
             socket.emit('cliente_accion', { estado: 'Menú', mensajeBot: msgBot });
+        }
+
+        function mostrarChat() {
+            document.getElementById('container-menu-options').style.display = 'none';
+            document.getElementById('container-games-options').style.display = 'none';
+            document.getElementById('messages-area').style.display = 'flex';
+            document.getElementById('container-chat-input').style.display = 'flex';
         }
 
         function mostrarSubMenuMinijuegos() {
@@ -343,16 +399,23 @@
         function seleccionarOpcion(opcion) {
             document.getElementById('container-menu-options').style.display = 'none';
             if (opcion === 'Depósito') {
+                mostrarChat(); // Abre el chat
                 document.getElementById('container-deposit-options').style.display = 'grid';
                 let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><br>Enviá el comprobante 📄`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
             } else if (opcion === 'Soporte') {
-                document.getElementById('container-chat-input').style.display = 'flex';
+                mostrarChat(); // Abre el chat
                 let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+            } else if (opcion === 'Retiro') {
+                mostrarChat(); // Abre el chat
+                let msgBot = `💸 <b>Retiro:</b> ¿Qué monto querés retirar? Escribilo aquí.`;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+                socket.emit('cliente_accion', { estado: 'Retiro', mensajeCliente: opcion, mensajeBot: msgBot });
             } else {
+                mostrarChat(); // Abre el chat por si acaso
                 let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
@@ -378,6 +441,7 @@
         document.getElementById('client-raw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') enviarMensajeLibreCliente(); });
 
         socket.on('recibir_mensaje_admin', (datos) => {
+            mostrarChat(); // Muestra el chat si llega un mensaje
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${datos.mensaje}</div></div>`;
             document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
             msgArea.scrollTop = msgArea.scrollHeight;
@@ -388,8 +452,21 @@
         });
 
         // ==========================================
-        // SISTEMA DE MINIJUEGOS Y CRÉDITOS
+        // SISTEMA DE MINIJUEGOS Y MODALES
         // ==========================================
+        
+        // Modal de victoria
+        function abrirModalVictoria(msg, emoji = '🎉') {
+            const cleanMsg = msg.replace(/<[^>]*>?/gm, ''); // Limpiar HTML del mensaje
+            document.getElementById('vic-msg').innerText = cleanMsg;
+            document.getElementById('vic-emoji').innerText = emoji;
+            document.getElementById('modal-victoria').style.display = 'flex';
+        }
+
+        function cerrarModalVictoria() {
+            document.getElementById('modal-victoria').style.display = 'none';
+        }
+
         function abrirModal(juego) {
             if (juego === 'cargar-creditos') {
                 document.getElementById('modal-cargar-creditos').style.display = 'block';
@@ -425,13 +502,12 @@
 
         function cerrarModal(juego) {
             document.getElementById(`modal-${juego}`).style.display = 'none';
-            if(juego !== 'cargar-creditos') irAlMenuPrincipal();
         }
 
         async function solicitarCargaCreditos() {
             const monto = document.getElementById('input-creditos-monto').value;
             const url = document.getElementById('input-creditos-url').value;
-            if(!monto || !url) return alert("Por favor, completá los datos.");
+            if(!monto || !url) return alert("Por favor, ingresá el monto y la URL del comprobante.");
 
             try {
                 const res = await fetch('/api/solicitar-carga-creditos', {
@@ -441,28 +517,39 @@
                 const data = await res.json();
                 if(data.success) {
                     cerrarModal('cargar-creditos');
-                    alert("Reporte enviado. Esperando aprobación.");
-                } else alert(data.message);
-            } catch(e) { alert("Error de conexión."); }
+                    document.getElementById('input-creditos-monto').value = '';
+                    document.getElementById('input-creditos-url').value = '';
+                    
+                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🟡 Reporté pago de ${monto} Créditos.<br>Comprobante adjuntado.</div><span class="status-text">✓ Enviado</span></div>`;
+                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">✅ ${data.message}</div></div>`;
+                    msgArea.scrollTop = msgArea.scrollHeight;
+                    socket.emit('cliente_accion', { estado: 'Carga Créditos', mensajeCliente: `Reporté pago de ${monto} Créditos`, mensajeBot: data.message });
+                    mostrarChat(); // Asegurar que el chat esté visible si no lo estaba
+                } else {
+                    alert(data.message || "Error al procesar la solicitud.");
+                }
+            } catch(e) { alert("Error de conexión al solicitar los créditos."); }
         }
 
-        function anunciarVictoria(emoji, titulo, msg) {
-            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${emoji} Jugué: ${titulo}</div><span class="status-text">✓ Enviado</span></div>`;
-            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${msg}</div></div>`;
-            msgArea.scrollTop = msgArea.scrollHeight;
-            socket.emit('cliente_accion', { estado: 'Menú' }); 
-        }
-
-              function jugarRuleta() {
+        // --- RUEDAS Y TIRADAS ---
+        function jugarRuleta() {
             document.getElementById('btn-spin-ruleta').disabled = true;
             fetch('/api/tirar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
             .then(r => r.json()).then(data => {
-                if(!data.exito) { alert(data.mensaje); return cerrarModal('ruleta'); }
+                if(!data.exito) { 
+                    alert(data.mensaje); 
+                    document.getElementById('btn-spin-ruleta').disabled = false;
+                    return cerrarModal('ruleta'); 
+                }
                 const wIdx = ruletaConfig.findIndex(i => i.id === data.premio.id); const sl = 360/ruletaConfig.length;
                 let needed = (270 - ((wIdx*sl)+(sl/2))) - (currentRotation%360); if(needed<0) needed+=360;
                 currentRotation += needed + (360*5);
                 document.getElementById('ruleta-canvas').style.transform = `rotate(${currentRotation}deg)`;
-                setTimeout(() => { document.querySelector('#modal-ruleta .btn-close-modal').classList.remove('hidden'); anunciarVictoria('🎯', 'Ruleta', data.mensaje); }, 5300);
+                setTimeout(() => { 
+                    document.querySelector('#modal-ruleta .btn-close-modal').classList.remove('hidden'); 
+                    cerrarModal('ruleta'); // Cerramos ruleta
+                    abrirModalVictoria(data.mensaje, '🎰'); // Abrimos victoria
+                }, 5300);
             });
         }
 
@@ -477,7 +564,11 @@
                 cards[idx].innerHTML += `<div class="raspa-prize-text">${data.premio.premio}</div><div class="raspa-value-text">$${data.premio.valor}</div>`;
                 setTimeout(() => {
                     let rIdx = 0; cards.forEach((c, i) => { if(i!==idx) { c.classList.add('others-revealed'); c.querySelector('.raspa-cover-layer').style.opacity='0'; c.innerHTML += `<div class="raspa-prize-text">${pools[rIdx].premio}</div><div class="raspa-value-text">$${pools[rIdx].valor}</div>`; rIdx++; }});
-                    document.querySelector('#modal-raspa .btn-close-modal').classList.remove('hidden'); anunciarVictoria('🎫', 'Raspa y Gana', data.mensaje);
+                    document.querySelector('#modal-raspa .btn-close-modal').classList.remove('hidden'); 
+                    setTimeout(() => {
+                        cerrarModal('raspa');
+                        abrirModalVictoria(data.mensaje, '🎫');
+                    }, 1500); // Dar un poco de tiempo para ver el resto antes de mostrar el modal
                 }, 800);
             });
         }
@@ -496,7 +587,8 @@
                     document.getElementById('client-slot-2').innerText = icons[Math.floor(Math.random()*icons.length)];
                     document.getElementById('client-slot-3').innerText = data.premio.premio.substring(0,2) || "🎰";
                     document.querySelector('#modal-traga .btn-close-modal').classList.remove('hidden');
-                    anunciarVictoria('🍒', 'Slots', data.mensaje);
+                    cerrarModal('traga');
+                    abrirModalVictoria(data.mensaje, '🍒');
                 }, 1500);
             });
         }
@@ -511,7 +603,10 @@
                 document.getElementById('client-card-val').innerText = data.premio.premio.substring(0,2) || "🃏";
                 document.getElementById('client-card-desc').innerText = data.premio.premio;
                 document.querySelector('#modal-cartas .btn-close-modal').classList.remove('hidden');
-                anunciarVictoria('🃏', 'Carta de la Suerte', data.mensaje);
+                setTimeout(() => {
+                    cerrarModal('cartas');
+                    abrirModalVictoria(data.mensaje, '🃏');
+                }, 2000); // Tiempo para ver la carta antes del modal
             });
         }
 
@@ -526,7 +621,10 @@
                 setTimeout(() => {
                     c.innerText = data.premio.premio.includes('Cara') ? '🟡' : (data.premio.premio.includes('Cruz') ? '⚪' : '💥');
                     document.querySelector('#modal-moneda .btn-close-modal').classList.remove('hidden');
-                    anunciarVictoria('🪙', 'Cara o Cruz', data.mensaje);
+                    setTimeout(() => {
+                        cerrarModal('moneda');
+                        abrirModalVictoria(data.mensaje, '🪙');
+                    }, 1500); // Tiempo para ver la moneda antes del modal
                 }, 1500);
             });
         }
