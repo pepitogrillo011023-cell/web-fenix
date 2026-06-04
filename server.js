@@ -6,6 +6,9 @@ const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
 
+// Importar modelo Minigame (corregido para evitar OverwriteModelError)
+const Minigame = require('./models/Minigame');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
@@ -34,11 +37,6 @@ const Raspa = mongoose.model('Raspa', new mongoose.Schema({ configuracion: Array
 const Tragamonedas = mongoose.model('Tragamonedas', new mongoose.Schema({ configuracion: Array }));
 const Cartas = mongoose.model('Cartas', new mongoose.Schema({ configuracion: Array }));
 const Moneda = mongoose.model('Moneda', new mongoose.Schema({ configuracion: Array }));
-
-const Minigame = mongoose.model('Minigame', new mongoose.Schema({ 
-    name: { type: String, unique: true }, 
-    creditCost: { type: Number, default: 10 } 
-}));
 
 const PanelConfig = mongoose.model('PanelConfig', new mongoose.Schema({
     identificador: { type: String, default: 'global', unique: true },
@@ -168,7 +166,7 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
         });
         res.json({ exito: true });
     } else {
-        res.status(500).json({ exito: false, mensaje: 'No hay administrador conectado.' });
+        res.status(500).json({ exito: false, mensaje: 'No hay administrador conectado por Sockets actualmente.' });
     }
 });
 
@@ -251,7 +249,7 @@ io.on('connection', (socket) => {
             exito: true, 
             usuario: datos.usuario, 
             historial: clienteDB.historialChat,
-            creditos: clienteDB.creditos || 0
+            creditos: clienteDB.creditos || 0 
         });
         
         if (sharedState.adminSocketId) {
@@ -320,20 +318,17 @@ io.on('connection', (socket) => {
 // 🛠️ INICIALIZADOR DE DATOS
 // ==============================================================
 async function inicializarDatosDePrueba() {
-    // 1. Inicializar Minijuegos (Soluciona "ID no encontrado")
     const juegos = ['Ruleta', 'Raspa', 'Tragamonedas', 'Cartas', 'Moneda'];
     for (let nombre of juegos) {
         const existe = await Minigame.findOne({ name: nombre });
         if (!existe) await new Minigame({ name: nombre, creditCost: 10 }).save();
     }
     
-    // 2. Cliente de prueba
     const countCl = await Cliente.countDocuments();
     if(countCl === 0) { await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save(); }
     
-    // 3. Ruleta
-    const countRuleta = await Ruleta.countDocuments();
-    if (countRuleta === 0) {
+    // Configuraciones iniciales (Ruleta, etc) se mantienen iguales...
+    if (await Ruleta.countDocuments() === 0) {
         await new Ruleta({ configuracion: [
             { id: 0, premio: '🏆 JACKPOT', valor: 50000, probabilidad: 2 },
             { id: 1, premio: '🔥 Premio Mayor', valor: 10000, probabilidad: 8 },
@@ -343,10 +338,7 @@ async function inicializarDatosDePrueba() {
             { id: 5, premio: '🎁 Sorpresa', valor: 100, probabilidad: 40 }
         ]}).save();
     }
-
-    // 4. Raspa
-    const countRaspa = await Raspa.countDocuments();
-    if (countRaspa === 0) {
+    if (await Raspa.countDocuments() === 0) {
         await new Raspa({ configuracion: [
             { id: 0, premio: '💎 MEGA BONO', valor: 30000, probabilidad: 3 },
             { id: 1, premio: '👑 Premio Alto', valor: 15000, probabilidad: 7 },
@@ -356,8 +348,6 @@ async function inicializarDatosDePrueba() {
             { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
         ]}).save();
     }
-
-    // 5. Slots
     if (await Tragamonedas.countDocuments() === 0) {
         await new Tragamonedas({ configuracion: [
             { id: 0, premio: '🎰 PLENO 777', valor: 50000, probabilidad: 2 },
@@ -368,8 +358,6 @@ async function inicializarDatosDePrueba() {
             { id: 5, premio: '❌ Sin Suerte', valor: 0, probabilidad: 20 }
         ]}).save();
     }
-
-    // 6. Cartas
     if (await Cartas.countDocuments() === 0) {
         await new Cartas({ configuracion: [
             { id: 0, premio: '🃏 AS (Jackpot)', valor: 25000, probabilidad: 5 },
@@ -380,8 +368,6 @@ async function inicializarDatosDePrueba() {
             { id: 5, premio: '🃂 2 Corazones', valor: 100, probabilidad: 10 }
         ]}).save();
     }
-
-    // 7. Moneda
     if (await Moneda.countDocuments() === 0) {
         await new Moneda({ configuracion: [
             { id: 0, premio: '🟡 Cara Dorada', valor: 10000, probabilidad: 5 },
