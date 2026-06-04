@@ -6,15 +6,18 @@
     <title>Acceso - Casino Fénix</title>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; }
-        .app-container { background-color: #111827; width: 340px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1f2937; display: flex; flex-direction: column; }
+        body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; color: white; overflow: hidden; }
+        
+        /* Modificado: Se agregó height y max-height para que actúe como una App rígida */
+        .app-container { background-color: #111827; width: 340px; height: 95vh; max-height: 750px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); overflow: hidden; border: 1px solid #1f2937; display: flex; flex-direction: column; }
+        
         .header { background-color: #1f2937; padding: 15px; font-weight: bold; font-size: 14px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #374151; }
         .header-title { display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
         
         .badge-creditos { background-color: #ffaa00; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; box-shadow: 0 0 8px rgba(255, 170, 0, 0.4); }
 
-        .auth-body { padding: 40px 25px; display: flex; flex-direction: column; align-items: center; }
+        .auth-body { padding: 40px 25px; display: flex; flex-direction: column; align-items: center; flex: 1; justify-content: center; }
         .auth-body h3 { margin-top: 0; margin-bottom: 20px; font-size: 18px; color: white; }
         .input-dark { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 15px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 12px; font-size: 14px; outline: none; transition: border 0.3s; }
         .input-dark:focus { border-color: #38bdf8; }
@@ -26,9 +29,12 @@
         .btn-logout { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .btn-logout:hover { background-color: #ef4444; color: white; }
 
-        /* AJUSTES CHAT: Solución del scroll horizontal */
-        #vista-chat { display: none; height: 100%; flex-direction: column; }
-        .chat-messages { display: none; flex-direction: column; flex: 1; padding: 20px; overflow-y: auto; overflow-x: hidden; background-color: #0b0f19; height: 450px; }
+        /* AJUSTES CHAT: Solución del scroll horizontal y vertical */
+        /* Modificado: flex: 1 y overflow hidden para contener la zona */
+        #vista-chat { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+        
+        /* Modificado: Se eliminó height fijo. El flex: 1 se encarga de rellenar el espacio */
+        .chat-messages { display: none; flex-direction: column; flex: 1; padding: 20px; overflow-y: auto; overflow-x: hidden; background-color: #0b0f19; }
         
         .bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 14px; width: 100%; position: relative; }
         .bubble { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; word-wrap: break-word; box-sizing: border-box; }
@@ -322,7 +328,7 @@
             window.usuarioLogueado = null;
             document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
             document.getElementById('header-title-text').innerText = "Chat Asistencia (En línea)";
-            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar créditos
+            document.getElementById('badge-creditos').classList.add('hidden');
             msgArea.innerHTML = '';
             cambiarVista('login');
         }
@@ -338,7 +344,7 @@
                 document.getElementById('txt-creditos').innerText = misCreditos;
                 document.getElementById('badge-creditos').classList.remove('hidden');
 
-                cargarCostosMinijuegos(); // Carga de costos al iniciar sesión
+                cargarCostosMinijuegos();
 
                 msgArea.innerHTML = '';
                 if(respuesta.historial && respuesta.historial.length > 0) {
@@ -359,7 +365,6 @@
             }
         });
 
-        // Escuchar actualización de créditos desde el servidor
         socket.on('actualizar_creditos', (data) => {
             misCreditos = data.nuevosCreditos;
             document.getElementById('txt-creditos').innerText = misCreditos;
@@ -374,7 +379,6 @@
             document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('container-menu-options').style.display = 'grid';
             
-            // OCULTAMOS EL CHAT EN EL MENÚ
             document.getElementById('messages-area').style.display = 'none';
             
             let msgBot = 'Volviste al menú principal. ¿En qué te podemos ayudar?';
@@ -384,7 +388,6 @@
         }
 
         function mostrarChat() {
-            // FUNCIÓN PARA MOSTRAR EL CHAT VERTICAL
             document.getElementById('container-menu-options').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('messages-area').style.display = 'flex';
@@ -395,7 +398,7 @@
         function mostrarSubMenuMinijuegos() {
             document.getElementById('container-menu-options').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'grid';
-            document.getElementById('messages-area').style.display = 'none'; // Aseguramos que el chat siga oculto
+            document.getElementById('messages-area').style.display = 'none'; 
         }
 
         function seleccionarOpcion(opcion) {
@@ -443,7 +446,7 @@
         document.getElementById('client-raw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') enviarMensajeLibreCliente(); });
 
         socket.on('recibir_mensaje_admin', (datos) => {
-            mostrarChat(); // Si recibe mensaje estando en menú, se abre el chat para verlo
+            mostrarChat(); 
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${datos.mensaje}</div></div>`;
             document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
             msgArea.scrollTop = msgArea.scrollHeight;
@@ -457,9 +460,8 @@
         // SISTEMA DE MINIJUEGOS Y MODALES
         // ==========================================
         
-        // Modal genérico de victoria
         function abrirModalVictoria(msg, emoji = '🎉') {
-            const cleanMsg = msg.replace(/<[^>]*>?/gm, '\n'); // Quitamos tags HTML para el alert limpio
+            const cleanMsg = msg.replace(/<[^>]*>?/gm, '\n');
             document.getElementById('vic-msg').innerText = cleanMsg;
             document.getElementById('vic-emoji').innerText = emoji;
             document.getElementById('modal-victoria').style.display = 'flex';
@@ -526,14 +528,13 @@
                     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">✅ ${data.message}</div></div>`;
                     msgArea.scrollTop = msgArea.scrollHeight;
                     socket.emit('cliente_accion', { estado: 'Carga Créditos', mensajeCliente: `Reporté pago de ${monto} Créditos`, mensajeBot: data.message });
-                    mostrarChat(); // Asegurar que el chat esté visible
+                    mostrarChat(); 
                 } else {
                     alert(data.message || "Error al procesar la solicitud.");
                 }
             } catch(e) { alert("Error de conexión al solicitar los créditos."); }
         }
 
-        // --- LÓGICA DE JUEGOS ---
         function jugarRuleta() {
             document.getElementById('btn-spin-ruleta').disabled = true;
             fetch('/api/tirar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
@@ -548,7 +549,6 @@
                 currentRotation += needed + (360*5);
                 document.getElementById('ruleta-canvas').style.transform = `rotate(${currentRotation}deg)`;
                 
-                // Mantenemos el log en el chat en segundo plano
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Jugué: Ruleta</div><span class="status-text">✓ Enviado</span></div>`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
                 
