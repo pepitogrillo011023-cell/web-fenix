@@ -1,13 +1,21 @@
 const mongoose = require('mongoose');
-// Importamos los modelos necesarios
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 
-module.exports = function(app, requireLogin) {
+module.exports = function(app, requireLogin, io, sharedState) {
     const CierreCaja = mongoose.model('CierreCaja');
+    const Cliente = mongoose.model('Cliente');
+
+    // Función auxiliar para notificar al panel administrativo
+    const notificarPanelAdmin = async () => {
+        if (sharedState && sharedState.adminSocketId) {
+            const clientesDB = await Cliente.find();
+            io.to(sharedState.adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
+    };
 
     // ==============================================================
-    // 📊 RUTAS DE CIERRE DE CAJA, RESÚMENES E HISTORIAL (EXISTENTES)
+    // 📊 RUTAS DE CIERRE DE CAJA, RESÚMENES E HISTORIAL
     // ==============================================================
     app.post('/api/cierre-caja', requireLogin, async (req, res) => {
         try {
@@ -106,21 +114,21 @@ module.exports = function(app, requireLogin) {
     });
 
     // ==============================================================
-    // 💳 RUTAS DE GESTIÓN DE CRÉDITOS (NUEVO BLOQUE)
+    // 💳 RUTAS DE GESTIÓN DE CRÉDITOS
     // ==============================================================
 
-    // RUTA GET: Obtener transacciones pendientes
+    // RUTA: Obtener transacciones pendientes
     app.get('/api/transacciones-pendientes', requireLogin, async (req, res) => {
         try {
             const tipo = req.query.tipo;
-            const transacciones = await Transaction.find({ type: tipo, status: 'pending' }).populate('userId', 'username');
+            const transacciones = await Transaction.find({ type: tipo, status: 'pending' }).populate('userId', 'usuarioCasino');
             res.json({ transacciones });
         } catch (e) {
             res.status(500).json({ error: e.message });
         }
     });
 
-    // 1. CLIENTE: Solicitar carga de créditos (Reportar pago)
+    // CLIENTE: Solicitar carga de créditos
     app.post('/api/solicitar-carga-creditos', requireLogin, async (req, res) => {
         try {
             const { userId, amount, receiptUrl } = req.body;
@@ -134,66 +142,64 @@ module.exports = function(app, requireLogin) {
             });
             
             await nuevaTransaccion.save();
-            res.json({ success: true, message: 'Reporte de pago de créditos enviado. Esperando aprobación del cajero.' });
+            await notificarPanelAdmin(); // Avisar al cajero que hay nueva solicitud
+            res.json({ success: true, message: 'Reporte de pago enviado.' });
         } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al procesar la solicitud de créditos.', error: error.message });
+            res.status(500).json({ success: false, message: error.message });
         }
     });
 
-    // 2. CAJERO: Aprobar carga de créditos
+    // CAJERO: Aprobar carga de créditos
     app.post('/api/aprobar-carga-creditos', requireLogin, async (req, res) => {
         try {
-            const { transactionId, cashierId } = req.body;
+            const { transactionId } = req.body;
             const transaccion = await Transaction.findById(transactionId);
             
-            if (!transaccion || transaccion.type !== 'credit_charge' || transaccion.status !== 'pending') {
-                return res.status(400).json({ success: false, message: 'Transacción no válida o ya procesada.' });
+            if (!transaccion || transaccion.status !== 'pending') {
+                return res.status(400).json({ success: false, message: 'Transacción no válida.' });
             }
 
-            // Actualizar estado de la transacción
             transaccion.status = 'approved';
-            transaccion.resolvedBy = cashierId;
             transaccion.resolvedAt = new Date();
             await transaccion.save();
 
-            // Sumar créditos al cliente (Cambiamos User por Cliente según tu estructura)
-            const Cliente = mongoose.model('Cliente');
             const cliente = await Cliente.findById(transaccion.userId);
             cliente.creditos = (cliente.creditos || 0) + transaccion.amount;
             await cliente.save();
 
-            res.json({ success: true, message: 'Créditos aprobados y cargados al usuario exitosamente.', nuevosCreditos: cliente.creditos });
+            // Notificar al cliente en tiempo real
+            const socketCliente = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
+            if (socketCliente && io) {
+                io.to(socketCliente.socketId).emit('actualizar_creditos', { nuevosCreditos: cliente.creditos });
+            }
+
+            await notificarPanelAdmin();
+            res.json({ success: true, message: 'Créditos cargados.', nuevosCreditos: cliente.creditos });
         } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al aprobar los créditos.', error: error.message });
+            res.status(500).json({ success: false, message: error.message });
         }
     });
 
-    // 3. CAJERO/ADMIN: Cargar o retirar créditos manualmente
+    // CAJERO: Gestión manual
     app.post('/api/gestion-manual-creditos', requireLogin, async (req, res) => {
         try {
-            const { userId, amount, action } = req.body; 
-            const Cliente = mongoose.model('Cliente');
+            const { userId, amount, action } = req.body;
             const cliente = await Cliente.findById(userId);
 
-            if (!cliente) {
-                return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
-            }
-
-            if (action === 'add') {
-                cliente.creditos = (cliente.creditos || 0) + amount;
-            } else if (action === 'remove') {
-                if ((cliente.creditos || 0) < amount) {
-                    return res.status(400).json({ success: false, message: 'El usuario no tiene suficientes créditos.' });
-                }
-                cliente.creditos -= amount;
-            } else {
-                return res.status(400).json({ success: false, message: 'Acción no válida.' });
-            }
+            if (action === 'add') cliente.creditos = (cliente.creditos || 0) + amount;
+            else if (action === 'remove') cliente.creditos = Math.max(0, (cliente.creditos || 0) - amount);
 
             await cliente.save();
-            res.json({ success: true, message: `Créditos actualizados. Saldo: ${cliente.creditos} créditos.` });
+            await notificarPanelAdmin();
+            
+            const socketCliente = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
+            if (socketCliente && io) {
+                io.to(socketCliente.socketId).emit('actualizar_creditos', { nuevosCreditos: cliente.creditos });
+            }
+
+            res.json({ success: true, message: 'Créditos actualizados.' });
         } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al gestionar los créditos manualmente.', error: error.message });
+            res.status(500).json({ success: false, message: error.message });
         }
     });
 };
