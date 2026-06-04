@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // ==============================================================
-// 📝 1. MODELOS DE DATOS
+// 📝 1. MODELOS DE DATOS (Mantenemos todos para que Mongoose los registre)
 // ==============================================================
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
@@ -110,28 +110,28 @@ app.get('/admin.html', requireLogin, (req, res) => {
 });
 
 // ==============================================================
-// 💳 5. BILLETERA WEBHOOK Y SALDOS
+// 📦 5. MEMORIA COMPARTIDA (SHARED STATE) PARA SOCKETS
+// ==============================================================
+const sharedState = {
+    usuariosConectados: [],
+    adminSocketId: null,
+    usuarioSeleccionadoActivoAdmin: null
+};
+
+// ==============================================================
+// 💳 6. BILLETERA WEBHOOK (Se queda en server por los sockets directos)
 // ==============================================================
 app.post('/api/webhook/billetera', async (req, res) => {
     res.status(200).send("OK");
-
     try {
-        const accion = req.body?.action;
-        const tipo = req.body?.type;
-        const paymentId = req.body?.data?.id;
-
+        const accion = req.body?.action; const tipo = req.body?.type; const paymentId = req.body?.data?.id;
         if ((accion === 'payment.created' || tipo === 'payment') && paymentId) {
             const configDb = await PanelConfig.findOne({ identificador: 'global' });
             const accessTokenMP = configDb?.apis?.pass; 
-
-            if (!accessTokenMP) {
-                console.log("🔴 Webhook recibido pero falta el Access Token de MP en el panel.");
-                return;
-            }
+            if (!accessTokenMP) return;
 
             const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
-                method: 'GET',
-                headers: { 'Authorization': `Bearer ${accessTokenMP}` }
+                method: 'GET', headers: { 'Authorization': `Bearer ${accessTokenMP}` }
             });
             const dataMP = await mpResponse.json();
 
@@ -141,32 +141,22 @@ app.post('/api/webhook/billetera', async (req, res) => {
 
                 let datosBilleteraActuales = configDb.billetera || {};
                 datosBilleteraActuales.monto = saldoFormateado;
+                await PanelConfig.updateOne({ identificador: 'global' }, { $set: { billetera: datosBilleteraActuales } });
 
-                await PanelConfig.updateOne(
-                    { identificador: 'global' },
-                    { $set: { billetera: datosBilleteraActuales } }
-                );
-
-                if (adminSocketId) {
-                    io.to(adminSocketId).emit('billetera_actualizada_en_vivo', {
-                        saldoFormateado: saldoFormateado,
-                        montoTransferido: montoTransferido,
-                        tipoMovimiento: 'ingreso'
+                if (sharedState.adminSocketId) {
+                    io.to(sharedState.adminSocketId).emit('billetera_actualizada_en_vivo', {
+                        saldoFormateado: saldoFormateado, montoTransferido: montoTransferido, tipoMovimiento: 'ingreso'
                     });
                 }
             }
         }
-    } catch (error) {
-        console.error("🔴 Error procesando el Webhook de Mercado Pago:", error);
-    }
+    } catch (error) { console.error("🔴 Error procesando Webhook:", error); }
 });
 
 app.post('/api/simular-pago-test', requireLogin, (req, res) => {
-    if (adminSocketId) {
-        io.to(adminSocketId).emit('billetera_actualizada_en_vivo', {
-            saldoFormateado: "$500,00 ARS (Simulado)",
-            montoTransferido: 500,
-            tipoMovimiento: 'ingreso'
+    if (sharedState.adminSocketId) {
+        io.to(sharedState.adminSocketId).emit('billetera_actualizada_en_vivo', {
+            saldoFormateado: "$500,00 ARS (Simulado)", montoTransferido: 500, tipoMovimiento: 'ingreso'
         });
         res.json({ exito: true });
     } else {
@@ -174,297 +164,22 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
     }
 });
 
-app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
-    const { usuario, monto } = req.body;
-    try {
-        await Cliente.updateOne(
-            { usuarioCasino: usuario }, 
-            { $inc: { saldo: monto } }
-        );
-        res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.` });
-    } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
-    }
-});
-
 // ==============================================================
-// 📊 6. RUTAS DE CIERRE DE CAJA, RESÚMENES E HISTORIAL (MODULAR)
+// 🚀 7. IMPORTACIÓN DE RUTAS MODULARES
 // ==============================================================
 require('./routes/finanzas')(app, requireLogin);
+require('./routes/clientes')(app, requireLogin);
+require('./routes/eventos')(app, requireLogin, io, sharedState);
+
 
 // ==============================================================
-// 🎲 7. RUTAS DE EVENTOS (RULETA / RASPA)
+// 🔌 8. COMUNICACIÓN EN VIVO (SOCKETS)
 // ==============================================================
-app.post('/api/guardar-ruleta', requireLogin, async (req, res) => {
-    try {
-        await Ruleta.deleteMany({});
-        await new Ruleta({ configuracion: req.body.configuracion }).save();
-        res.json({ exito: true });
-    } catch (error) {
-        res.json({ exito: false });
-    }
-});
-
-app.get('/api/ruleta-config', async (req, res) => {
-    try {
-        const ruletaDb = await Ruleta.findOne();
-        const config = ruletaDb ? ruletaDb.configuracion : [];
-        res.json({ exito: true, config });
-    } catch (error) {
-        res.json({ exito: false });
-    }
-});
-
-app.post('/api/tirar-ruleta-prueba', requireLogin, (req, res) => {
-    try {
-        const { configuracion } = req.body;
-        if (!configuracion || configuracion.length === 0) return res.json({ exito: false });
-
-        const rand = Math.random() * 100;
-        let sum = 0;
-        let premioGanado = configuracion[configuracion.length - 1]; 
-
-        for (let item of configuracion) {
-            sum += item.probabilidad;
-            if (rand <= sum) {
-                premioGanado = item;
-                break;
-            }
-        }
-        res.json({ exito: true, premio: premioGanado });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
-
-app.post('/api/tirar-ruleta', async (req, res) => {
-    try {
-        const { usuario } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
-
-        const hoy = new Date();
-        const ultima = cliente.ultimaRuleta;
-        if (ultima && ultima.getDate() === hoy.getDate() && ultima.getMonth() === hoy.getMonth() && ultima.getFullYear() === hoy.getFullYear()) {
-            return res.json({ exito: false, mensaje: '❌ Ya usaste tu tiro diario. ¡Volvé mañana con más suerte!' });
-        }
-
-        const ruletaDb = await Ruleta.findOne();
-        const config = ruletaDb ? ruletaDb.configuracion : [];
-        if (config.length === 0) return res.json({ exito: false, mensaje: 'La ruleta está en mantenimiento.' });
-
-        const rand = Math.random() * 100;
-        let sum = 0;
-        let premioGanado = config[config.length - 1]; 
-
-        for (let item of config) {
-            sum += item.probabilidad;
-            if (rand <= sum) {
-                premioGanado = item;
-                break;
-            }
-        }
-
-        cliente.saldo += premioGanado.valor;
-        cliente.ultimaRuleta = hoy;
-        
-        const msgBot = `🎰 ¡La ruleta frenó en <b>${premioGanado.premio}</b>!<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu cuenta de casino.`;
-        cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-        await cliente.save();
-
-        const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
-        if (usuarioExistente) {
-            usuarioExistente.historial = cliente.historialChat;
-            if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
-        }
-        if (adminSocketId) {
-            const clientesDB = await Cliente.find();
-            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
-        }
-
-        res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
-
-app.post('/api/guardar-raspa', requireLogin, async (req, res) => {
-    try {
-        await Raspa.deleteMany({});
-        await new Raspa({ configuracion: req.body.configuracion }).save();
-        res.json({ exito: true });
-    } catch (error) {
-        res.json({ exito: false });
-    }
-});
-
-app.get('/api/raspa-config', async (req, res) => {
-    try {
-        const raspaDb = await Raspa.findOne();
-        const config = raspaDb ? raspaDb.configuracion : [];
-        res.json({ exito: true, config });
-    } catch (error) {
-        res.json({ exito: false });
-    }
-});
-
-app.post('/api/tirar-raspa-prueba', requireLogin, (req, res) => {
-    try {
-        const { configuracion } = req.body;
-        if (!configuracion || configuracion.length === 0) return res.json({ exito: false });
-
-        const rand = Math.random() * 100;
-        let sum = 0;
-        let premioGanado = configuracion[configuracion.length - 1];
-
-        for (let item of configuracion) {
-            sum += item.probabilidad;
-            if (rand <= sum) {
-                premioGanado = item;
-                break;
-            }
-        }
-        res.json({ exito: true, premio: premioGanado });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
-
-app.post('/api/tirar-raspa', async (req, res) => {
-    try {
-        const { usuario } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
-
-        const hoy = new Date();
-        const ultima = cliente.ultimaRaspa;
-        if (ultima && ultima.getDate() === hoy.getDate() && ultima.getMonth() === hoy.getMonth() && ultima.getFullYear() === hoy.getFullYear()) {
-            return res.json({ exito: false, mensaje: '❌ Ya raspaste tu tarjeta de hoy. ¡Volvé mañana!' });
-        }
-
-        const raspaDb = await Raspa.findOne();
-        const config = raspaDb ? raspaDb.configuracion : [];
-        if (config.length === 0) return res.json({ exito: false, mensaje: 'El Raspa y Gana está en mantenimiento.' });
-
-        const rand = Math.random() * 100;
-        let sum = 0;
-        let premioGanado = config[config.length - 1];
-
-        for (let item of config) {
-            sum += item.probabilidad;
-            if (rand <= sum) {
-                premioGanado = item;
-                break;
-            }
-        }
-
-        cliente.saldo += premioGanado.valor;
-        cliente.ultimaRaspa = hoy;
-
-        const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!<br>Premio obtenido: <b>${premioGanado.premio}</b>.<br>Se acreditaron <b>$${premioGanado.valor}</b> a tu balance.`;
-        cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
-        await cliente.save();
-
-        const usuarioExistente = usuariosConectados.find(u => u.nombre === usuario);
-        if (usuarioExistente) {
-            usuarioExistente.historial = cliente.historialChat;
-            if (adminSocketId) io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario, historial: usuarioExistente.historial });
-        }
-        if (adminSocketId) {
-            const clientesDB = await Cliente.find();
-            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
-        }
-
-        res.json({ exito: true, mensaje: msgBot, premio: premioGanado });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
-
-// ==============================================================
-// 🛠 8. OTRAS RUTAS API (CONFIG / VALIDAR CLIENTE / IMPORTADOR)
-// ==============================================================
-app.post('/api/validar-cliente', async (req, res) => {
-    try {
-        const { usuario, password } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        
-        if (cliente) {
-            const claveReal = cliente.password ? cliente.password : '1234';
-            if (password === claveReal) {
-                if (!cliente.password) {
-                    await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
-                }
-                res.json({ exito: true });
-            } else {
-                res.json({ exito: false }); 
-            }
-        } else {
-            res.json({ exito: false }); 
-        }
-    } catch (error) {
-        res.status(500).json({ exito: false, mensaje: 'Error en inicio de sesión.' });
-    }
-});
-
-app.post('/api/guardar-config', requireLogin, async (req, res) => {
-    try {
-        const { seccion, datos } = req.body;
-        await PanelConfig.updateOne(
-            { identificador: 'global' },
-            { $set: { [seccion]: datos } },
-            { upsert: true }
-        );
-        res.json({ exito: true });
-    } catch (error) {
-        res.status(500).json({ exito: false });
-    }
-});
-
-app.post('/importar-datos', requireLogin, async (req, res) => {
-    try {
-        const { datosCrudos } = req.body;
-        const lineas = datosCrudos.split('\n').map(l => l.trim()).filter(l => l !== '');
-        let actualizados = 0;
-
-        for (let i = 0; i < lineas.length; i++) {
-            if (lineas[i].toLowerCase() === 'player') {
-                const usuario = lineas[i - 1];
-                const saldoString = lineas[i + 1];
-                if (usuario && saldoString) {
-                    const saldoNumerico = parseFloat(saldoString.replace(/\./g, '').replace(',', '.'));
-                    if (!isNaN(saldoNumerico)) {
-                        await Cliente.updateOne(
-                            { usuarioCasino: usuario }, 
-                            { 
-                                $set: { saldo: saldoNumerico, estado: 'Activo' },
-                                $setOnInsert: { password: '1234' }
-                            }, 
-                            { upsert: true }
-                        );
-                        actualizados++;
-                    }
-                }
-            }
-        }
-        res.json({ mensaje: `¡Se actualizaron ${actualizados} usuarios!` });
-    } catch (error) {
-        res.status(500).json({ mensaje: 'Hubo un error en el servidor.' });
-    }
-});
-
-// ==============================================================
-// 🔌 9. COMUNICACIÓN EN VIVO (SOCKETS)
-// ==============================================================
-let usuariosConectados = []; 
-let adminSocketId = null;
-let usuarioSeleccionadoActivoAdmin = null;
-
 io.on('connection', (socket) => {
     
     socket.on('identificar_admin', async () => {
-        adminSocketId = socket.id;
-        socket.emit('lista_usuarios_actualizada', usuariosConectados);
+        sharedState.adminSocketId = socket.id;
+        socket.emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
         
         try {
             const clientesDB = await Cliente.find();
@@ -486,16 +201,16 @@ io.on('connection', (socket) => {
     });
 
     socket.on('admin_cambio_chat_activo', async (datos) => {
-        usuarioSeleccionadoActivoAdmin = datos.usuario;
-        if (usuarioSeleccionadoActivoAdmin) {
-            let usuario = usuariosConectados.find(u => u.nombre === usuarioSeleccionadoActivoAdmin);
+        sharedState.usuarioSeleccionadoActivoAdmin = datos.usuario;
+        if (sharedState.usuarioSeleccionadoActivoAdmin) {
+            let usuario = sharedState.usuariosConectados.find(u => u.nombre === sharedState.usuarioSeleccionadoActivoAdmin);
             if (usuario) {
                 usuario.historial.forEach(h => { if (h.emisor === 'cliente') h.leido = true; });
                 await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
                 if (usuario.id) io.to(usuario.id).emit('tus_mensajes_fueron_leidos');
             }
         }
-        if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+        if (sharedState.adminSocketId) io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
     });
 
     socket.on('identificar_usuario', async (datos) => {
@@ -510,9 +225,9 @@ io.on('connection', (socket) => {
             await clienteDB.save();
         }
 
-        let usuarioExistente = usuariosConectados.find(u => u.nombre === datos.usuario);
+        let usuarioExistente = sharedState.usuariosConectados.find(u => u.nombre === datos.usuario);
         if (!usuarioExistente) {
-            usuariosConectados.push({ 
+            sharedState.usuariosConectados.push({ 
                 id: socket.id, 
                 nombre: datos.usuario, 
                 estado: 'Menú',
@@ -524,50 +239,50 @@ io.on('connection', (socket) => {
         }
         
         socket.emit('resultado_validacion', { exito: true, usuario: datos.usuario, historial: clienteDB.historialChat });
-        if (adminSocketId) {
-            io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+        if (sharedState.adminSocketId) {
+            io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
             const clientesDB = await Cliente.find();
-            io.to(adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+            io.to(sharedState.adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
         }
     });
 
     socket.on('cliente_accion', async (datos) => {
-        let usuario = usuariosConectados.find(u => u.nombre === socket.username);
+        let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
         if (usuario) {
             usuario.estado = datos.estado;
-            let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
+            let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
 
             if (datos.mensajeCliente) { usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); }
             if (datos.mensajeBot) { usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); }
 
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
 
-            if (adminSocketId) {
-                io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
-                io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+            if (sharedState.adminSocketId) {
+                io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+                io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
             }
             if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
     });
 
     socket.on('cliente_envia_mensaje_libre', async (datos) => {
-        let usuario = usuariosConectados.find(u => u.nombre === socket.username);
+        let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
         if (usuario) {
-            let estaMirandome = (usuarioSeleccionadoActivoAdmin === usuario.nombre);
+            let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
             usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensaje, leido: estaMirandome });
 
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
 
-            if (adminSocketId) {
-                io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
-                io.to(adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+            if (sharedState.adminSocketId) {
+                io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+                io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
             }
             if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
     });
 
     socket.on('admin_envia_mensaje', async (datos) => {
-        let usuario = usuariosConectados.find(u => u.nombre === datos.paraUsuario);
+        let usuario = sharedState.usuariosConectados.find(u => u.nombre === datos.paraUsuario);
         if (usuario) {
             usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true });
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
@@ -578,19 +293,17 @@ io.on('connection', (socket) => {
 
     socket.on('disconnect', () => {
         if (socket.username) {
-            let usuario = usuariosConectados.find(u => u.nombre === socket.username);
+            let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
             if (usuario) { usuario.id = null; }
-            if (usuarioSeleccionadoActivoAdmin === socket.username) usuarioSeleccionadoActivoAdmin = null;
-            if (adminSocketId) io.to(adminSocketId).emit('lista_usuarios_actualizada', usuariosConectados);
+            if (sharedState.usuarioSeleccionadoActivoAdmin === socket.username) sharedState.usuarioSeleccionadoActivoAdmin = null;
+            if (sharedState.adminSocketId) io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
         }
     });
 });
 
 async function inicializarDatosDePrueba() {
     const countCl = await Cliente.countDocuments();
-    if(countCl === 0) {
-        await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save();
-    }
+    if(countCl === 0) { await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save(); }
     
     const countRuleta = await Ruleta.countDocuments();
     if (countRuleta === 0) {
@@ -617,9 +330,7 @@ async function inicializarDatosDePrueba() {
     }
 
     const countPanel = await PanelConfig.countDocuments();
-    if (countPanel === 0) {
-        await new PanelConfig({ identificador: 'global' }).save();
-    }
+    if (countPanel === 0) { await new PanelConfig({ identificador: 'global' }).save(); }
 }
 
 const PUERTO = process.env.PORT || 3000;
