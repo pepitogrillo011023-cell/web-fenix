@@ -26,9 +26,9 @@
         .btn-logout { background-color: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer; }
         .btn-logout:hover { background-color: #ef4444; color: white; }
 
-        /* AJUSTES CHAT: Oculto por defecto, más grande cuando se muestra */
+        /* AJUSTES CHAT: Solución del scroll horizontal */
         #vista-chat { display: none; height: 100%; flex-direction: column; }
-        .chat-messages { display: none; flex: 1; padding: 20px; overflow-y: auto; background-color: #0b0f19; height: 450px; }
+        .chat-messages { display: none; flex-direction: column; flex: 1; padding: 20px; overflow-y: auto; overflow-x: hidden; background-color: #0b0f19; height: 450px; }
         
         .bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 14px; width: 100%; position: relative; }
         .bubble { max-width: 85%; padding: 12px; border-radius: 12px; font-size: 13.5px; line-height: 1.4; word-wrap: break-word; box-sizing: border-box; }
@@ -155,7 +155,7 @@
         <div class="victoria-content">
             <div class="victoria-emoji" id="vic-emoji">🎉</div>
             <h2 style="color:white;">¡RESULTADO!</h2>
-            <p id="vic-msg" style="color:#cbd5e1;"></p>
+            <p id="vic-msg" style="color:#cbd5e1; font-size: 14px;"></p>
             <button class="btn-spin" onclick="cerrarModalVictoria()">Aceptar</button>
         </div>
     </div>
@@ -259,7 +259,6 @@
                             const btn = document.getElementById(btnId);
                             if(btn) btn.innerText = `GIRAR POR ${j.creditCost} CR`;
                         }
-                        // Para Raspa, Cartas y Moneda la acción se hace al tocar los elementos directamente
                     });
                 }
             } catch(e) { console.error(e); }
@@ -323,7 +322,7 @@
             window.usuarioLogueado = null;
             document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
             document.getElementById('header-title-text').innerText = "Chat Asistencia (En línea)";
-            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar créditos al salir
+            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar créditos
             msgArea.innerHTML = '';
             cambiarVista('login');
         }
@@ -339,7 +338,7 @@
                 document.getElementById('txt-creditos').innerText = misCreditos;
                 document.getElementById('badge-creditos').classList.remove('hidden');
 
-                cargarCostosMinijuegos(); // Llama a la carga de costos
+                cargarCostosMinijuegos(); // Carga de costos al iniciar sesión
 
                 msgArea.innerHTML = '';
                 if(respuesta.historial && respuesta.historial.length > 0) {
@@ -360,7 +359,7 @@
             }
         });
 
-        // Escuchar actualización de créditos
+        // Escuchar actualización de créditos desde el servidor
         socket.on('actualizar_creditos', (data) => {
             misCreditos = data.nuevosCreditos;
             document.getElementById('txt-creditos').innerText = misCreditos;
@@ -375,7 +374,7 @@
             document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('container-menu-options').style.display = 'grid';
             
-            // Ocultar chat en menú principal
+            // OCULTAMOS EL CHAT EN EL MENÚ
             document.getElementById('messages-area').style.display = 'none';
             
             let msgBot = 'Volviste al menú principal. ¿En qué te podemos ayudar?';
@@ -385,37 +384,40 @@
         }
 
         function mostrarChat() {
+            // FUNCIÓN PARA MOSTRAR EL CHAT VERTICAL
             document.getElementById('container-menu-options').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('messages-area').style.display = 'flex';
             document.getElementById('container-chat-input').style.display = 'flex';
+            msgArea.scrollTop = msgArea.scrollHeight;
         }
 
         function mostrarSubMenuMinijuegos() {
             document.getElementById('container-menu-options').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'grid';
+            document.getElementById('messages-area').style.display = 'none'; // Aseguramos que el chat siga oculto
         }
 
         function seleccionarOpcion(opcion) {
             document.getElementById('container-menu-options').style.display = 'none';
             if (opcion === 'Depósito') {
-                mostrarChat(); // Abre el chat
+                mostrarChat();
                 document.getElementById('container-deposit-options').style.display = 'grid';
                 let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><br>Enviá el comprobante 📄`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
             } else if (opcion === 'Soporte') {
-                mostrarChat(); // Abre el chat
+                mostrarChat();
                 let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
             } else if (opcion === 'Retiro') {
-                mostrarChat(); // Abre el chat
+                mostrarChat();
                 let msgBot = `💸 <b>Retiro:</b> ¿Qué monto querés retirar? Escribilo aquí.`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: 'Retiro', mensajeCliente: opcion, mensajeBot: msgBot });
             } else {
-                mostrarChat(); // Abre el chat por si acaso
+                mostrarChat();
                 let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
                 msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
                 socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
@@ -441,7 +443,7 @@
         document.getElementById('client-raw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') enviarMensajeLibreCliente(); });
 
         socket.on('recibir_mensaje_admin', (datos) => {
-            mostrarChat(); // Muestra el chat si llega un mensaje
+            mostrarChat(); // Si recibe mensaje estando en menú, se abre el chat para verlo
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${datos.mensaje}</div></div>`;
             document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
             msgArea.scrollTop = msgArea.scrollHeight;
@@ -455,9 +457,9 @@
         // SISTEMA DE MINIJUEGOS Y MODALES
         // ==========================================
         
-        // Modal de victoria
+        // Modal genérico de victoria
         function abrirModalVictoria(msg, emoji = '🎉') {
-            const cleanMsg = msg.replace(/<[^>]*>?/gm, ''); // Limpiar HTML del mensaje
+            const cleanMsg = msg.replace(/<[^>]*>?/gm, '\n'); // Quitamos tags HTML para el alert limpio
             document.getElementById('vic-msg').innerText = cleanMsg;
             document.getElementById('vic-emoji').innerText = emoji;
             document.getElementById('modal-victoria').style.display = 'flex';
@@ -524,14 +526,14 @@
                     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">✅ ${data.message}</div></div>`;
                     msgArea.scrollTop = msgArea.scrollHeight;
                     socket.emit('cliente_accion', { estado: 'Carga Créditos', mensajeCliente: `Reporté pago de ${monto} Créditos`, mensajeBot: data.message });
-                    mostrarChat(); // Asegurar que el chat esté visible si no lo estaba
+                    mostrarChat(); // Asegurar que el chat esté visible
                 } else {
                     alert(data.message || "Error al procesar la solicitud.");
                 }
             } catch(e) { alert("Error de conexión al solicitar los créditos."); }
         }
 
-        // --- RUEDAS Y TIRADAS ---
+        // --- LÓGICA DE JUEGOS ---
         function jugarRuleta() {
             document.getElementById('btn-spin-ruleta').disabled = true;
             fetch('/api/tirar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
@@ -545,10 +547,15 @@
                 let needed = (270 - ((wIdx*sl)+(sl/2))) - (currentRotation%360); if(needed<0) needed+=360;
                 currentRotation += needed + (360*5);
                 document.getElementById('ruleta-canvas').style.transform = `rotate(${currentRotation}deg)`;
+                
+                // Mantenemos el log en el chat en segundo plano
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Jugué: Ruleta</div><span class="status-text">✓ Enviado</span></div>`;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
+                
                 setTimeout(() => { 
                     document.querySelector('#modal-ruleta .btn-close-modal').classList.remove('hidden'); 
-                    cerrarModal('ruleta'); // Cerramos ruleta
-                    abrirModalVictoria(data.mensaje, '🎰'); // Abrimos victoria
+                    cerrarModal('ruleta'); 
+                    abrirModalVictoria(data.mensaje, '🎯'); 
                 }, 5300);
             });
         }
@@ -562,13 +569,17 @@
                 const pools = raspaConfig.filter(i => i.id !== data.premio.id).sort(() => Math.random() - 0.5);
                 cards[idx].classList.add('scratched'); cards[idx].querySelector('.raspa-cover-layer').style.opacity = '0';
                 cards[idx].innerHTML += `<div class="raspa-prize-text">${data.premio.premio}</div><div class="raspa-value-text">$${data.premio.valor}</div>`;
+                
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎫 Jugué: Raspa y Gana</div><span class="status-text">✓ Enviado</span></div>`;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
+
                 setTimeout(() => {
                     let rIdx = 0; cards.forEach((c, i) => { if(i!==idx) { c.classList.add('others-revealed'); c.querySelector('.raspa-cover-layer').style.opacity='0'; c.innerHTML += `<div class="raspa-prize-text">${pools[rIdx].premio}</div><div class="raspa-value-text">$${pools[rIdx].valor}</div>`; rIdx++; }});
                     document.querySelector('#modal-raspa .btn-close-modal').classList.remove('hidden'); 
                     setTimeout(() => {
                         cerrarModal('raspa');
                         abrirModalVictoria(data.mensaje, '🎫');
-                    }, 1500); // Dar un poco de tiempo para ver el resto antes de mostrar el modal
+                    }, 1500); 
                 }, 800);
             });
         }
@@ -581,6 +592,10 @@
                 if(!data.exito) { alert(data.mensaje); return cerrarModal('traga'); }
                 tragaJugado = true;
                 document.getElementById('client-slot-1').innerText="⏳"; document.getElementById('client-slot-2').innerText="⏳"; document.getElementById('client-slot-3').innerText="⏳";
+                
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🍒 Jugué: Slots</div><span class="status-text">✓ Enviado</span></div>`;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
+
                 setTimeout(() => {
                     let icons = ['🍒','💎','🔔','🍋','❌'];
                     document.getElementById('client-slot-1').innerText = icons[Math.floor(Math.random()*icons.length)];
@@ -603,10 +618,14 @@
                 document.getElementById('client-card-val').innerText = data.premio.premio.substring(0,2) || "🃏";
                 document.getElementById('client-card-desc').innerText = data.premio.premio;
                 document.querySelector('#modal-cartas .btn-close-modal').classList.remove('hidden');
+                
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🃏 Jugué: Carta Suerte</div><span class="status-text">✓ Enviado</span></div>`;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
+
                 setTimeout(() => {
                     cerrarModal('cartas');
                     abrirModalVictoria(data.mensaje, '🃏');
-                }, 2000); // Tiempo para ver la carta antes del modal
+                }, 2000);
             });
         }
 
@@ -618,13 +637,17 @@
                 monedaJugado = true;
                 const c = document.getElementById('client-coin');
                 c.style.transform = `rotateY(${180 * 5}deg)`;
+                
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🪙 Jugué: Cara o Cruz</div><span class="status-text">✓ Enviado</span></div>`;
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
+
                 setTimeout(() => {
                     c.innerText = data.premio.premio.includes('Cara') ? '🟡' : (data.premio.premio.includes('Cruz') ? '⚪' : '💥');
                     document.querySelector('#modal-moneda .btn-close-modal').classList.remove('hidden');
                     setTimeout(() => {
                         cerrarModal('moneda');
                         abrirModalVictoria(data.mensaje, '🪙');
-                    }, 1500); // Tiempo para ver la moneda antes del modal
+                    }, 1500); 
                 }, 1500);
             });
         }
