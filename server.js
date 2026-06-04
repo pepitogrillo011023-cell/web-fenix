@@ -11,7 +11,7 @@ const server = http.createServer(app);
 const io = new Server(server);
 
 // ==============================================================
-// 📝 1. MODELOS DE DATOS (Mantenemos todos para que Mongoose los registre)
+// 📝 1. MODELOS DE DATOS (Agregamos los 3 minijuegos nuevos)
 // ==============================================================
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
@@ -22,11 +22,17 @@ const Cliente = mongoose.model('Cliente', new mongoose.Schema({
     historialChat: { type: Array, default: [] },
     ultimaConexion: { type: Date, default: Date.now },
     ultimaRuleta: { type: Date, default: null },
-    ultimaRaspa: { type: Date, default: null } 
+    ultimaRaspa: { type: Date, default: null },
+    ultimaTragamonedas: { type: Date, default: null },
+    ultimaCarta: { type: Date, default: null },
+    ultimaMoneda: { type: Date, default: null }
 }));
 
 const Ruleta = mongoose.model('Ruleta', new mongoose.Schema({ configuracion: Array }));
 const Raspa = mongoose.model('Raspa', new mongoose.Schema({ configuracion: Array }));
+const Tragamonedas = mongoose.model('Tragamonedas', new mongoose.Schema({ configuracion: Array }));
+const Cartas = mongoose.model('Cartas', new mongoose.Schema({ configuracion: Array }));
+const Moneda = mongoose.model('Moneda', new mongoose.Schema({ configuracion: Array }));
 
 const PanelConfig = mongoose.model('PanelConfig', new mongoose.Schema({
     identificador: { type: String, default: 'global', unique: true },
@@ -80,11 +86,7 @@ app.use(session({
 }));
 
 const requireLogin = (req, res, next) => {
-    if (req.session.loggedIn) {
-        next();
-    } else {
-        res.redirect('/login.html');
-    }
+    if (req.session.loggedIn) { next(); } else { res.redirect('/login.html'); }
 };
 
 // ==============================================================
@@ -119,7 +121,7 @@ const sharedState = {
 };
 
 // ==============================================================
-// 💳 6. BILLETERA WEBHOOK (Se queda en server por los sockets directos)
+// 💳 6. BILLETERA WEBHOOK
 // ==============================================================
 app.post('/api/webhook/billetera', async (req, res) => {
     res.status(200).send("OK");
@@ -168,9 +170,8 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
 // 🚀 7. IMPORTACIÓN DE RUTAS MODULARES
 // ==============================================================
 require('./routes/finanzas')(app, requireLogin);
-require('./routes/clientes')(app, requireLogin);
+require('./routes/clientes')(app, requireLogin, io, sharedState);
 require('./routes/eventos')(app, requireLogin, io, sharedState);
-
 
 // ==============================================================
 // 🔌 8. COMUNICACIÓN EN VIVO (SOCKETS)
@@ -185,9 +186,14 @@ io.on('connection', (socket) => {
             const clientesDB = await Cliente.find();
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
+            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); 
+            
+            // Traemos las configs de los 5 minijuegos
             const ruletaDB = await Ruleta.findOne();
             const raspaDB = await Raspa.findOne(); 
-            const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); 
+            const tragaDB = await Tragamonedas.findOne();
+            const cartasDB = await Cartas.findOne();
+            const monedaDB = await Moneda.findOne();
             
             socket.emit('cargar_datos_tablas', {
                 clientes: clientesDB,
@@ -195,6 +201,9 @@ io.on('connection', (socket) => {
                 usuariosInternos: internosDB,
                 ruleta: ruletaDB ? ruletaDB.configuracion : [],
                 raspa: raspaDB ? raspaDB.configuracion : [],
+                tragamonedas: tragaDB ? tragaDB.configuracion : [],
+                cartas: cartasDB ? cartasDB.configuracion : [],
+                moneda: monedaDB ? monedaDB.configuracion : [],
                 panelConfig: panelConfigDB 
             });
         } catch (e) { console.log(e); }
@@ -227,12 +236,7 @@ io.on('connection', (socket) => {
 
         let usuarioExistente = sharedState.usuariosConectados.find(u => u.nombre === datos.usuario);
         if (!usuarioExistente) {
-            sharedState.usuariosConectados.push({ 
-                id: socket.id, 
-                nombre: datos.usuario, 
-                estado: 'Menú',
-                historial: clienteDB.historialChat
-            });
+            sharedState.usuariosConectados.push({ id: socket.id, nombre: datos.usuario, estado: 'Menú', historial: clienteDB.historialChat });
         } else {
             usuarioExistente.id = socket.id; 
             usuarioExistente.historial = clienteDB.historialChat; 
@@ -329,8 +333,40 @@ async function inicializarDatosDePrueba() {
         ]}).save();
     }
 
-    const countPanel = await PanelConfig.countDocuments();
-    if (countPanel === 0) { await new PanelConfig({ identificador: 'global' }).save(); }
+    // Datos Base Nuevos Juegos
+    if (await Tragamonedas.countDocuments() === 0) {
+        await new Tragamonedas({ configuracion: [
+            { id: 0, premio: '🎰 PLENO 777', valor: 50000, probabilidad: 2 },
+            { id: 1, premio: '💎 Diamantes', valor: 15000, probabilidad: 8 },
+            { id: 2, premio: '🔔 Campanas', valor: 5000, probabilidad: 15 },
+            { id: 3, premio: '🍋 Limones', valor: 1500, probabilidad: 25 },
+            { id: 4, premio: '🍒 Cerezas', valor: 500, probabilidad: 30 },
+            { id: 5, premio: '❌ Sin Suerte', valor: 0, probabilidad: 20 }
+        ]}).save();
+    }
+
+    if (await Cartas.countDocuments() === 0) {
+        await new Cartas({ configuracion: [
+            { id: 0, premio: '🃏 AS (Jackpot)', valor: 25000, probabilidad: 5 },
+            { id: 1, premio: '🤴 Rey (Alto)', valor: 10000, probabilidad: 10 },
+            { id: 2, premio: '👸 Reina (Medio)', valor: 5000, probabilidad: 20 },
+            { id: 3, premio: '🃋 10 de Trébol', valor: 2000, probabilidad: 25 },
+            { id: 4, premio: '🃈 7 Diamantes', valor: 500, probabilidad: 30 },
+            { id: 5, premio: '🃂 2 Corazones', valor: 100, probabilidad: 10 }
+        ]}).save();
+    }
+
+    if (await Moneda.countDocuments() === 0) {
+        await new Moneda({ configuracion: [
+            { id: 0, premio: '🟡 Cara Dorada', valor: 10000, probabilidad: 5 },
+            { id: 1, premio: '⚪ Cruz Plata', valor: 5000, probabilidad: 15 },
+            { id: 2, premio: '🪙 Cara Normal', valor: 2000, probabilidad: 30 },
+            { id: 3, premio: '🪙 Cruz Normal', valor: 1000, probabilidad: 30 },
+            { id: 4, premio: '💥 Moneda Caída', valor: 200, probabilidad: 20 }
+        ]}).save();
+    }
+
+    if (await PanelConfig.countDocuments() === 0) { await new PanelConfig({ identificador: 'global' }).save(); }
 }
 
 const PUERTO = process.env.PORT || 3000;
