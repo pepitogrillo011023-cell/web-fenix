@@ -1,14 +1,11 @@
 const mongoose = require('mongoose');
 
-// Le pedimos a Mongoose que nos traiga el modelo CierreCaja que ya existe
-const CierreCaja = mongoose.model('CierreCaja');
-
 module.exports = function(app, requireLogin) {
+    const CierreCaja = mongoose.model('CierreCaja');
+
     // ==============================================================
-    // 📊 RUTAS DE CIERRE DE CAJA Y RESÚMENES
+    // 📊 RUTAS DE CIERRE DE CAJA, RESÚMENES E HISTORIAL
     // ==============================================================
-    
-    // Guardar o actualizar un cierre de caja
     app.post('/api/cierre-caja', requireLogin, async (req, res) => {
         try {
             const filtro = { fecha: req.body.fecha, turno: req.body.turno };
@@ -19,7 +16,6 @@ module.exports = function(app, requireLogin) {
         }
     });
 
-    // Obtener todos los cierres (para listas generales)
     app.get('/api/cierre-caja', requireLogin, async (req, res) => {
         try {
             const cierres = await CierreCaja.find().sort({ _id: -1 });
@@ -29,7 +25,6 @@ module.exports = function(app, requireLogin) {
         }
     });
 
-    // Obtener el resumen diario y mensual para el "Dashboard"
     app.get('/api/resumen-cajas/:fecha', requireLogin, async (req, res) => {
         try {
             const fechaSelect = req.params.fecha; 
@@ -98,7 +93,6 @@ module.exports = function(app, requireLogin) {
         }
     });
 
-    // Obtener el detalle completo para el "Historial de Cajas"
     app.get('/api/historial-cajas/:fecha', requireLogin, async (req, res) => {
         try {
             const cierres = await CierreCaja.find({ fecha: req.params.fecha });
