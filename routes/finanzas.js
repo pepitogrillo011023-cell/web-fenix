@@ -1,10 +1,13 @@
 const mongoose = require('mongoose');
+// Importamos los modelos necesarios para el sistema de créditos
+const User = require('../models/User');
+const Transaction = require('../models/Transaction');
 
 module.exports = function(app, requireLogin) {
     const CierreCaja = mongoose.model('CierreCaja');
 
     // ==============================================================
-    // 📊 RUTAS DE CIERRE DE CAJA, RESÚMENES E HISTORIAL
+    // 📊 RUTAS DE CIERRE DE CAJA, RESÚMENES E HISTORIAL (EXISTENTES)
     // ==============================================================
     app.post('/api/cierre-caja', requireLogin, async (req, res) => {
         try {
@@ -99,6 +102,85 @@ module.exports = function(app, requireLogin) {
             res.json(cierres);
         } catch (e) {
             res.status(500).json([]);
+        }
+    });
+
+    // ==============================================================
+    // 💳 RUTAS DE GESTIÓN DE CRÉDITOS (NUEVO BLOQUE)
+    // ==============================================================
+
+    // 1. CLIENTE: Solicitar carga de créditos (Reportar pago)
+    app.post('/api/solicitar-carga-creditos', requireLogin, async (req, res) => {
+        try {
+            const { userId, amount, receiptUrl } = req.body;
+            
+            const nuevaTransaccion = new Transaction({
+                userId,
+                type: 'credit_charge',
+                amount,
+                receiptUrl,
+                status: 'pending'
+            });
+            
+            await nuevaTransaccion.save();
+            res.json({ success: true, message: 'Reporte de pago de créditos enviado. Esperando aprobación del cajero.' });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error al procesar la solicitud de créditos.', error: error.message });
+        }
+    });
+
+    // 2. CAJERO: Aprobar carga de créditos
+    app.post('/api/aprobar-carga-creditos', requireLogin, async (req, res) => {
+        try {
+            const { transactionId, cashierId } = req.body;
+            const transaccion = await Transaction.findById(transactionId);
+            
+            if (!transaccion || transaccion.type !== 'credit_charge' || transaccion.status !== 'pending') {
+                return res.status(400).json({ success: false, message: 'Transacción no válida o ya procesada.' });
+            }
+
+            // Actualizar estado de la transacción
+            transaccion.status = 'approved';
+            transaccion.resolvedBy = cashierId;
+            transaccion.resolvedAt = new Date();
+            await transaccion.save();
+
+            // Sumar créditos al cliente
+            const usuario = await User.findById(transaccion.userId);
+            usuario.credits += transaccion.amount;
+            await usuario.save();
+
+            res.json({ success: true, message: 'Créditos aprobados y cargados al usuario exitosamente.', nuevosCreditos: usuario.credits });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error al aprobar los créditos.', error: error.message });
+        }
+    });
+
+    // 3. CAJERO/ADMIN: Cargar o retirar créditos manualmente (Acción Rápida en el Panel)
+    app.post('/api/gestion-manual-creditos', requireLogin, async (req, res) => {
+        try {
+            const { userId, amount, action } = req.body; // action: 'add' o 'remove'
+            const usuario = await User.findById(userId);
+
+            if (!usuario) {
+                return res.status(404).json({ success: false, message: 'Usuario no encontrado.' });
+            }
+
+            if (action === 'add') {
+                usuario.credits += amount;
+            } else if (action === 'remove') {
+                if (usuario.credits < amount) {
+                    return res.status(400).json({ success: false, message: 'El usuario no tiene suficientes créditos para retirar esa cantidad.' });
+                }
+                usuario.credits -= amount;
+            } else {
+                return res.status(400).json({ success: false, message: 'Acción no válida. Usa "add" o "remove".' });
+            }
+
+            await usuario.save();
+            res.json({ success: true, message: `Créditos actualizados exitosamente. Saldo actual: ${usuario.credits} créditos.` });
+        } catch (error) {
+            res.status(500).json({ success: false, message: 'Error al gestionar los créditos manualmente.', error: error.message });
         }
     });
 };
