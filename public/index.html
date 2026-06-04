@@ -12,6 +12,9 @@
         .header-title { display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
         
+        /* NUEVO: Badge de créditos en el header */
+        .badge-creditos { background-color: #ffaa00; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; box-shadow: 0 0 8px rgba(255, 170, 0, 0.4); }
+
         .auth-body { padding: 40px 25px; display: flex; flex-direction: column; align-items: center; }
         .auth-body h3 { margin-top: 0; margin-bottom: 20px; font-size: 18px; color: white; }
         .input-dark { background-color: #1f2937; border: 1px solid #374151; color: white; padding: 12px 15px; border-radius: 8px; width: 100%; box-sizing: border-box; margin-bottom: 12px; font-size: 14px; outline: none; transition: border 0.3s; }
@@ -43,7 +46,7 @@
         
         .hidden { display: none !important; }
 
-        /* MODALES DE MINIJUEGOS */
+        /* MODALES DE MINIJUEGOS Y CRÉDITOS */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
         .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 330px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.4); text-align: center; box-sizing: border-box; }
         .btn-spin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
@@ -82,6 +85,7 @@
             <div class="header-title">
                 <div class="status-dot"></div>
                 <span id="header-title-text">Chat Asistencia (En línea)</span>
+                <span id="badge-creditos" class="badge-creditos hidden">🟡 <span id="txt-creditos">0</span> CR</span>
             </div>
             <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Salir</button>
         </div>
@@ -112,6 +116,9 @@
                 <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
                 <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
                 <button class="btn-action" style="padding: 20px 10px; font-size:14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
+                
+                <button class="btn-action" style="padding: 15px 10px; font-size:14px; grid-column: span 2; border: 1px solid #ffaa00; color: #ffaa00; background: rgba(255, 170, 0, 0.05);" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos (Minijuegos)</button>
+
                 <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7); border:none; box-shadow: 0 0 15px rgba(168,85,247,0.3); color: white;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos Diarios</button>
             </div>
 
@@ -135,6 +142,17 @@
                 <button class="btn-primary" style="margin:0; width:auto; padding: 0 15px;" onclick="enviarMensajeLibreCliente()">Enviar</button>
                 <button class="btn-action" style="background-color: #374151; padding: 0 10px; margin-top:0;" onclick="irAlMenuPrincipal()">↩️</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modal-cargar-creditos" class="modal-overlay">
+        <div class="modal-content" style="border-color: #ffaa00;">
+            <h3 style="color:white; margin-top:0; font-size: 20px;">🟡 Comprar Créditos</h3>
+            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos de minijuegos.</p>
+            <input type="number" id="input-creditos-monto" class="input-dark" placeholder="Monto transferido ($)...">
+            <input type="url" id="input-creditos-url" class="input-dark" placeholder="URL de la imagen del comprobante...">
+            <button class="btn-spin" style="background: #ffaa00; color: #000; margin-top:10px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4);" onclick="solicitarCargaCreditos()">ENVIAR REPORTE</button>
+            <button class="btn-action btn-close-modal" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('cargar-creditos')">Cancelar</button>
         </div>
     </div>
 
@@ -272,6 +290,7 @@
             window.usuarioLogueado = null;
             document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
             document.getElementById('header-title-text').innerText = "Chat Asistencia (En línea)";
+            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar créditos
             msgArea.innerHTML = '';
             cambiarVista('login');
         }
@@ -282,6 +301,12 @@
         socket.on('resultado_validacion', (respuesta) => {
             if (respuesta.exito) {
                 document.getElementById('header-title-text').innerText = "Hola, " + respuesta.usuario;
+                
+                // NUEVO: Mostrar los créditos en el header si el backend los envía
+                if(respuesta.creditos !== undefined) {
+                    document.getElementById('badge-creditos').classList.remove('hidden');
+                    document.getElementById('txt-creditos').innerText = respuesta.creditos;
+                }
                 
                 // CORRECCIÓN 3: Al entrar, limpiamos y re-dibujamos el historial real de la base de datos
                 msgArea.innerHTML = '';
@@ -373,6 +398,11 @@
         // SISTEMA DE MINIJUEGOS Y MODALES
         // ==========================================
         function abrirModal(juego) {
+            if (juego === 'cargar-creditos') {
+                document.getElementById('modal-cargar-creditos').style.display = 'block';
+                return;
+            }
+
             fetch(`/api/${juego === 'traga' ? 'tragamonedas' : juego}-config`).then(res => res.json()).then(data => {
                 if(!data.exito || data.config.length === 0) return alert("Juego en mantenimiento.");
                 
@@ -402,7 +432,10 @@
 
         function cerrarModal(juego) {
             document.getElementById(`modal-${juego}`).style.display = 'none';
-            irAlMenuPrincipal();
+            // Solo volver al menú si no es el modal de créditos, para no interferir con las pantallas de chat.
+            if(juego !== 'cargar-creditos') {
+                irAlMenuPrincipal();
+            }
         }
 
         function anunciarVictoria(emoji, titulo, msg) {
@@ -410,6 +443,44 @@
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${msg}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
             socket.emit('cliente_accion', { estado: 'Menú' }); 
+        }
+
+        // --- LÓGICA DE CRÉDITOS ---
+        async function solicitarCargaCreditos() {
+            const monto = document.getElementById('input-creditos-monto').value;
+            const url = document.getElementById('input-creditos-url').value;
+            
+            if(!monto || !url) {
+                return alert("Por favor, ingresá el monto y la URL del comprobante.");
+            }
+
+            try {
+                // Enviamos el usuarioLogueado como userId para mantener la coherencia con tu base de datos de clientes
+                const res = await fetch('/api/solicitar-carga-creditos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: window.usuarioLogueado, amount: Number(monto), receiptUrl: url })
+                });
+                
+                const data = await res.json();
+                
+                if(data.success) {
+                    cerrarModal('cargar-creditos');
+                    document.getElementById('input-creditos-monto').value = '';
+                    document.getElementById('input-creditos-url').value = '';
+                    
+                    // Mostramos el reporte en el chat
+                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🟡 Reporté pago de ${monto} Créditos.<br>Comprobante adjuntado.</div><span class="status-text">✓ Enviado</span></div>`;
+                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">✅ ${data.message}</div></div>`;
+                    msgArea.scrollTop = msgArea.scrollHeight;
+                    
+                    socket.emit('cliente_accion', { estado: 'Carga Créditos', mensajeCliente: `Reporté pago de ${monto} Créditos`, mensajeBot: data.message });
+                } else {
+                    alert(data.message || "Error al procesar la solicitud.");
+                }
+            } catch(e) {
+                alert("Error de conexión al solicitar los créditos.");
+            }
         }
 
         // --- RUEDAS Y TIRADAS ---
