@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Slot Premium - Casino Fénix</title>
+    
+    <style>
+        /* ==========================================
+           1. ESTILOS BASE DE FÉNIX
+           ========================================== */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; color: white; }
+        
+        .header { text-align: center; margin-bottom: 20px; }
+        .slot-title { color: #ffaa00; font-size: 32px; text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); text-transform: uppercase; letter-spacing: 2px; }
+        .balance-box { background: #1f2937; padding: 10px 20px; border-radius: 8px; font-size: 20px; font-weight: bold; border: 1px solid #374151; display: inline-block; margin-top: 10px;}
+        #creditos-display { color: #10b981; }
+
+        /* ==========================================
+           2. ESTILOS DEL MOTOR 3D (REEMPLAZA AL CSS DEL REPO)
+           ========================================== */
+        .slot-machine { display: flex; justify-content: center; background: #111827; padding: 30px; border-radius: 15px; border: 4px solid #ffaa00; box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.9); margin-bottom: 30px; }
+        .display { display: flex; gap: 10px; perspective: 1200px; }
+        .reel { width: 100px; height: 150px; overflow: hidden; position: relative; border-radius: 8px; border: 3px solid #374151; background: #ffffff; box-shadow: inset 0 10px 15px rgba(0,0,0,0.6); }
+        .strip { list-style: none; margin: 0; padding: 0; position: absolute; transform-style: preserve-3d; transition: transform 0.5s cubic-bezier(0.1, 0.8, 0.2, 1); }
+        .strip li { display: block; position: absolute; color: transparent; /* Oculta los números guía */ }
+        
+        /* Animación infinita controlada por Javascript */
+        .spin .strip { animation: spinReel 0.6s linear infinite; }
+        @keyframes spinReel {
+            0% { transform: rotateX(0deg); }
+            100% { transform: rotateX(-360deg); }
+        }
+
+        /* ==========================================
+           3. BOTONES Y ALERTAS
+           ========================================== */
+        .controls { display: flex; flex-direction: column; width: 100%; max-width: 350px; gap: 15px; }
+        .spin-button { background: linear-gradient(to bottom, #f59e0b, #d97706); color: white; border: none; padding: 20px; font-size: 24px; font-weight: bold; border-radius: 50px; cursor: pointer; box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4); text-transform: uppercase; }
+        .spin-button:active { transform: scale(0.95); }
+        .spin-button:disabled { background: #4b5563; color: #9ca3af; box-shadow: none; cursor: not-allowed; }
+        .btn-volver { background: #374151; color: white; border: none; padding: 15px; font-size: 16px; border-radius: 8px; cursor: pointer; text-align: center; }
+        
+        #mensaje-premio { opacity: 0; text-align: center; font-size: 26px; color: #a3e635; font-weight: bold; text-shadow: 0 0 10px rgba(163, 230, 53, 0.5); transition: opacity 0.3s; height: 35px; }
+        .mensaje-visible { opacity: 1 !important; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1 class="slot-title">FÉNIX SLOTS</h1>
+        <div class="balance-box">Créditos: <span id="creditos-display">...</span></div>
+    </div>
+
+    <div id="slot-machine-container"></div>
+
+    <div id="mensaje-premio">¡GANASTE!</div>
+
+    <div class="controls">
+        <button id="play-button" class="spin-button">GIRAR AHORA</button>
+        <button class="btn-volver" onclick="window.close()">↩️ Volver al Casino</button>
+    </div>
+
+    <script type="text/javascript" src="slot-machine.js"></script>
+
+    <script>
+        // 1. VERIFICACIÓN DE SEGURIDAD FÉNIX
+        const usuarioActual = localStorage.getItem('casino_fenix_user');
+        if (!usuarioActual) {
+            alert("No estás logueado. Volvé a ingresar al panel.");
+            window.close();
+        }
+
+        // 2. CONFIGURACIÓN DE LOS SÍMBOLOS Y SUS POSICIONES
+        // Las "posiciones" (100, 300, etc.) son los píxeles donde frena la imagen. 
+        // Los "names" son los Emojis que envía tu backend en el server.js
+        const baseSymbols = [
+            { name: '🍒', position: 100, weight: 1 },
+            { name: '🍋', position: 300, weight: 1 },
+            { name: '💎', position: 500, weight: 1 },
+            { name: '🔔', position: 700, weight: 1 },
+            { name: '🎰', position: 1100, weight: 1 }
+        ];
+
+        // Usamos la misma tira de imágenes para los 3 rodillos por ahora
+        // ATENCIÓN: Esta ruta asume que tenés la imagen en public/slot/images/reel-strip1.png
+        const reelsConfig = [
+            { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
+            { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
+            { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols }
+        ];
+
+        window.onload = function() {
+            const btnGirar = document.getElementById('play-button');
+            const displayCreditos = document.getElementById('creditos-display');
+            const mensajeDiv = document.getElementById('mensaje-premio');
+            let saldoLocal = 0;
+
+            // 3. CALLBACK: Qué pasa cuando la animación termina y frena en el resultado
+            const onReelsStop = function(resultadoArray) {
+                // Actualizamos el visor con los créditos que mandó el servidor
+                displayCreditos.innerText = saldoLocal;
+
+                // Si ganaste algo, acá salta el cartel
+                if (window.ultimoPremio > 0) {
+                    mensajeDiv.innerText = `¡GANASTE $${window.ultimoPremio}! 🎉`;
+                    mensajeDiv.classList.add('mensaje-visible');
+                }
+
+                btnGirar.disabled = false;
+            };
+
+            // 4. INICIALIZAR LA MÁQUINA
+            const container = document.getElementById('slot-machine-container');
+            const slot = slotMachine(container, reelsConfig, onReelsStop, {
+                reelHeight: 1200,
+                reelWidth: 100,
+                click2Spin: false // Desactivamos el clic en la pantalla, usamos nuestro botón
+            });
+
+            displayCreditos.innerText = "Listo"; // Visor de inicio
+
+            // 5. ACCIÓN DEL BOTÓN GIRAR
+            btnGirar.addEventListener('click', async () => {
+                // Bloqueamos botón y limpiamos mensajes
+                btnGirar.disabled = true;
+                mensajeDiv.classList.remove('mensaje-visible');
+                window.ultimoPremio = 0;
+
+                // 🚀 Arrancamos el show visual (ilusión de que la máquina piensa)
+                slot.startSpinAnimation();
+
+                try {
+                    // 📞 Llamamos a Fénix Backend
+                    const respuesta = await fetch('/api/tirar-slot-premium', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usuario: usuarioActual })
+                    });
+                    
+                    const data = await respuesta.json();
+
+                    // Si no tiene saldo o hay error, paramos la animación
+                    if (!data.exito) {
+                        alert(data.mensaje);
+                        // Frenamos en cualquier símbolo porque no hubo jugada
+                        slot.stopSpinAndShowResult(['🍒', '🍋', '💎']); 
+                        return;
+                    }
+
+                    // Guardamos los datos para mostrarlos cuando termine de girar
+                    saldoLocal = data.creditosRestantes;
+                    window.ultimoPremio = data.premioValor;
+
+                    // 🛑 Le pasamos el resultado a la máquina para que frene
+                    // data.rodillos viene del backend (ej: ['💎', '💎', '💎'])
+                    slot.stopSpinAndShowResult(data.rodillos);
+
+                } catch (error) {
+                    alert("Error de conexión con el Casino.");
+                    slot.stopSpinAndShowResult(['🍒', '🍒', '🍒']);
+                }
+            });
+        };
+    </script>
+</body>
+</html>
