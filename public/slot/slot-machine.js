@@ -8,7 +8,6 @@ function SlotMachine(container, reels, callback, options) {
         div.classList.add('reel');
         const ul = document.createElement('ul');
         ul.classList.add('strip');
-        
         for (let i = 0; i < 6; i++) {
             const li = document.createElement('li');
             li.style.backgroundImage = `url("${config.imageSrc}")`;
@@ -28,10 +27,11 @@ function SlotMachine(container, reels, callback, options) {
 
     self.startSpinAnimation = function() {
         reels.forEach(r => {
-            const elm = r.element;
-            elm.style.marginTop = ""; // LIMPIAMOS EL ESTILO INLINE PARA QUE GIRE
-            elm.classList.remove('stop');
-            elm.classList.add('spin');
+            const ul = r.element;
+            ul.style.transition = "none"; // MATAMOS LA TRANSICIÓN
+            ul.style.marginTop = "0px";   // RESETEAMOS POSICIÓN
+            ul.classList.remove('stop');
+            ul.classList.add('spin');
         });
     };
 
@@ -43,8 +43,8 @@ function SlotMachine(container, reels, callback, options) {
 
             setTimeout(() => {
                 ul.classList.remove('spin');
-                ul.classList.add('stop');
-                ul.style.marginTop = `-${finalPos}px`; // Aquí aplicamos el resultado final
+                ul.style.transition = "margin-top 0.5s ease-out"; // REACTIVAMOS TRANSICIÓN PARA FRENAR SUAVE
+                ul.style.marginTop = `-${finalPos}px`;
                 if (index === reels.length - 1 && callback) callback();
             }, 1000 + (index * 400));
         });
