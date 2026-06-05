@@ -11,6 +11,8 @@ function SlotMachine(container, reels, callback, options) {
         
         for (let i = 0; i < 6; i++) {
             const li = document.createElement('li');
+            // ¡ESTO ES LO QUE FALTABA!
+            li.style.backgroundImage = `url("${config.imageSrc}")`;
             li.style.backgroundPosition = `0px -${i * 150}px`;
             ul.appendChild(li);
         }
@@ -22,7 +24,7 @@ function SlotMachine(container, reels, callback, options) {
     // Inicializar
     const divSlots = document.createElement('div');
     divSlots.classList.add('slots');
-    divSlots.style.display = "flex"; // Forzar horizontal
+    divSlots.style.display = "flex";
     reels.forEach(reel => divSlots.appendChild(createReelElm(reel)));
     container.appendChild(divSlots);
 
