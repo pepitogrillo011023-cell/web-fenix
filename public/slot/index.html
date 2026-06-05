@@ -9,7 +9,7 @@
         
         .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
         
-        /* Contenedor del rodillo: El tamaño fijo es sagrado */
+        /* Rodillo ajustado */
         .reel { 
             width: 100px; 
             height: 150px; 
@@ -18,9 +18,15 @@
             background: #000;
         }
 
-        /* IMPORTANTE: Eliminamos el background del CSS del rodillo. 
-           Dejamos que slot-machine.js lo maneje. 
-        */
+        /* CORRECCIÓN VISUAL: Forzamos el tamaño de la tira y la imagen */
+        .strip { list-style: none; padding: 0; margin: 0; width: 100px; }
+        
+        .strip li { 
+            width: 100px !important; 
+            height: 150px !important; 
+            background-size: 100px 900px !important; /* 100px ancho, 900px alto total */
+            background-repeat: no-repeat !important;
+        }
 
         .spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .spin-button:disabled { background: #4b5563; }
@@ -42,7 +48,7 @@
     <script>
         const usuarioActual = localStorage.getItem('casino_fenix_user');
         
-        // Configuramos los símbolos con la altura exacta (150px)
+        // POSICIONES EXACTAS SEGÚN TU IMAGEN (cada fruta mide 150px de alto)
         const baseSymbols = [
             { name: 'cherry', position: 0, weight: 1 },
             { name: 'plum', position: 150, weight: 1 },
@@ -56,7 +62,6 @@
             const btnGirar = document.getElementById('play-button');
             const container = document.getElementById('slot-machine-container');
             
-            // Inicializamos
             const slot = slotMachine(container, [
                 { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
                 { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
@@ -85,7 +90,7 @@
                         alert(data.mensaje);
                         slot.stopSpinAndShowResult(['cherry', 'cherry', 'cherry']);
                     }
-                } catch(e) { alert("Error"); }
+                } catch(e) { alert("Error de conexión"); }
                 btnGirar.disabled = false;
             });
         };
