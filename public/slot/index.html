@@ -17,33 +17,7 @@
         .controles-apuesta label { font-size: 18px; color: #ffaa00; font-weight: bold; }
         .controles-apuesta input { background: #000; color: #a3e635; border: 1px solid #555; padding: 10px; border-radius: 5px; font-size: 18px; width: 120px; text-align: center; font-weight: bold; outline: none; }
 
-        /* MARCO Y ESTRUCTURA NUEVA */
-        .slot-frame-container {
-            position: relative;
-            width: 380px; 
-            height: 670px;
-            background-image: url('images/marco-slot.png');
-            background-size: contain;
-            background-repeat: no-repeat;
-            background-position: center;
-            margin: 0 auto;
-        }
-
-        .slot-machine { 
-            position: absolute;
-            top: 215px; /* Ajusta estos valores si la imagen se ve movida */
-            left: 45px; /* Ajusta estos valores si la imagen se ve movida */
-            width: 290px;
-            display: flex; 
-            justify-content: center; 
-            gap: 10px; 
-            background: #000; 
-            padding: 20px; 
-            border: none; /* Quitamos borde para que el marco sea el borde */
-            border-radius: 15px; 
-            margin-bottom: 20px; 
-            z-index: 1;
-        }
+        .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
         
         /* Rodillo individual con sombra 3D */
         .reel { width: 100px; height: 150px; overflow: hidden; border: 2px solid #555; background: #000; position: relative; }
@@ -56,7 +30,7 @@
         .strip { list-style: none; padding: 0; margin: 0; width: 100px; transition: margin-top 0.3s ease-out; }
         .strip li { width: 100px; height: 150px; background-size: 100px 900px !important; background-repeat: no-repeat !important; }
 
-        .spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: transform 0.1s; margin-top: 20px;}
+        .spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: transform 0.1s; }
         .spin-button:active { transform: scale(0.95); }
         .spin-button:disabled { background: #4b5563; cursor: not-allowed; transform: none; }
         .btn-volver { background: #374151; padding: 15px 30px; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px; }
@@ -86,9 +60,7 @@
 
     <div id="mensaje-premio">¡Gira para ganar!</div>
     
-    <div class="slot-frame-container">
-        <div id="slot-machine-container" class="slot-machine"></div>
-    </div>
+    <div id="slot-machine-container" class="slot-machine"></div>
 
     <button id="play-button" class="spin-button" disabled>CARGANDO...</button>
     <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
@@ -133,6 +105,7 @@
             const mensajePremio = document.getElementById('mensaje-premio');
             const saldoDisplay = document.getElementById('saldo-actual');
 
+            // 1. CARGA INICIAL DE CRÉDITOS DESDE LA BASE DE DATOS
             async function cargarCreditos() {
                 try {
                     const res = await fetch(`/api/obtener-saldo?usuario=${usuarioActual}`);
@@ -156,13 +129,14 @@
             await cargarCreditos();
 
             slot = slotMachine(container, [
-                { imageSrc: 'images/reel-strip1.png', symbols: simbolosRodillo1 },
-                { imageSrc: 'images/reel-strip2.png', symbols: simbolosRodillo2 },
-                { imageSrc: 'images/reel-strip3.png', symbols: simbolosRodillo3 }
+                { imageSrc: '/slot/images/reel-strip1.png', symbols: simbolosRodillo1 },
+                { imageSrc: '/slot/images/reel-strip2.png', symbols: simbolosRodillo2 },
+                { imageSrc: '/slot/images/reel-strip3.png', symbols: simbolosRodillo3 }
             ], (resultadoFinal) => {
                 evaluarPremio(resultadoFinal); 
             }, { reelHeight: 150, reelWidth: 100 });
 
+            // 2. CONEXIÓN DEL GIRO AL SERVIDOR REAL
             window.ejecutarGiro = async function() {
                 if (isSpinning) return;
                 
@@ -172,6 +146,7 @@
                     return;
                 }
 
+                // Verificación visual rápida (el servidor también debe verificar esto)
                 if (!enModoBonus && creditosActuales < apuestaActual) {
                     alert("Créditos insuficientes para esta apuesta.");
                     return;
@@ -184,40 +159,56 @@
                 
                 slot.startSpinAnimation();
 
+                // === COMUNICACIÓN CON EL BACKEND ===
                 try {
                     const respuesta = await fetch('/api/jugar-slot', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             usuario: usuarioActual,
+                            // Si estamos en bonus, la apuesta que se descuenta en BD debe ser 0
                             apuestaGasto: enModoBonus ? 0 : apuestaActual, 
-                            apuestaCalculoPremio: apuestaActual,
+                            apuestaCalculoPremio: apuestaActual, // Para calcular X10, X8, etc.
                             esGiroGratis: enModoBonus
                         })
                     });
 
-                    if (!respuesta.ok) throw new Error("Error en backend");
+                    if (!respuesta.ok) throw new Error("El backend aún no tiene esta ruta configurada.");
 
                     const data = await respuesta.json();
 
                     if (data.exito) {
+                        // Sincronizamos los créditos EXACTOS que diga la base de datos
                         creditosActuales = data.nuevoSaldo;
                         actualizarPantallaCreditos();
+                        
+                        // Detenemos la máquina con las frutas que eligió el servidor
                         slot.stopSpinAndShowResult(data.rodillos);
                     } else {
-                        alert(data.mensaje || "Error al procesar la apuesta.");
+                        alert(data.mensaje || "Error al procesar la apuesta en el servidor.");
                         isSpinning = false;
                         btnGirar.disabled = false;
                     }
+
                 } catch (error) {
-                    // Salvacaídas local (para pruebas)
+                    // === SALVACAÍDAS TEMPORAL (Mantiene el juego andando hasta que programes el backend) ===
                     setTimeout(() => {
-                        if(!enModoBonus) creditosActuales -= apuestaActual;
+                        if(!enModoBonus) creditosActuales -= apuestaActual; // Gasto visual
                         actualizarPantallaCreditos();
-                        const todos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
-                        const res = [todos[Math.floor(Math.random()*6)], todos[Math.floor(Math.random()*6)], todos[Math.floor(Math.random()*6)]];
-                        slot.stopSpinAndShowResult(res);
-                    }, 1000);
+
+                        const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
+                        let rodillosFinales = [
+                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
+                        ];
+                        
+                        if (Math.random() > 0.85) { 
+                            const forzado = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
+                            rodillosFinales = [forzado, forzado, forzado];
+                        }
+                        slot.stopSpinAndShowResult(rodillosFinales);
+                    }, 1000); 
                 }
             };
 
@@ -225,36 +216,91 @@
                 let apuestaActual = parseFloat(inputApuesta.value);
                 const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
                 const simbolo = rodillos[0];
+
                 isSpinning = false; 
 
                 if (esIgual && simbolo === 'bonus') {
                     if (!enModoBonus) {
-                        enModoBonus = true; girosGratisRestantes = 10; totalGanadoEnGratis = 0;
-                        document.getElementById('modal-inicio-bonus').style.display = 'flex'; return; 
-                    } else { girosGratisRestantes += 10; mensajePremio.innerText = "¡+10 GIROS EXTRAS!"; }
+                        enModoBonus = true;
+                        girosGratisRestantes = 10;
+                        totalGanadoEnGratis = 0;
+                        document.getElementById('modal-inicio-bonus').style.display = 'flex';
+                        return; 
+                    } else {
+                        girosGratisRestantes += 10;
+                        mensajePremio.innerText = "¡+10 GIROS EXTRAS!";
+                    }
                 } 
                 else if (esIgual && tablaPremios[simbolo]) {
                     const premio = apuestaActual * tablaPremios[simbolo];
-                    if (enModoBonus) { totalGanadoEnGratis += premio; mensajePremio.innerText = `¡Ganaste ${premio}! (Total: ${totalGanadoEnGratis})`; }
-                    else { creditosActuales += premio; actualizarPantallaCreditos(); mensajePremio.innerText = `¡Ganaste ${premio}!`; }
+                    if (enModoBonus) {
+                        totalGanadoEnGratis += premio;
+                        mensajePremio.innerText = `¡Ganaste ${premio} créditos! (Acumulado: ${totalGanadoEnGratis})`;
+                    } else {
+                        // En la versión final, el servidor ya sumó esto en la base de datos, 
+                        // acá solo lo sumamos visualmente si cayó en el "salvacaídas"
+                        creditosActuales += premio;
+                        actualizarPantallaCreditos();
+                        mensajePremio.innerText = `¡Ganaste ${premio} créditos!`;
+                    }
                 } 
-                else { mensajePremio.innerText = enModoBonus ? "Sigue girando..." : "¡Suerte!"; }
+                else {
+                    mensajePremio.innerText = enModoBonus ? "Sigue girando..." : "¡Suerte para la próxima!";
+                }
 
-                if (enModoBonus && girosGratisRestantes > 0) { girosGratisRestantes--; setTimeout(window.ejecutarGiro, 1500); } 
-                else if (enModoBonus && girosGratisRestantes === 0) { document.getElementById('monto-bonus-final').innerText = totalGanadoEnGratis; document.getElementById('modal-fin-bonus').style.display = 'flex'; } 
-                else { btnGirar.disabled = false; inputApuesta.disabled = false; }
+                // GESTIÓN DE TIROS GRATIS
+                if (enModoBonus && girosGratisRestantes > 0) {
+                    girosGratisRestantes--;
+                    setTimeout(window.ejecutarGiro, 1500); 
+                } 
+                else if (enModoBonus && girosGratisRestantes === 0) {
+                    document.getElementById('monto-bonus-final').innerText = totalGanadoEnGratis;
+                    document.getElementById('modal-fin-bonus').style.display = 'flex';
+                } 
+                else {
+                    btnGirar.disabled = false;
+                    inputApuesta.disabled = false;
+                }
             }
+
             btnGirar.addEventListener('click', window.ejecutarGiro);
         };
 
-        function empezarTirosGratis() { document.getElementById('modal-inicio-bonus').style.display = 'none'; girosGratisRestantes--; window.ejecutarGiro(); }
+        function empezarTirosGratis() {
+            document.getElementById('modal-inicio-bonus').style.display = 'none';
+            girosGratisRestantes--;
+            window.ejecutarGiro();
+        }
 
+        // 3. FINALIZAR BONUS Y GUARDAR PREMIO GIGANTE
         async function cerrarModalFinBonus() {
             document.getElementById('modal-fin-bonus').style.display = 'none';
+            
+            // Si hay premio del bonus, le avisamos al servidor que lo sume a la base de datos
             if (totalGanadoEnGratis > 0) {
-                await fetch('/api/sumar-premio-bonus', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: usuarioActual, premio: totalGanadoEnGratis }) });
+                try {
+                    const res = await fetch('/api/sumar-premio-bonus', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usuario: usuarioActual, premio: totalGanadoEnGratis })
+                    });
+                    if(res.ok) {
+                        const data = await res.json();
+                        creditosActuales = data.nuevoSaldo; // Sincronizamos exacto
+                    } else {
+                        creditosActuales += totalGanadoEnGratis; // Fallback visual
+                    }
+                } catch(e) {
+                    creditosActuales += totalGanadoEnGratis; // Fallback visual
+                }
+                document.getElementById('saldo-actual').innerText = creditosActuales;
             }
-            enModoBonus = false; isSpinning = false; btnGirar.disabled = false; inputApuesta.disabled = false;
+
+            enModoBonus = false; 
+            isSpinning = false;
+            document.getElementById('play-button').disabled = false;
+            document.getElementById('apuesta-input').disabled = false;
+            document.getElementById('mensaje-premio').innerText = "¡Gira para ganar!";
         }
     </script>
 </body>
