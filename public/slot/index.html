@@ -1,41 +1,40 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slot Premium - Casino Fénix</title>
-    
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        body { background: linear-gradient(135deg, #0f0c29, #302b63, #24243e); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; color: white; }
+        /* ESTILOS INTEGRADOS PARA ASEGURAR QUE TODO FUNCIONE */
+        body { margin: 0; background: linear-gradient(135deg, #0f0c29, #302b63); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
         
-        .header { text-align: center; margin-bottom: 20px; }
-        .slot-title { color: #ffaa00; font-size: 32px; text-shadow: 0 0 15px rgba(255, 170, 0, 0.6); text-transform: uppercase; letter-spacing: 2px; }
-        .balance-box { background: #1f2937; padding: 10px 20px; border-radius: 8px; font-size: 20px; font-weight: bold; border: 1px solid #374151; display: inline-block; margin-top: 10px;}
-        #creditos-display { color: #10b981; }
+        /* Contenedor principal de la máquina */
+        .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
+        
+        /* CADA REEL (RODILLO) ES LA CLAVE */
+        .reel { 
+            width: 100px; 
+            height: 150px; 
+            background-color: white; 
+            border-radius: 5px; 
+            background-image: url('images/reel-strip1.png'); 
+            background-repeat: repeat-y;
+            background-size: 100px auto; /* FUERZA QUE LA IMAGEN MIDA 100PX DE ANCHO */
+            background-position: 0px 0px; 
+        }
 
-        .slot-machine { display: flex; justify-content: center; background: #111827; padding: 30px; border-radius: 15px; border: 4px solid #ffaa00; box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.9); margin-bottom: 30px; }
-        .display { display: flex; gap: 10px; perspective: 1200px; }
-        .reel { width: 100px; height: 150px; overflow: hidden; position: relative; border-radius: 8px; border: 3px solid #374151; background: #ffffff; }
-        
-        .controls { display: flex; flex-direction: column; width: 100%; max-width: 350px; gap: 15px; }
-        .spin-button { background: linear-gradient(to bottom, #f59e0b, #d97706); color: white; border: none; padding: 20px; font-size: 24px; font-weight: bold; border-radius: 50px; cursor: pointer; text-transform: uppercase; }
-        .spin-button:disabled { background: #4b5563; cursor: not-allowed; }
-        .btn-volver { background: #374151; color: white; border: none; padding: 15px; font-size: 16px; border-radius: 8px; cursor: pointer; text-align: center; }
-        
-        #mensaje-premio { text-align: center; font-size: 26px; color: #a3e635; font-weight: bold; height: 35px; margin-bottom: 15px; }
+        .controls { display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        .spin-button { background: #f59e0b; padding: 20px 50px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; }
+        .btn-volver { background: #374151; padding: 12px 25px; border: none; border-radius: 8px; color: white; cursor: pointer; text-decoration: none; }
+        #mensaje-premio { font-size: 24px; color: #a3e635; height: 30px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <h1 class="slot-title">FÉNIX SLOTS</h1>
-        <div class="balance-box">Créditos: <span id="creditos-display">...</span></div>
-    </div>
-
-    <div id="slot-machine-container"></div>
-
+    <h1 style="color:#ffaa00; margin-bottom: 20px;">FÉNIX SLOTS</h1>
     <div id="mensaje-premio"></div>
+    
+    <div id="slot-machine-container" class="slot-machine"></div>
 
     <div class="controls">
         <button id="play-button" class="spin-button">GIRAR AHORA</button>
@@ -43,67 +42,47 @@
     </div>
 
     <script type="text/javascript" src="slot-machine.js"></script>
-
     <script>
         const usuarioActual = localStorage.getItem('casino_fenix_user');
-        if (!usuarioActual) { window.location.href = '/'; }
-
+        
+        // Configuración de símbolos acorde a la tira de imágenes
         const baseSymbols = [
-            { name: '🍒', position: 0, weight: 1 },
-            { name: '🍋', position: 150, weight: 1 },
-            { name: '💎', position: 300, weight: 1 },
-            { name: '🔔', position: 450, weight: 1 },
-            { name: '🎰', position: 600, weight: 1 }
-        ];
-
-        // RUTA CORREGIDA: Usamos barra inicial para buscar desde la raíz
-        const reelsConfig = [
-            { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols },
-            { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols },
-            { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols }
+            { name: 'symbol1', position: 0, weight: 1 },
+            { name: 'symbol2', position: 150, weight: 1 },
+            { name: 'symbol3', position: 300, weight: 1 }
         ];
 
         window.onload = function() {
-            const btnGirar = document.getElementById('play-button');
-            const displayCreditos = document.getElementById('creditos-display');
-            const mensajeDiv = document.getElementById('mensaje-premio');
-            
-            const onReelsStop = function() { btnGirar.disabled = false; };
-
             const container = document.getElementById('slot-machine-container');
-            const slot = slotMachine(container, reelsConfig, onReelsStop, {
-                reelHeight: 150,
-                reelWidth: 100,
-                click2Spin: false 
-            });
+            
+            // Inicializar máquina
+            const slot = slotMachine(container, [
+                { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
+                { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
+                { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols }
+            ], null, { reelHeight: 150, reelWidth: 100 });
 
-            btnGirar.addEventListener('click', async () => {
-                btnGirar.disabled = true;
-                mensajeDiv.innerText = "";
+            document.getElementById('play-button').addEventListener('click', async () => {
+                document.getElementById('play-button').disabled = true;
                 slot.startSpinAnimation();
-
+                
                 try {
-                    const respuesta = await fetch('/api/tirar-slot-premium', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ usuario: usuarioActual })
+                    const res = await fetch('/api/tirar-slot-premium', { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'}, 
+                        body: JSON.stringify({ usuario: usuarioActual }) 
                     });
-                    const data = await respuesta.json();
-
-                    if (!data.exito) {
+                    const data = await res.json();
+                    
+                    if(data.exito) {
+                        slot.stopSpinAndShowResult(data.rodillos);
+                        document.getElementById('mensaje-premio').innerText = "¡Ganaste!";
+                    } else {
                         alert(data.mensaje);
-                        slot.stopSpinAndShowResult(['🍒', '🍒', '🍒']);
-                        btnGirar.disabled = false;
-                        return;
+                        slot.stopSpinAndShowResult(['symbol1', 'symbol1', 'symbol1']);
                     }
-
-                    displayCreditos.innerText = data.creditosRestantes;
-                    mensajeDiv.innerText = `¡GANASTE $${data.premioValor}! 🎉`;
-                    slot.stopSpinAndShowResult(data.rodillos);
-                } catch (error) {
-                    alert("Error de conexión");
-                    btnGirar.disabled = false;
-                }
+                } catch(e) { alert("Error"); }
+                document.getElementById('play-button').disabled = false;
             });
         };
     </script>
