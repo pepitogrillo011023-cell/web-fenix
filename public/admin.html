@@ -422,6 +422,23 @@
                     </div>
                 </div>
             </div>
+            <div class="seccion-admin">
+    <h3>⚙️ Configurar Tienda (4 Productos)</h3>
+    <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:10px;">
+        <!-- Generamos 4 campos -->
+        <script>
+            for(let i=0; i<4; i++) {
+                document.write(`
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="p-nombre-${i}" placeholder="Nombre Producto ${i+1}">
+                        <input type="number" id="p-costo-${i}" placeholder="Costo ${i+1}">
+                    </div>
+                `);
+            }
+        </script>
+        <button onclick="guardarTiendaAdmin()" class="btn-primary">GUARDAR TIENDA</button>
+    </div>
+</div>
 
             <div id="section-apis" class="view-section">
                 <div class="panel-inside">
