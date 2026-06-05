@@ -59,7 +59,7 @@
 
     <div class="controls">
         <button id="play-button" class="spin-button">GIRAR AHORA</button>
-        <button class="btn-volver" onclick="window.close()">↩️ Volver al Casino</button>
+        <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
     </div>
 
     <script type="text/javascript" src="slot-machine.js"></script>
@@ -69,12 +69,10 @@
         const usuarioActual = localStorage.getItem('casino_fenix_user');
         if (!usuarioActual) {
             alert("No estás logueado. Volvé a ingresar al panel.");
-            window.close();
+            window.location.href = '/';
         }
 
         // 2. CONFIGURACIÓN DE LOS SÍMBOLOS Y SUS POSICIONES
-        // Las "posiciones" (100, 300, etc.) son los píxeles donde frena la imagen. 
-        // Los "names" son los Emojis que envía tu backend en el server.js
         const baseSymbols = [
             { name: '🍒', position: 100, weight: 1 },
             { name: '🍋', position: 300, weight: 1 },
@@ -83,8 +81,6 @@
             { name: '🎰', position: 1100, weight: 1 }
         ];
 
-        // Usamos la misma tira de imágenes para los 3 rodillos por ahora
-        // ATENCIÓN: Esta ruta asume que tenés la imagen en public/slot/images/reel-strip1.png
         const reelsConfig = [
             { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
             { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
@@ -97,12 +93,9 @@
             const mensajeDiv = document.getElementById('mensaje-premio');
             let saldoLocal = 0;
 
-            // 3. CALLBACK: Qué pasa cuando la animación termina y frena en el resultado
             const onReelsStop = function(resultadoArray) {
-                // Actualizamos el visor con los créditos que mandó el servidor
                 displayCreditos.innerText = saldoLocal;
 
-                // Si ganaste algo, acá salta el cartel
                 if (window.ultimoPremio > 0) {
                     mensajeDiv.innerText = `¡GANASTE $${window.ultimoPremio}! 🎉`;
                     mensajeDiv.classList.add('mensaje-visible');
@@ -111,28 +104,23 @@
                 btnGirar.disabled = false;
             };
 
-            // 4. INICIALIZAR LA MÁQUINA
             const container = document.getElementById('slot-machine-container');
             const slot = slotMachine(container, reelsConfig, onReelsStop, {
                 reelHeight: 1200,
                 reelWidth: 100,
-                click2Spin: false // Desactivamos el clic en la pantalla, usamos nuestro botón
+                click2Spin: false 
             });
 
-            displayCreditos.innerText = "Listo"; // Visor de inicio
+            displayCreditos.innerText = "Listo"; 
 
-            // 5. ACCIÓN DEL BOTÓN GIRAR
             btnGirar.addEventListener('click', async () => {
-                // Bloqueamos botón y limpiamos mensajes
                 btnGirar.disabled = true;
                 mensajeDiv.classList.remove('mensaje-visible');
                 window.ultimoPremio = 0;
 
-                // 🚀 Arrancamos el show visual (ilusión de que la máquina piensa)
                 slot.startSpinAnimation();
 
                 try {
-                    // 📞 Llamamos a Fénix Backend
                     const respuesta = await fetch('/api/tirar-slot-premium', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -141,20 +129,15 @@
                     
                     const data = await respuesta.json();
 
-                    // Si no tiene saldo o hay error, paramos la animación
                     if (!data.exito) {
                         alert(data.mensaje);
-                        // Frenamos en cualquier símbolo porque no hubo jugada
                         slot.stopSpinAndShowResult(['🍒', '🍋', '💎']); 
                         return;
                     }
 
-                    // Guardamos los datos para mostrarlos cuando termine de girar
                     saldoLocal = data.creditosRestantes;
                     window.ultimoPremio = data.premioValor;
 
-                    // 🛑 Le pasamos el resultado a la máquina para que frene
-                    // data.rodillos viene del backend (ej: ['💎', '💎', '💎'])
                     slot.stopSpinAndShowResult(data.rodillos);
 
                 } catch (error) {
