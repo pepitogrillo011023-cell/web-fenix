@@ -105,12 +105,21 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
-    app.get('/api/historial-cajas/:fecha', requireLogin, async (req, res) => {
+    // MODIFICADA: Ahora busca por fecha Y turno
+    app.get('/api/historial-cajas/:fecha/:turno', requireLogin, async (req, res) => {
         try {
-            const cierres = await CierreCaja.find({ fecha: req.params.fecha });
-            res.json(cierres);
+            const { fecha, turno } = req.params;
+            
+            // Buscamos ambos datos en paralelo
+            const cierre = await CierreCaja.findOne({ fecha: fecha, turno: turno });
+            const registroRetiros = await Retiro.findOne({ fecha: fecha, turno: turno });
+            
+            res.json({
+                cierre: cierre || null,
+                retiros: registroRetiros ? registroRetiros.retiros : []
+            });
         } catch (e) {
-            res.status(500).json([]);
+            res.status(500).json({ error: e.message });
         }
     });
 
