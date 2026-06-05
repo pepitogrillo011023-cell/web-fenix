@@ -68,6 +68,8 @@ function cambiarVista(vista) {
         document.getElementById('vista-chat').classList.remove('hidden');
         document.getElementById('vista-chat').style.display = 'flex';
         document.getElementById('btn-cerrar-sesion').classList.remove('hidden');
+        // Mostrar el banner de bienvenida al loguear
+        document.getElementById('hero-welcome-container').classList.remove('hidden');
     }
 }
 
@@ -100,7 +102,6 @@ function validarAcceso(esAutoLogin) {
     .then(res => res.json()).then(data => {
         btn.innerText = 'Ingresar al Chat'; btn.disabled = false;
         if(data.exito) {
-            // === REFUERZO DEL PUENTE ===
             localStorage.setItem('casino_fenix_user', u);
             localStorage.setItem('casino_fenix_pass', p);
             window.usuarioLogueado = u; 
@@ -123,6 +124,7 @@ function cerrarSesion() {
     document.getElementById('header-title-text').innerText = "Chat Asistencia";
     document.getElementById('badge-creditos').classList.add('hidden');
     msgArea.innerHTML = '';
+    document.getElementById('hero-welcome-container').classList.add('hidden');
     cambiarVista('login');
 }
 
@@ -449,7 +451,6 @@ function jugarMoneda() {
 // NUEVO: SLOT PREMIUM (NAVEGACIÓN NATIVA)
 // ==========================================
 function abrirSlotPremium() {
-    // 1. Avisamos en el chat que el cliente abrió el juego
     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎰 Entré al Slot Premium</div><span class="status-text">✓ Enviado</span></div>`;
     socket.emit('cliente_accion', { 
         estado: 'En Slot Premium', 
@@ -458,11 +459,38 @@ function abrirSlotPremium() {
     });
     msgArea.scrollTop = msgArea.scrollHeight;
 
-    // 2. REFUERZO DEL PUENTE: Aseguramos el storage antes de navegar
     if(window.usuarioLogueado) {
         localStorage.setItem('casino_fenix_user', window.usuarioLogueado);
     }
-
-    // 3. Navegamos en la misma pestaña
     window.location.href = '/slot/index.html';
+}
+
+// ==========================================
+// NUEVO: TIENDA DE BONOS
+// ==========================================
+function abrirTienda() {
+    document.getElementById('modal-tienda').style.display = 'flex';
+}
+
+async function canjearProducto(nombre, costo) {
+    if (misCreditos < costo) return alert("Créditos insuficientes.");
+    if (!confirm(`¿Confirmar canje de ${nombre} por ${costo} CR?`)) return;
+
+    try {
+        const res = await fetch('/api/canjear-producto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario: window.usuarioLogueado, nombre, costo })
+        });
+        const data = await res.json();
+        if (data.exito) {
+            alert("¡Canje exitoso!");
+            cerrarModal('tienda');
+            // Actualizar créditos visuales
+            misCreditos = data.nuevoSaldo;
+            document.getElementById('txt-creditos').innerText = misCreditos;
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (e) { alert("Error de conexión al canjear producto."); }
 }
