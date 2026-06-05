@@ -100,6 +100,7 @@ function validarAcceso(esAutoLogin) {
     .then(res => res.json()).then(data => {
         btn.innerText = 'Ingresar al Chat'; btn.disabled = false;
         if(data.exito) {
+            // === REFUERZO DEL PUENTE ===
             localStorage.setItem('casino_fenix_user', u);
             localStorage.setItem('casino_fenix_pass', p);
             window.usuarioLogueado = u; 
@@ -457,6 +458,11 @@ function abrirSlotPremium() {
     });
     msgArea.scrollTop = msgArea.scrollHeight;
 
-    // 2. Navegamos en la misma pestaña (Esto evita que el celular lo bloquee)
+    // 2. REFUERZO DEL PUENTE: Aseguramos el storage antes de navegar
+    if(window.usuarioLogueado) {
+        localStorage.setItem('casino_fenix_user', window.usuarioLogueado);
+    }
+
+    // 3. Navegamos en la misma pestaña
     window.location.href = '/slot/index.html';
 }
