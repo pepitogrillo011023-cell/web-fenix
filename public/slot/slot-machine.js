@@ -4,17 +4,19 @@ function SlotMachine(container, reels, callback, options) {
     const self = this;
     
     function createReelElm(config) {
+        console.log("Creando rodillo para:", config.imageSrc);
         const div = document.createElement('div');
         div.classList.add('reel');
         const ul = document.createElement('ul');
         ul.classList.add('strip');
+        
         for (let i = 0; i < 6; i++) {
             const li = document.createElement('li');
             li.style.backgroundImage = `url("${config.imageSrc}")`;
             li.style.backgroundPosition = `0px -${i * 150}px`;
             ul.appendChild(li);
         }
-        config['element'] = ul;
+        config['element'] = ul; // Esto es el <ul> con clase .strip
         div.appendChild(ul);
         return div;
     }
@@ -26,13 +28,15 @@ function SlotMachine(container, reels, callback, options) {
     container.appendChild(divSlots);
 
     self.startSpinAnimation = function() {
+        console.log("Iniciando giro...");
         reels.forEach(r => {
-            r.element.classList.remove('stop');
+            console.log("Aplicando clase spin a:", r.element);
             r.element.classList.add('spin');
         });
     };
 
     self.stopSpinAndShowResult = function(resultadoArray) {
+        console.log("Parando giros...");
         reels.forEach((reel, index) => {
             const ul = reel.element;
             const simbolo = reel.symbols.find(s => s.name === resultadoArray[index]);
@@ -40,10 +44,10 @@ function SlotMachine(container, reels, callback, options) {
 
             setTimeout(() => {
                 ul.classList.remove('spin');
-                ul.classList.add('stop'); // Activamos la transición de frenado suave
                 ul.style.marginTop = `-${finalPos}px`;
+                console.log("Rodillo " + index + " frenado en:", finalPos);
                 if (index === reels.length - 1 && callback) callback();
-            }, 1000 + (index * 400));
+            }, 1000 + (index * 500));
         });
     };
     return self;
