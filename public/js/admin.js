@@ -45,7 +45,7 @@ function cambiarSeccion(seccion) {
         retiros: "Auditoría de Retiros", billetera: "Billetera y Saldos", creditos: "Solicitudes Créditos",
         costos: "Costos Minijuegos", push: "Notificaciones Masivas", retencion: "Automatización de Retención", 
         eventos: "Consola de Eventos y Minijuegos", apis: "Integraciones y Llaves de API", cierre: "Cierre de Caja", 
-        resumen: "Resumen Cajas", historial: "Historial de Cajas" 
+        resumen: "Resumen Cajas", historial: "Historial de Cajas", ganamos: "Plataforma Ganamos" 
     };
     document.getElementById('panel-title').innerText = "Panel de Control - " + (titulos[seccion] || "");
 
