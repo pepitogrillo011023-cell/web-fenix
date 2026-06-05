@@ -19,6 +19,7 @@
 
         .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
         
+        /* Rodillo individual con sombra 3D */
         .reel { width: 100px; height: 150px; overflow: hidden; border: 2px solid #555; background: #000; position: relative; }
         .reel::after {
             content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -104,23 +105,18 @@
             const mensajePremio = document.getElementById('mensaje-premio');
             const saldoDisplay = document.getElementById('saldo-actual');
 
-            // 1. OBTENER CRÉDITOS REALES DEL SERVIDOR
+            // 1. CARGA INICIAL DE CRÉDITOS DESDE LA BASE DE DATOS
             async function cargarCreditos() {
                 try {
-                    // INTENTA buscar el saldo real en tu backend
                     const res = await fetch(`/api/obtener-saldo?usuario=${usuarioActual}`);
                     if (res.ok) {
                         const data = await res.json();
                         creditosActuales = data.saldo; 
-                    } else {
-                        // SALVACAÍDAS: Si no encuentra la API, te da 5000 para que puedas seguir testeando
-                        creditosActuales = 5000;
-                    }
+                    } else { throw new Error("API no lista"); }
                 } catch (error) {
-                    console.warn("API no disponible todavía, usando saldo de prueba.");
+                    console.warn("Backend no conectado aún. Usando 5000 créditos de prueba.");
                     creditosActuales = 5000;
                 }
-                
                 actualizarPantallaCreditos();
                 btnGirar.innerText = "GIRAR AHORA";
                 btnGirar.disabled = false;
@@ -130,7 +126,6 @@
                 saldoDisplay.innerText = creditosActuales;
             }
 
-            // Llamamos a la función apenas carga la página
             await cargarCreditos();
 
             slot = slotMachine(container, [
@@ -141,6 +136,7 @@
                 evaluarPremio(resultadoFinal); 
             }, { reelHeight: 150, reelWidth: 100 });
 
+            // 2. CONEXIÓN DEL GIRO AL SERVIDOR REAL
             window.ejecutarGiro = async function() {
                 if (isSpinning) return;
                 
@@ -150,41 +146,70 @@
                     return;
                 }
 
-                if (!enModoBonus) {
-                    if (creditosActuales < apuestaActual) {
-                        alert("Créditos insuficientes para esta apuesta.");
-                        return;
-                    }
-                    // Descontamos visualmente al instante (luego el servidor lo confirma)
-                    creditosActuales -= apuestaActual;
-                    actualizarPantallaCreditos();
+                // Verificación visual rápida (el servidor también debe verificar esto)
+                if (!enModoBonus && creditosActuales < apuestaActual) {
+                    alert("Créditos insuficientes para esta apuesta.");
+                    return;
                 }
 
                 isSpinning = true;
                 btnGirar.disabled = true;
                 inputApuesta.disabled = enModoBonus; 
-
                 mensajePremio.innerText = enModoBonus ? `¡GIRO GRATIS! (${girosGratisRestantes} restantes)` : "Girando...";
+                
                 slot.startSpinAnimation();
 
-                // ----------------------------------------------------------------------
-                // SIMULADOR: Mantiene el código de prueba funcionando 
-                // Cuando tu backend esté listo, borrás el setTimeout y usás el fetch real
-                // ----------------------------------------------------------------------
-                setTimeout(() => {
-                    const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
-                    const r1 = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
-                    const r2 = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
-                    const r3 = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
-                    
-                    let rodillosFinales = [r1, r2, r3];
-                    if (Math.random() > 0.85) { 
-                        const premioForzado = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
-                        rodillosFinales = [premioForzado, premioForzado, premioForzado];
+                // === COMUNICACIÓN CON EL BACKEND ===
+                try {
+                    const respuesta = await fetch('/api/jugar-slot', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            usuario: usuarioActual,
+                            // Si estamos en bonus, la apuesta que se descuenta en BD debe ser 0
+                            apuestaGasto: enModoBonus ? 0 : apuestaActual, 
+                            apuestaCalculoPremio: apuestaActual, // Para calcular X10, X8, etc.
+                            esGiroGratis: enModoBonus
+                        })
+                    });
+
+                    if (!respuesta.ok) throw new Error("El backend aún no tiene esta ruta configurada.");
+
+                    const data = await respuesta.json();
+
+                    if (data.exito) {
+                        // Sincronizamos los créditos EXACTOS que diga la base de datos
+                        creditosActuales = data.nuevoSaldo;
+                        actualizarPantallaCreditos();
+                        
+                        // Detenemos la máquina con las frutas que eligió el servidor
+                        slot.stopSpinAndShowResult(data.rodillos);
+                    } else {
+                        alert(data.mensaje || "Error al procesar la apuesta en el servidor.");
+                        isSpinning = false;
+                        btnGirar.disabled = false;
                     }
 
-                    slot.stopSpinAndShowResult(rodillosFinales);
-                }, 1000); 
+                } catch (error) {
+                    // === SALVACAÍDAS TEMPORAL (Mantiene el juego andando hasta que programes el backend) ===
+                    setTimeout(() => {
+                        if(!enModoBonus) creditosActuales -= apuestaActual; // Gasto visual
+                        actualizarPantallaCreditos();
+
+                        const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
+                        let rodillosFinales = [
+                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
+                        ];
+                        
+                        if (Math.random() > 0.85) { 
+                            const forzado = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
+                            rodillosFinales = [forzado, forzado, forzado];
+                        }
+                        slot.stopSpinAndShowResult(rodillosFinales);
+                    }, 1000); 
+                }
             };
 
             function evaluarPremio(rodillos) {
@@ -212,16 +237,18 @@
                         totalGanadoEnGratis += premio;
                         mensajePremio.innerText = `¡Ganaste ${premio} créditos! (Acumulado: ${totalGanadoEnGratis})`;
                     } else {
-                        creditosActuales += premio; 
+                        // En la versión final, el servidor ya sumó esto en la base de datos, 
+                        // acá solo lo sumamos visualmente si cayó en el "salvacaídas"
+                        creditosActuales += premio;
                         actualizarPantallaCreditos();
                         mensajePremio.innerText = `¡Ganaste ${premio} créditos!`;
-                        // Aquí enviarías al servidor que el usuario ganó
                     }
                 } 
                 else {
                     mensajePremio.innerText = enModoBonus ? "Sigue girando..." : "¡Suerte para la próxima!";
                 }
 
+                // GESTIÓN DE TIROS GRATIS
                 if (enModoBonus && girosGratisRestantes > 0) {
                     girosGratisRestantes--;
                     setTimeout(window.ejecutarGiro, 1500); 
@@ -245,11 +272,30 @@
             window.ejecutarGiro();
         }
 
-        function cerrarModalFinBonus() {
+        // 3. FINALIZAR BONUS Y GUARDAR PREMIO GIGANTE
+        async function cerrarModalFinBonus() {
             document.getElementById('modal-fin-bonus').style.display = 'none';
-            creditosActuales += totalGanadoEnGratis;
-            document.getElementById('saldo-actual').innerText = creditosActuales;
-            // Aquí enviarías al servidor la suma total del bonus
+            
+            // Si hay premio del bonus, le avisamos al servidor que lo sume a la base de datos
+            if (totalGanadoEnGratis > 0) {
+                try {
+                    const res = await fetch('/api/sumar-premio-bonus', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ usuario: usuarioActual, premio: totalGanadoEnGratis })
+                    });
+                    if(res.ok) {
+                        const data = await res.json();
+                        creditosActuales = data.nuevoSaldo; // Sincronizamos exacto
+                    } else {
+                        creditosActuales += totalGanadoEnGratis; // Fallback visual
+                    }
+                } catch(e) {
+                    creditosActuales += totalGanadoEnGratis; // Fallback visual
+                }
+                document.getElementById('saldo-actual').innerText = creditosActuales;
+            }
+
             enModoBonus = false; 
             isSpinning = false;
             document.getElementById('play-button').disabled = false;
