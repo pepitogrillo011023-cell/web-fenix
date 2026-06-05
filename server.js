@@ -6,16 +6,16 @@ const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
 
-// Importar modelos externos
+// Importar modelos
 const Minigame = require('./models/Minigame');
-const User = require('./models/User'); // <-- ACÁ IMPORTAMOS TU NUEVO ARCHIVO USER.JS
+const User = require('./models/User');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 // ==============================================================
-// 📝 1. MODELOS DE DATOS INTERNOS (Dejamos intactos los tuyos)
+// 1. MODELOS DE DATOS
 // ==============================================================
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
@@ -67,7 +67,7 @@ const UsuarioInterno = mongoose.model('UsuarioInterno', new mongoose.Schema({
 }));
 
 // ==============================================================
-// 🟢 2. CONEXIÓN A MONGODB
+// 2. CONEXIÓN A MONGODB
 // ==============================================================
 if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONGODB') {
     mongoose.connect(process.env.MONGO_URI, { family: 4 })
@@ -79,7 +79,7 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 }
 
 // ==============================================================
-// ⚙️ 3. MIDDLEWARES, SESIÓN Y SEGURIDAD
+// 3. MIDDLEWARES, SESIÓN Y SEGURIDAD
 // ==============================================================
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); 
@@ -94,10 +94,9 @@ const requireLogin = (req, res, next) => {
     if (req.session.loggedIn) { next(); } else { res.redirect('/login.html'); }
 };
 
-// ==============================================================
-// 🔐 4. RUTAS DE ACCESO (PRIORIDAD AL LOGIN)
-// ==============================================================
-app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -121,7 +120,7 @@ app.get('/admin.html', requireLogin, (req, res) => {
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==============================================================
-// 📦 5. MEMORIA COMPARTIDA Y WEBHOOKS
+// 4. MEMORIA COMPARTIDA Y WEBHOOKS
 // ==============================================================
 const sharedState = {
     usuariosConectados: [],
@@ -176,126 +175,76 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
     try {
         const { name, nuevoCosto } = req.body;
         const minijuego = await Minigame.findOneAndUpdate({ name: name }, { creditCost: nuevoCosto }, { new: true });
-        if (!minijuego) return res.status(404).json({ success: false, message: `Minijuego '${name}' no encontrado.` });
+        
+        if (!minijuego) {
+            return res.status(404).json({ success: false, message: `Minijuego '${name}' no encontrado en la base de datos.` });
+        }
         res.json({ success: true, message: `El costo de ${name} ha sido actualizado a ${nuevoCosto} Créditos.` });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
     }
 });
-
 // ==============================================================
-// 🎰 NUEVO: MOTOR DEL SLOT PREMIUM CONECTADO A USER.JS
+// 5. MOTOR DEL SLOT PREMIUM (FÉNIX SLOTS)
 // ==============================================================
 const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
 const tablaPremios = {
-    'bufon': 10,
-    'laud': 8,
-    'clavas': 6,
-    'zapatos': 3,
-    'esfera': 1
+    'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1
 };
 
-// 1. OBTENER SALDO AL ENTRAR AL JUEGO
 app.get('/api/obtener-saldo', async (req, res) => {
     try {
         const { usuario } = req.query;
-        // Buscamos en Cliente, usando usuarioCasino
         const cliente = await Cliente.findOne({ usuarioCasino: usuario }); 
-
-        if (!cliente) {
-            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
-        }
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
         res.json({ exito: true, saldo: cliente.creditos });
-    } catch (error) {
-        console.error("Error al obtener saldo:", error);
-        res.status(500).json({ exito: false, mensaje: "Error del servidor" });
-    }
+    } catch (error) { res.status(500).json({ exito: false, mensaje: "Error del servidor" }); }
 });
 
 app.post('/api/jugar-slot', async (req, res) => {
     try {
         const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
-
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
-
-        // Verificamos fondos
-        if (!esGiroGratis && cliente.creditos < apuestaGasto) {
-            return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
-        }
-
-        // Descontamos apuesta
+        if (!esGiroGratis && cliente.creditos < apuestaGasto) return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
+        
         cliente.creditos -= apuestaGasto;
-
-        // SORTEO
         const rodillos = [
             todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
             todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
             todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
         ];
-
         const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
         const simbolo = rodillos[0];
-        let premio = 0;
-
-        if (esIgual && simbolo !== 'bonus' && tablaPremios[simbolo]) {
-            premio = apuestaCalculoPremio * tablaPremios[simbolo];
-        }
-
-        if (!esGiroGratis && premio > 0) {
-            cliente.creditos += premio;
-        }
-
+        let premio = (esIgual && simbolo !== 'bonus' && tablaPremios[simbolo]) ? apuestaCalculoPremio * tablaPremios[simbolo] : 0;
+        
+        if (!esGiroGratis && premio > 0) cliente.creditos += premio;
         await cliente.save();
-
-        res.json({
-            exito: true,
-            rodillos: rodillos,
-            nuevoSaldo: cliente.creditos,
-            premioGanado: premio
-        });
-
-    } catch (error) {
-        console.error("Error en el Slot Premium:", error);
-        res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" });
-    }
+        res.json({ exito: true, rodillos, nuevoSaldo: cliente.creditos, premioGanado: premio });
+    } catch (error) { res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" }); }
 });
 
-    } catch (error) {
-        console.error("Error en el Slot Premium:", error);
-        res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" });
-    }
-});
-
-// 3. SUMAR EL POZO GIGANTE DESPUÉS DEL BONUS
 app.post('/api/sumar-premio-bonus', async (req, res) => {
     try {
         const { usuario, premio } = req.body;
         if (premio <= 0) return res.json({ exito: true });
-
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
-
         cliente.creditos += premio;
         await cliente.save();
-
         res.json({ exito: true, nuevoSaldo: cliente.creditos });
-    } catch (error) {
-        console.error("Error sumando bonus:", error);
-        res.status(500).json({ exito: false, mensaje: "Error sumando el premio del bonus" });
-    }
+    } catch (error) { res.status(500).json({ exito: false, mensaje: "Error sumando bonus" }); }
 });
 
-
 // ==============================================================
-// 🚀 6. IMPORTACIÓN DE RUTAS MODULARES
+// 6. IMPORTACIÓN DE RUTAS MODULARES
 // ==============================================================
 require('./routes/finanzas')(app, requireLogin, io, sharedState);
 require('./routes/clientes')(app, requireLogin, io, sharedState);
 require('./routes/eventos')(app, requireLogin, io, sharedState);
 
 // ==============================================================
-// 🔌 7. COMUNICACIÓN EN VIVO (SOCKETS)
+// 7. COMUNICACIÓN EN VIVO (SOCKETS)
 // ==============================================================
 io.on('connection', (socket) => {
     socket.on('identificar_admin', async () => {
@@ -411,7 +360,7 @@ io.on('connection', (socket) => {
 });
 
 // ==============================================================
-// 🛠️ 8. INICIALIZADOR DE DATOS
+// 8. INICIALIZADOR DE DATOS
 // ==============================================================
 async function inicializarDatosDePrueba() {
     const juegos = ['Ruleta', 'Raspa', 'Tragamonedas', 'Cartas', 'Moneda'];
@@ -419,7 +368,6 @@ async function inicializarDatosDePrueba() {
         const existe = await Minigame.findOne({ name: nombre });
         if (!existe) await new Minigame({ name: nombre, creditCost: 10 }).save();
     }
-    
     const countCl = await Cliente.countDocuments();
     if(countCl === 0) { await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, creditos: 5000, wager: 10000, estado: 'Activo' }).save(); }
     
@@ -463,8 +411,4 @@ async function inicializarDatosDePrueba() {
 }
 
 const PUERTO = process.env.PORT || 3000;
-server.listen(PUERTO, () => {
-    console.log('=============================================');
-    console.log(`🚀 SERVIDOR VINCULADO AL PANEL EN PUERTO ${PUERTO}`);
-    console.log('=============================================');
-});
+server.listen(PUERTO, () => { console.log(`🚀 Servidor en puerto ${PUERTO}`); });
