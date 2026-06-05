@@ -1,9 +1,18 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
 
-/* El contenedor principal */
+body { 
+    background: #0b0f19; 
+    height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    color: white; 
+    font-family: sans-serif; 
+}
+
 .slot-machine { 
-    display: flex; /* ESTO PONE LOS RODILLOS UNO AL LADO DEL OTRO */
+    display: flex; 
     justify-content: center; 
     gap: 10px; 
     background: #000; 
@@ -23,19 +32,21 @@ body { background: #0b0f19; height: 100vh; display: flex; flex-direction: column
     position: relative;
 }
 
-/* La tira de imágenes */
+/* La tira que contiene las frutas */
 .strip { 
     list-style: none; 
+    padding: 0; 
+    margin: 0; 
     width: 100px;
     transition: margin-top 0.5s ease-out;
 }
 
+/* Cada fruta (El JS les pondrá el fondo dinámicamente) */
 .strip li { 
     width: 100px; 
     height: 150px; 
-    background-image: url('images/reel-strip1.png');
-    background-size: 100px 900px; 
-    background-repeat: no-repeat;
+    list-style: none;
+    /* QUITAMOS background-image de aquí para que no haya conflicto */
 }
 
 /* Animación de giro */
