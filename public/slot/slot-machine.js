@@ -1,3 +1,4 @@
+JavaScript
 'use strict';
 
 function SlotMachine(container, reels, callback, options) {
@@ -9,10 +10,8 @@ function SlotMachine(container, reels, callback, options) {
         const ul = document.createElement('ul');
         ul.classList.add('strip');
         
-        // TRUCO DE MAGIA: Duplicamos la tira (12 símbolos en vez de 6) 
-        // Esto crea un loop infinito perfecto hacia abajo sin cortes.
         for (let i = 0; i < 12; i++) {
-            const indexSimbolo = i % 6; // Repite 0,1,2,3,4,5,0,1,2...
+            const indexSimbolo = i % 6; 
             const li = document.createElement('li');
             li.style.backgroundImage = `url("${config.imageSrc}")`;
             li.style.backgroundPosition = `0px -${indexSimbolo * 150}px`;
@@ -31,22 +30,18 @@ function SlotMachine(container, reels, callback, options) {
 
     self.startSpinAnimation = function() {
         reels.forEach(r => {
-            // Arrancamos desde la mitad inferior de la tira larga (-900px)
             let pos = -900; 
-            const speed = 25; // Velocidad de caída. Subí este número si querés que gire más rápido.
+            // BAJAMOS LA VELOCIDAD DE 25 a 12 PARA QUE GIRE SUAVE Y PESADO
+            const speed = 12; 
             
             function animate() {
-                pos += speed; // Sumamos píxeles para que caiga por gravedad
-                
-                // Cuando llega a la copia idéntica de arriba (0px), lo teletransportamos abajo (-900px)
-                // El (pos - 0) mantiene los decimales para que no haya ni un micro-salto
+                pos += speed; 
                 if (pos >= 0) pos = -900 + pos; 
                 
                 r.element.style.marginTop = pos + "px";
-                r.animationId = requestAnimationFrame(animate); // Animación a 60FPS fluidos
+                r.animationId = requestAnimationFrame(animate); 
             }
             
-            // Iniciamos el motor fluido
             r.animationId = requestAnimationFrame(animate);
         });
     };
@@ -57,20 +52,18 @@ function SlotMachine(container, reels, callback, options) {
             const simbolo = reel.symbols.find(s => s.name === resultadoArray[index]);
             const finalPos = simbolo ? simbolo.position : 0;
 
-            // El multiplicador de index (index * 400) frena los rodillos en cascada
             setTimeout(() => {
-                // Detenemos el motor fluido
                 cancelAnimationFrame(reel.animationId); 
                 
-                // Le damos un micro-efecto de "clavado" al frenar
-                ul.style.transition = "margin-top 0.1s ease-out"; 
+                // EFECTO DE TRABA MECÁNICA (Rebote)
+                // Usamos cubic-bezier para que "se pase" un poco del centro y vuelva, como si trabara.
+                ul.style.transition = "margin-top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"; 
                 ul.style.marginTop = `-${finalPos}px`; 
                 
-                // Limpiamos todo para el próximo giro
                 setTimeout(() => {
                     ul.style.transition = "none"; 
                     if (index === reels.length - 1 && callback) callback(resultadoArray);
-                }, 100);
+                }, 400); // Esperamos 0.4s a que termine el rebote
 
             }, 1000 + (index * 400)); 
         });
