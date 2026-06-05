@@ -89,27 +89,7 @@ app.use(session({
     saveUninitialized: false,
     cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
-// --- RUTA PARA OBTENER TIENDA ---
-app.get('/api/tienda', async (req, res) => {
-    try {
-        const config = await PanelConfig.findOne({ identificador: 'global' });
-        res.json(config.tienda || [
-            { nombre: 'Bono 10%', costo: 500 },
-            { nombre: '10 Tiradas', costo: 1000 },
-            { nombre: 'Bono 20%', costo: 2000 },
-            { nombre: 'Bono 50%', costo: 5000 }
-        ]);
-    } catch (e) { res.status(500).json([]); }
-});
 
-// --- RUTA PARA GUARDAR TIENDA DESDE ADMIN ---
-app.post('/api/admin/actualizar-tienda', requireLogin, async (req, res) => {
-    try {
-        const { productos } = req.body; // Se espera un array de 4 objetos
-        await PanelConfig.updateOne({ identificador: 'global' }, { $set: { tienda: productos } });
-        res.json({ exito: true, mensaje: "Tienda actualizada" });
-    } catch (e) { res.status(500).json({ exito: false }); }
-});
 
 const requireLogin = (req, res, next) => {
     if (req.session.loggedIn) { next(); } else { res.redirect('/login.html'); }
@@ -179,6 +159,27 @@ app.post('/api/webhook/billetera', async (req, res) => {
             }
         }
     } catch (error) { console.error("🔴 Error procesando Webhook:", error); }
+});
+// --- RUTA PARA OBTENER TIENDA ---
+app.get('/api/tienda', async (req, res) => {
+    try {
+        const config = await PanelConfig.findOne({ identificador: 'global' });
+        res.json(config.tienda || [
+            { nombre: 'Bono 10%', costo: 500 },
+            { nombre: '10 Tiradas', costo: 1000 },
+            { nombre: 'Bono 20%', costo: 2000 },
+            { nombre: 'Bono 50%', costo: 5000 }
+        ]);
+    } catch (e) { res.status(500).json([]); }
+});
+
+// --- RUTA PARA GUARDAR TIENDA DESDE ADMIN ---
+app.post('/api/admin/actualizar-tienda', requireLogin, async (req, res) => {
+    try {
+        const { productos } = req.body; // Se espera un array de 4 objetos
+        await PanelConfig.updateOne({ identificador: 'global' }, { $set: { tienda: productos } });
+        res.json({ exito: true, mensaje: "Tienda actualizada" });
+    } catch (e) { res.status(500).json({ exito: false }); }
 });
 
 app.post('/api/simular-pago-test', requireLogin, (req, res) => {
