@@ -561,13 +561,60 @@ async function buscarResumen() {
     document.getElementById('res-mensual-bonos').innerHTML = `<tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr><tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>`;
 }
 async function buscarHistorialCajas() {
-    const fecha = document.getElementById('hist-fecha').value; const c = document.getElementById('historial-resultados'); if(!fecha) return;
+    const fecha = document.getElementById('hist-fecha').value;
+    const turno = document.getElementById('hist-turno').value;
+    const c = document.getElementById('historial-resultados');
+    
+    if(!fecha) return alert("Seleccioná una fecha.");
+
     try {
-        const res = await fetch('/api/historial-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
-        if (!res.ok) throw new Error(); const cierres = await res.json();
-        if (cierres.length === 0) return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay cajas guardadas para la fecha ${fecha}.</p>`;
-        c.innerHTML = cierres.map(cl => `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;"><h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">📅 ${cl.fecha} | 🕒 ${cl.turno || 'S/T'} | 👤 ${cl.cajero || 'N/D'}</h4><div class="excel-grid"><div><table class="table-custom"><tr><th style="width:50%">Apertura</th><td>${cl.horaInicio || '--:--'}</td></tr><tr><th>Cierre</th><td>${cl.horaFin || '--:--'}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE GASTOS</h5><table class="table-custom"><thead><tr><th>Tipo</th><th>Destino</th><th>Monto</th></tr></thead><tbody>${(cl.gastos && cl.gastos.length > 0) ? cl.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos</td></tr>'}</tbody></table></div><div><table class="table-custom"><tr><th>Ingreso</th><th>Oro</th><th>Ganamos</th><th>Egreso</th></tr><tr><td style="text-align:right;">${f.format(cl.ingreso || 0)}</td><td style="text-align:right;">${f.format(cl.saldoOro || 0)}</td><td style="text-align:right;">${f.format(cl.saldoGanamos || 0)}</td><td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(cl.egreso || 0)}</td></tr></table><table class="table-custom" style="margin-top:15px;"><tr><th>Esperado (Teórico)</th><th>Real Final (Caja)</th><th>Diferencia</th></tr><tr><td style="text-align:right;">${f.format(cl.montoEsperado || 0)}</td><td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(cl.montoRealFinal || 0)}</td><td style="text-align:right; font-weight:bold; color:${(cl.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(cl.sobranteFaltante || 0)}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS</h5><table class="table-custom"><thead><tr><th>Usuario</th><th>Monto</th></tr></thead><tbody>${(cl.propinas && cl.propinas.length > 0) ? cl.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas</td></tr>'}</tbody></table></div></div></div>`).join('');
-    } catch (e) { c.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center;"><p style="color:#cbd5e1;">Error al cargar el historial.</p></div>`; }
+        const res = await fetch(`/api/historial-cajas/${fecha}/${turno}`);
+        if(res.redirected) return window.location.href = '/login.html';
+        const data = await res.json();
+        
+        if (!data.cierre && data.retiros.length === 0) {
+            return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay registros para ${fecha} en el turno ${turno}.</p>`;
+        }
+
+        // 1. Renderizar el Cierre de Caja (si existe)
+        let html = '';
+        if (data.cierre) {
+            const cl = data.cierre;
+            html = `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;">
+                <h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">
+                    📅 ${cl.fecha} | 🕒 ${cl.turno} | 👤 ${cl.cajero || 'N/D'}
+                </h4>
+                <div class="excel-grid">
+                    <div>
+                        <table class="table-custom"><tr><th style="width:50%">Apertura</th><td>${cl.horaInicio || '--:--'}</td></tr><tr><th>Cierre</th><td>${cl.horaFin || '--:--'}</td></tr></table>
+                        <h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE GASTOS</h5>
+                        <table class="table-custom"><thead><tr><th>Tipo</th><th>Destino</th><th>Monto</th></tr></thead><tbody>${(cl.gastos && cl.gastos.length > 0) ? cl.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos</td></tr>'}</tbody></table>
+                    </div>
+                    <div>
+                        <table class="table-custom"><tr><th>Ingreso</th><th>Oro</th><th>Ganamos</th><th>Egreso</th></tr><tr><td style="text-align:right;">${f.format(cl.ingreso || 0)}</td><td style="text-align:right;">${f.format(cl.saldoOro || 0)}</td><td style="text-align:right;">${f.format(cl.saldoGanamos || 0)}</td><td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(cl.egreso || 0)}</td></tr></table>
+                        <table class="table-custom" style="margin-top:15px;"><tr><th>Esperado (Teórico)</th><th>Real Final (Caja)</th><th>Diferencia</th></tr><tr><td style="text-align:right;">${f.format(cl.montoEsperado || 0)}</td><td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(cl.montoRealFinal || 0)}</td><td style="text-align:right; font-weight:bold; color:${(cl.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(cl.sobranteFaltante || 0)}</td></tr></table>
+                    </div>
+                </div>
+            </div>`;
+        }
+
+        // 2. Renderizar la tabla de Retiros (si existen)
+        if (data.retiros && data.retiros.length > 0) {
+            html += `<h4 style="color:#38bdf8; margin: 20px 0 10px 0;">💸 Detalle de Retiros</h4>
+                     <table class="data-table">
+                        <thead><tr><th>Cliente</th><th>Monto</th><th>Hora</th><th>Verificado</th></tr></thead>
+                        <tbody>
+                            ${data.retiros.map(r => `<tr><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.hora}</td><td>${r.verificado ? '✅' : '❌'}</td></tr>`).join('')}
+                        </tbody>
+                     </table>`;
+        } else {
+            html += `<p style="color:#64748b; font-size:13px; margin-top:10px;">No hubo retiros registrados en este turno.</p>`;
+        }
+
+        c.innerHTML = html;
+    } catch (e) { 
+        c.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center;"><p style="color:#cbd5e1;">Error al cargar el historial.</p></div>`; 
+    }
 }
 
 // ==========================================
