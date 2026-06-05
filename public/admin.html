@@ -27,8 +27,9 @@
         <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
         <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
         <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
-        <button id="btn-nav-tienda" class="nav-btn" onclick="cambiarSeccion('tienda')">🛒 Configurar Tienda</button>
         
+        <button id="btn-nav-tienda" class="nav-btn" onclick="abrirSeccionTienda()">🛒 Configurar Tienda</button>
+
         <div class="menu-category">Sistema</div>
         <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
         <button id="btn-nav-costos" class="nav-btn" onclick="cambiarSeccion('costos')">🪙 Costos Minijuegos</button>
@@ -68,7 +69,7 @@
                                 document.write(`
                                     <div style="display:flex; gap:15px; align-items:center; background: #1b2635; padding: 12px; border-radius: 8px;">
                                         <span style="color:#94a3b8; font-weight:bold; min-width:80px;">Prod. ${i+1}:</span>
-                                        <input type="text" id="p-nombre-${i}" placeholder="Nombre" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
+                                        <input type="text" id="p-nombre-${i}" placeholder="Nombre (ej: Bono 10%)" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
                                         <input type="number" id="p-costo-${i}" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
                                     </div>
                                 `);
@@ -535,6 +536,17 @@
     </div>
 
     <script>
+        // Esta función NO sobreescribe a la de admin.js, funciona en paralelo solo para la tienda
+        function abrirSeccionTienda() {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            
+            document.getElementById('section-tienda').classList.add('active-view');
+            document.getElementById('btn-nav-tienda').classList.add('active-nav');
+            
+            document.getElementById('panel-title').innerText = "Panel de Control - Configuración de Tienda";
+        }
+
         async function guardarTiendaAdmin() {
             let productos = [];
             for(let i=0; i<4; i++) {
