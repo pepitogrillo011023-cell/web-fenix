@@ -132,9 +132,20 @@
                     </div>
 
                     <div id="sub-caja-retiros" class="sub-caja-view active-sub-caja">
-                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:15px;">
-                            <h3 style="color:white; margin:0;">Control de Retiros del Turno</h3>
+                        
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-top:15px; margin-bottom:15px; background:#111827; padding:15px; border-radius:8px; border: 1px solid #1f2937;">
+                            <div style="display:flex; gap:15px; align-items:center;">
+                                <h3 style="margin:0; color:#38bdf8;">Datos del Turno:</h3>
+                                <input type="date" id="global-retiro-fecha" class="input-text-adv" style="width:180px; margin:0; background:#a3e635; color:black; font-weight:bold;">
+                                <select id="global-retiro-turno" class="input-text-adv" style="width:150px; margin:0; background:#a3e635; color:black; font-weight:bold;">
+                                    <option value="Mañana">Mañana</option>
+                                    <option value="Tarde">Tarde</option>
+                                    <option value="Noche">Noche</option>
+                                </select>
+                            </div>
+                            <button class="btn-add" onclick="addRetiroRow()" style="font-size: 16px; padding: 10px 20px;">➕ Agregar Retiro</button>
                         </div>
+
                         <table class="data-table" id="tabla-control-retiros">
                             <thead>
                                 <tr>
@@ -144,12 +155,12 @@
                                     <th>Hora</th>
                                     <th>Verifi</th>
                                     <th>Turno</th>
-                                </tr>
+                                    <th>Acción</th> </tr>
                             </thead>
-                            <tbody>
+                            <tbody id="tbody-retiros">
                                 </tbody>
                         </table>
-                        <button class="btn-save" style="margin-top:20px; width:100%;" onclick="procesarCierreRetiros()">📥 GUARDAR TABLA DE RETIROS (Cerrar Turno)</button>
+                        <button class="btn-save" style="margin-top:20px; width:100%; font-size:16px;" onclick="procesarCierreRetiros()">📥 GUARDAR TABLA DE RETIROS (Cerrar Turno)</button>
                     </div>
 
                     <div id="sub-caja-cierre" class="sub-caja-view">
