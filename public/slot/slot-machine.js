@@ -28,10 +28,16 @@ function SlotMachine(container, reels, callback, options) {
 
     self.startSpinAnimation = function() {
         reels.forEach(r => {
-            let pos = 0;
+            // Empezamos con el margen negativo (oculto abajo)
+            let pos = -750; 
+            
             r.interval = setInterval(() => {
-                pos -= 30; 
-                if (pos <= -900) pos = 0; 
+                // SUMAMOS 40px para que la tira "caiga" hacia abajo
+                pos += 40; 
+                
+                // Si la imagen ya bajó del todo, la volvemos a subir invisiblemente para el bucle
+                if (pos >= 0) pos = -750; 
+                
                 r.element.style.marginTop = pos + "px";
             }, 30);
         });
@@ -43,12 +49,14 @@ function SlotMachine(container, reels, callback, options) {
             const simbolo = reel.symbols.find(s => s.name === resultadoArray[index]);
             const finalPos = simbolo ? simbolo.position : 0;
 
+            // El (index * 400) es el truco que hace que frenen en cascada (uno por uno)
             setTimeout(() => {
                 clearInterval(reel.interval); 
-                ul.style.marginTop = `-${finalPos}px`; 
-                // AQUÍ PASAMOS EL RESULTADO AL CALLBACK
+                ul.style.marginTop = `-${finalPos}px`; // Clava la imagen ganadora
+                
+                // Le avisamos al juego que terminó el último rodillo
                 if (index === reels.length - 1 && callback) callback(resultadoArray);
-            }, 1000 + (index * 400));
+            }, 1000 + (index * 400)); 
         });
     };
     return self;
