@@ -63,32 +63,28 @@ function cambiarSubJuego(juego) {
 }
 
 // ==========================================
-// POPUP DE PLATAFORMAS EXTERNAS (TAMAÑO ENCAJADO)
+// POPUP DE PLATAFORMAS EXTERNAS (ENCASTRE PERFECTO)
 // ==========================================
 function abrirGanamosPopup() {
-    // 1. Tamaños fijos de tu diseño (según tu CSS)
-    const sidebarWidth = 240; // Ancho del menú lateral oscuro
-    const topbarHeight = 60;  // Alto de la barra "Panel de Control"
+    const sidebarWidth = 240; // El ancho exacto de tu menú lateral en CSS
 
-    // 2. Calculamos el tamaño libre que queda en tu pantalla
-    const width = window.innerWidth - sidebarWidth;
-    const height = window.innerHeight - topbarHeight;
+    // 1. Calculamos el tamaño exacto que debe tener la ventana
+    const popupWidth = window.innerWidth - sidebarWidth;
+    const popupHeight = window.innerHeight;
 
-    // 3. Calculamos la posición exacta en el monitor de quien lo usa
-    // Averiguamos cuánto espacio ocupan las pestañas y barra de URL de Google Chrome
-    const offsetNavegadorY = window.outerHeight - window.innerHeight;
-    const offsetNavegadorX = window.outerWidth - window.innerWidth;
+    // 2. Calculamos la interfaz del navegador del usuario (Chrome/Edge)
+    const borderX = (window.outerWidth - window.innerWidth) / 2;
+    const browserHeaderHeight = window.outerHeight - window.innerHeight - borderX;
 
-    // Sumamos la posición del navegador + el tamaño de tu menú
-    const left = window.screenX + sidebarWidth + (offsetNavegadorX / 2);
-    // Sumamos la posición del navegador + las pestañas de Chrome + tu barra superior
-    const top = window.screenY + topbarHeight + offsetNavegadorY - 8; 
+    // 3. Posicionamos la ventana en las coordenadas exactas del monitor
+    const popupLeft = window.screenX + sidebarWidth + borderX;
+    const popupTop = window.screenY + browserHeaderHeight;
 
-    // 4. Abrimos la ventana obligándola a encajar en esas coordenadas
+    // 4. Abrimos la ventana con los datos milimétricos
     window.open(
         'https://agents.ganamosnet.club/users/all', 
         'GanamosPanel', 
-        `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
+        `width=${popupWidth},height=${popupHeight},top=${popupTop},left=${popupLeft},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
     );
 }
 
