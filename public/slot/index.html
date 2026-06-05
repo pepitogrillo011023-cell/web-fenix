@@ -4,11 +4,46 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slot Premium - Casino Fénix</title>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
+
+        /* Panel de Saldo */
+        .saldo-container { display: flex; align-items: center; justify-content: center; background: #064e3b; padding: 10px 30px; border-radius: 10px; border: 2px solid #10b981; margin-bottom: 15px; font-size: 20px; font-weight: bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        .saldo-container span { margin-left: 10px; color: #6ee7b7; font-size: 28px; }
+
+        /* Controles de Apuesta */
+        .controles-apuesta { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #1f2937; padding: 10px 20px; border-radius: 10px; border: 2px solid #374151; }
+        .controles-apuesta label { font-size: 18px; color: #ffaa00; font-weight: bold; }
+        .controles-apuesta input { background: #000; color: #a3e635; border: 1px solid #555; padding: 10px; border-radius: 5px; font-size: 18px; width: 120px; text-align: center; font-weight: bold; outline: none; }
+
+        .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
+        .reel { width: 100px; height: 150px; overflow: hidden; border: 2px solid #555; background: #000; position: relative; }
+        .strip { list-style: none; padding: 0; margin: 0; width: 100px; transition: margin-top 0.3s ease-out; }
+        .strip li { width: 100px; height: 150px; background-size: 100px 900px !important; background-repeat: no-repeat !important; }
+
+        .spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; transition: transform 0.1s; }
+        .spin-button:active { transform: scale(0.95); }
+        .spin-button:disabled { background: #4b5563; cursor: not-allowed; transform: none; }
+        .btn-volver { background: #374151; padding: 15px 30px; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px; }
+        #mensaje-premio { font-size: 24px; color: #a3e635; margin-bottom: 15px; height: 35px; font-weight: bold; text-align: center; }
+
+        /* MODALES (Ventanas flotantes) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-content { background: linear-gradient(180deg, #1f2937, #000); border: 4px solid #f59e0b; padding: 40px; border-radius: 20px; text-align: center; max-width: 90%; width: 450px; box-shadow: 0 0 40px rgba(245, 158, 11, 0.6); }
+        .modal-title { color: #f59e0b; font-size: 32px; margin-bottom: 15px; text-transform: uppercase; text-shadow: 0 2px 5px rgba(0,0,0,0.5); }
+        .modal-texto { font-size: 22px; color: #fff; margin-bottom: 30px; line-height: 1.4; }
+        .modal-monto { font-size: 40px; color: #a3e635; font-weight: bold; display: block; margin-top: 10px; }
+        .btn-aceptar { background: #f59e0b; color: #000; padding: 15px 40px; border: none; border-radius: 10px; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 10px; }
+    </style>
 </head>
 <body>
 
     <h1 style="color:#ffaa00; margin-bottom: 10px;">FÉNIX SLOTS</h1>
+
+    <div class="saldo-container">
+        MI SALDO: $<span id="saldo-actual">5000</span>
+    </div>
 
     <div class="controles-apuesta">
         <label for="apuesta-input">Apuesta:</label>
@@ -22,11 +57,19 @@
     <button id="play-button" class="spin-button">GIRAR AHORA</button>
     <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
 
-    <div id="modal-bonus" class="modal-overlay">
+    <div id="modal-inicio-bonus" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="modal-title">¡BONUS ACTIVADO!</h2>
+            <p class="modal-texto">¡Conseguiste 3 símbolos Bonus!<br>Disfrutá de <strong>10 tiros gratis</strong> con premios acumulables.</p>
+            <button class="btn-aceptar" onclick="empezarTirosGratis()">Empezar</button>
+        </div>
+    </div>
+
+    <div id="modal-fin-bonus" class="modal-overlay">
         <div class="modal-content">
             <h2 class="modal-title">¡Fin del Bonus!</h2>
-            <p class="modal-texto">Ganaste en 10 tiradas gratis:<br> <span id="monto-bonus-final" class="modal-monto">$0</span></p>
-            <button class="btn-aceptar" onclick="cerrarModal()">Aceptar</button>
+            <p class="modal-texto">Ganaste en tus tiradas gratis:<br> <span id="monto-bonus-final" class="modal-monto">$0</span></p>
+            <button class="btn-aceptar" onclick="cerrarModalFinBonus()">Aceptar</button>
         </div>
     </div>
 
@@ -53,11 +96,12 @@
             'esfera': 1
         };
 
-        // Variables de estado
+        // Variables de estado global
+        let saldoActual = 5000; // Saldo simulado inicial
         let girosGratisRestantes = 0;
         let totalGanadoEnGratis = 0;
         let isSpinning = false;
-        let enModoBonus = false; // Controla si estamos dentro de la ronda gratis
+        let enModoBonus = false; 
         let slot;
 
         window.onload = function() {
@@ -65,6 +109,12 @@
             const container = document.getElementById('slot-machine-container');
             const inputApuesta = document.getElementById('apuesta-input');
             const mensajePremio = document.getElementById('mensaje-premio');
+            const saldoDisplay = document.getElementById('saldo-actual');
+
+            // Actualiza el texto del saldo en la pantalla
+            function actualizarPantallaSaldo() {
+                saldoDisplay.innerText = saldoActual;
+            }
 
             // INICIALIZAMOS LA MÁQUINA
             slot = slotMachine(container, [
@@ -76,7 +126,7 @@
             }, { reelHeight: 150, reelWidth: 100 });
 
             // FUNCIÓN PRINCIPAL DE GIRO
-            async function ejecutarGiro() {
+            window.ejecutarGiro = async function() {
                 if (isSpinning) return;
                 
                 let apuestaActual = parseFloat(inputApuesta.value);
@@ -85,17 +135,24 @@
                     return;
                 }
 
+                // Descontar saldo si NO es un tiro gratis
+                if (!enModoBonus) {
+                    if (saldoActual < apuestaActual) {
+                        alert("Saldo insuficiente para esta apuesta.");
+                        return;
+                    }
+                    saldoActual -= apuestaActual;
+                    actualizarPantallaSaldo();
+                }
+
                 isSpinning = true;
                 btnGirar.disabled = true;
                 inputApuesta.disabled = enModoBonus; 
 
-                // Si estamos en bonus, mostramos el número real del tiro actual
                 mensajePremio.innerText = enModoBonus ? `¡GIRO GRATIS! (${girosGratisRestantes} restantes)` : "Girando...";
                 slot.startSpinAnimation();
 
-                // ---------------------------------------------------------
                 // SIMULADOR TEMPORAL (Borrar cuando el backend esté listo)
-                // ---------------------------------------------------------
                 setTimeout(() => {
                     const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
                     const r1 = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
@@ -103,98 +160,94 @@
                     const r3 = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
                     
                     let rodillosFinales = [r1, r2, r3];
-                    if (Math.random() > 0.85) { // Probabilidad alta para probar el bonus
+                    if (Math.random() > 0.85) { 
                         const premioForzado = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
                         rodillosFinales = [premioForzado, premioForzado, premioForzado];
                     }
 
                     slot.stopSpinAndShowResult(rodillosFinales);
                 }, 1000); 
-                
-                /*
-                // Cuando configures el servidor, borrá el simulador de arriba y usá esto:
-                try {
-                    const res = await fetch('/api/tirar-slot-premium', { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({ 
-                            usuario: usuarioActual, 
-                            apuesta: apuestaActual,
-                            esGiroGratis: enModoBonus 
-                        }) 
-                    });
-                    const data = await res.json();
-                    
-                    if(data.exito) {
-                        slot.stopSpinAndShowResult(data.rodillos); 
-                    } else {
-                        alert(data.mensaje);
-                        slot.stopSpinAndShowResult(['esfera', 'esfera', 'esfera']);
-                    }
-                } catch(e) { 
-                    alert("Error de conexión"); 
-                    slot.stopSpinAndShowResult(['esfera', 'esfera', 'esfera']);
-                }
-                */
-            }
+            };
 
-            // FUNCIÓN DE LÓGICA DE PREMIOS CORREGIDA
+            // FUNCIÓN DE LÓGICA DE PREMIOS
             function evaluarPremio(rodillos) {
                 let apuestaActual = parseFloat(inputApuesta.value);
                 const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
                 const simbolo = rodillos[0];
 
-                // LIBERAMOS LA MÁQUINA para que pueda hacer el siguiente tiro automático
                 isSpinning = false; 
 
-                // Evaluamos los premios visuales
+                // CASO 1: SACÓ BONUS
                 if (esIgual && simbolo === 'bonus') {
-                    enModoBonus = true;
-                    if (girosGratisRestantes === 0) {
+                    if (!enModoBonus) {
+                        // Es la primera vez que saca el bonus
+                        enModoBonus = true;
                         girosGratisRestantes = 10;
                         totalGanadoEnGratis = 0;
-                        mensajePremio.innerText = "¡BONUS ACTIVADO!";
+                        document.getElementById('modal-inicio-bonus').style.display = 'flex';
+                        return; // Frenamos acá. El jugador tiene que apretar "Empezar"
                     } else {
+                        // Sacó bonus DENTRO de los tiros gratis
                         girosGratisRestantes += 10;
                         mensajePremio.innerText = "¡+10 GIROS EXTRAS!";
                     }
-                } else if (esIgual && tablaPremios[simbolo]) {
+                } 
+                // CASO 2: GANÓ PREMIO NORMAL
+                else if (esIgual && tablaPremios[simbolo]) {
                     const premio = apuestaActual * tablaPremios[simbolo];
                     if (enModoBonus) {
                         totalGanadoEnGratis += premio;
                         mensajePremio.innerText = `¡Ganaste $${premio}! (Acumulado: $${totalGanadoEnGratis})`;
                     } else {
+                        saldoActual += premio; // Suma directa al saldo
+                        actualizarPantallaSaldo();
                         mensajePremio.innerText = `¡Ganaste $${premio}!`;
                     }
-                } else {
+                } 
+                // CASO 3: NO GANÓ NADA
+                else {
                     mensajePremio.innerText = enModoBonus ? "Sigue girando..." : "¡Suerte para la próxima!";
                 }
 
                 // GESTIÓN DEL FLUJO DE TIROS AUTOMÁTICOS
-                if (girosGratisRestantes > 0) {
+                if (enModoBonus && girosGratisRestantes > 0) {
                     girosGratisRestantes--;
-                    setTimeout(ejecutarGiro, 1500); // Tira de nuevo automáticamente después de 1.5s
-                } else {
-                    // Si ya no quedan tiros, nos fijamos si acabamos de terminar un Bonus
-                    if (enModoBonus) {
-                        document.getElementById('monto-bonus-final').innerText = `$${totalGanadoEnGratis}`;
-                        document.getElementById('modal-bonus').style.display = 'flex';
-                    } else {
-                        // Si fue un tiro normal que no ganó bonus, restauramos controles
-                        btnGirar.disabled = false;
-                        inputApuesta.disabled = false;
-                    }
+                    setTimeout(window.ejecutarGiro, 1500); 
+                } 
+                // FIN DE LOS TIROS GRATIS
+                else if (enModoBonus && girosGratisRestantes === 0) {
+                    document.getElementById('monto-bonus-final').innerText = `$${totalGanadoEnGratis}`;
+                    document.getElementById('modal-fin-bonus').style.display = 'flex';
+                } 
+                // TIRO NORMAL TERMINADO
+                else {
+                    btnGirar.disabled = false;
+                    inputApuesta.disabled = false;
                 }
             }
 
             // Evento del botón principal
-            btnGirar.addEventListener('click', ejecutarGiro);
+            btnGirar.addEventListener('click', window.ejecutarGiro);
         };
 
-        // Función para cerrar la ventana del bonus y reiniciar todo
-        function cerrarModal() {
-            document.getElementById('modal-bonus').style.display = 'none';
-            enModoBonus = false; // Apagamos el modo bonus
+        // Función llamada por el botón "Empezar" del primer modal
+        function empezarTirosGratis() {
+            document.getElementById('modal-inicio-bonus').style.display = 'none';
+            // Ejecutamos el primer tiro gratis, restando 1 a la cuenta
+            girosGratisRestantes--;
+            window.ejecutarGiro();
+        }
+
+        // Función para cerrar la ventana final, sumar el pozo y reiniciar
+        function cerrarModalFinBonus() {
+            document.getElementById('modal-fin-bonus').style.display = 'none';
+            
+            // Sumamos todo lo ganado al saldo real
+            saldoActual += totalGanadoEnGratis;
+            document.getElementById('saldo-actual').innerText = saldoActual;
+
+            // Apagamos el modo bonus
+            enModoBonus = false; 
             isSpinning = false;
             document.getElementById('play-button').disabled = false;
             document.getElementById('apuesta-input').disabled = false;
