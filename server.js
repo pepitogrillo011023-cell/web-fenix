@@ -184,6 +184,31 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
         res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
     }
 });
+app.post('/api/canjear-producto', async (req, res) => {
+    try {
+        const { usuario, nombre, costo } = req.body;
+        // Buscamos al cliente
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        
+        if (!cliente) {
+            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        }
+        
+        if (cliente.creditos < costo) {
+            return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
+        }
+
+        // Descontamos créditos
+        cliente.creditos -= costo;
+        await cliente.save();
+
+        console.log(`Canje exitoso para ${usuario}: ${nombre}`);
+        res.json({ exito: true, nuevoSaldo: cliente.creditos });
+    } catch (error) {
+        console.error("Error en canje:", error);
+        res.status(500).json({ exito: false, mensaje: "Error al canjear el producto" });
+    }
+});
 // ==============================================================
 // 5. MOTOR DEL SLOT PREMIUM (FÉNIX SLOTS)
 // ==============================================================
