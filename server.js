@@ -192,74 +192,109 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
 });
 
 // ==============================================================
-// 🎰 NUEVO: API PARA EL SLOT PREMIUM GRÁFICO
+// 🎰 NUEVO: MOTOR DEL SLOT PREMIUM (FÉNIX SLOTS)
 // ==============================================================
-app.post('/api/tirar-slot-premium', async (req, res) => {
+const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
+const tablaPremios = {
+    'bufon': 10,
+    'laud': 8,
+    'clavas': 6,
+    'zapatos': 3,
+    'esfera': 1
+};
+
+// 1. OBTENER SALDO AL ENTRAR AL JUEGO
+app.get('/api/obtener-saldo', async (req, res) => {
     try {
-        const { usuario } = req.body;
-        if (!usuario) return res.json({ exito: false, mensaje: "Usuario no identificado." });
+        const { usuario } = req.query;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario }); 
+
+        if (!cliente) {
+            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        }
+        // Devolvemos el campo CREDITOS
+        res.json({ exito: true, saldo: cliente.creditos });
+    } catch (error) {
+        console.error("Error al obtener saldo:", error);
+        res.status(500).json({ exito: false, mensaje: "Error del servidor" });
+    }
+});
+
+// 2. MOTOR PRINCIPAL DE GIROS Y APUESTAS
+app.post('/api/jugar-slot', async (req, res) => {
+    try {
+        const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
 
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        if (!cliente) return res.json({ exito: false, mensaje: "Cliente no encontrado." });
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
 
-        const minijuego = await Minigame.findOne({ name: 'Tragamonedas' });
-        const costoTiro = minijuego ? minijuego.creditCost : 10;
-
-        if (cliente.creditos < costoTiro) {
-            return res.json({ exito: false, mensaje: `Necesitas al menos ${costoTiro} Créditos 🟡 para girar.` });
+        // Verificamos fondos
+        if (!esGiroGratis && cliente.creditos < apuestaGasto) {
+            return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
         }
 
-        const configTraga = await Tragamonedas.findOne();
-        if (!configTraga || !configTraga.configuracion || configTraga.configuracion.length === 0) {
-            return res.json({ exito: false, mensaje: "Máquina en mantenimiento." });
+        // Descontamos la apuesta de sus créditos
+        cliente.creditos -= apuestaGasto;
+
+        // SORTEO REAL DEL LADO DEL SERVIDOR
+        const rodillos = [
+            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
+        ];
+
+        // Calculamos el premio
+        const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
+        const simbolo = rodillos[0];
+        let premio = 0;
+
+        if (esIgual && simbolo !== 'bonus' && tablaPremios[simbolo]) {
+            premio = apuestaCalculoPremio * tablaPremios[simbolo];
         }
 
-        cliente.creditos -= costoTiro;
-
-        const config = configTraga.configuracion;
-        const random = Math.random() * 100;
-        let sumaProb = 0;
-        let premioGanado = null;
-
-        for (let item of config) {
-            sumaProb += item.probabilidad;
-            if (random <= sumaProb) {
-                premioGanado = item;
-                break;
-            }
+        // Si gana un premio normal, se lo sumamos directamente a sus créditos
+        if (!esGiroGratis && premio > 0) {
+            cliente.creditos += premio;
         }
 
-        const iconos = ['🎰', '💎', '🔔', '🍋', '🍒'];
-        let res1, res2, res3;
-
-        if (premioGanado.id < 5) {
-            res1 = iconos[premioGanado.id];
-            res2 = iconos[premioGanado.id];
-            res3 = iconos[premioGanado.id];
-            cliente.saldo += premioGanado.valor;
-        } else {
-            res1 = iconos[Math.floor(Math.random() * iconos.length)];
-            res2 = iconos[Math.floor(Math.random() * iconos.length)];
-            do {
-                res3 = iconos[Math.floor(Math.random() * iconos.length)];
-            } while (res1 === res2 && res2 === res3); 
-        }
-
+        // Guardamos el cambio en MongoDB
         await cliente.save();
 
         res.json({
             exito: true,
-            rodillos: [res1, res2, res3],
-            premioNombre: premioGanado.premio,
-            premioValor: premioGanado.valor,
-            creditosRestantes: cliente.creditos
+            rodillos: rodillos,
+            nuevoSaldo: cliente.creditos,
+            premioGanado: premio
         });
 
     } catch (error) {
-        console.error("Error en Slot Premium:", error);
-        res.status(500).json({ exito: false, mensaje: "Error del servidor." });
+        console.error("Error en el Slot Premium:", error);
+        res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" });
     }
 });
+
+// 3. SUMAR EL POZO GIGANTE DESPUÉS DEL BONUS
+app.post('/api/sumar-premio-bonus', async (req, res) => {
+    try {
+        const { usuario, premio } = req.body;
+
+        if (premio <= 0) return res.json({ exito: true });
+
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+
+        // Sumamos todo lo ganado en las tiradas gratis
+        cliente.creditos += premio;
+        await cliente.save();
+
+        res.json({ exito: true, nuevoSaldo: cliente.creditos });
+
+    } catch (error) {
+        console.error("Error sumando bonus:", error);
+        res.status(500).json({ exito: false, mensaje: "Error sumando el premio del bonus" });
+    }
+});
+
 
 // ==============================================================
 // 🚀 6. IMPORTACIÓN DE RUTAS MODULARES
@@ -416,7 +451,7 @@ async function inicializarDatosDePrueba() {
     }
     
     const countCl = await Cliente.countDocuments();
-    if(countCl === 0) { await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, wager: 10000, estado: 'Activo' }).save(); }
+    if(countCl === 0) { await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, creditos: 5000, wager: 10000, estado: 'Activo' }).save(); }
     
     if (await Ruleta.countDocuments() === 0) {
         await new Ruleta({ configuracion: [
