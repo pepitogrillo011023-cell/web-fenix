@@ -1,4 +1,3 @@
-JavaScript
 'use strict';
 
 function SlotMachine(container, reels, callback, options) {
@@ -31,7 +30,6 @@ function SlotMachine(container, reels, callback, options) {
     self.startSpinAnimation = function() {
         reels.forEach(r => {
             let pos = -900; 
-            // BAJAMOS LA VELOCIDAD DE 25 a 12 PARA QUE GIRE SUAVE Y PESADO
             const speed = 12; 
             
             function animate() {
@@ -55,15 +53,13 @@ function SlotMachine(container, reels, callback, options) {
             setTimeout(() => {
                 cancelAnimationFrame(reel.animationId); 
                 
-                // EFECTO DE TRABA MECÁNICA (Rebote)
-                // Usamos cubic-bezier para que "se pase" un poco del centro y vuelva, como si trabara.
                 ul.style.transition = "margin-top 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)"; 
                 ul.style.marginTop = `-${finalPos}px`; 
                 
                 setTimeout(() => {
                     ul.style.transition = "none"; 
                     if (index === reels.length - 1 && callback) callback(resultadoArray);
-                }, 400); // Esperamos 0.4s a que termine el rebote
+                }, 400); 
 
             }, 1000 + (index * 400)); 
         });
