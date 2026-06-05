@@ -1,4 +1,3 @@
-/* Borra todo lo que tenías y pegá esto */
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
 body { 
@@ -12,7 +11,6 @@ body {
     font-family: sans-serif; 
 }
 
-/* El contenedor principal de la máquina */
 .slot-machine { 
     display: flex; 
     justify-content: center; 
@@ -23,13 +21,14 @@ body {
     border-radius: 15px; 
 }
 
-/* El rodillo (Contenedor 3D) */
+/* El rodillo (contenedor) */
 .reel { 
     width: 100px; 
     height: 150px; 
     overflow: hidden; 
-    position: relative; 
-    perspective: 1000px; /* IMPORTANTE: Esto activa el efecto 3D */
+    border: 2px solid #555; 
+    background: #000; 
+    position: relative;
 }
 
 /* La tira que se mueve */
@@ -38,19 +37,30 @@ body {
     padding: 0; 
     margin: 0; 
     width: 100px; 
-    transform-style: preserve-3d; /* IMPORTANTE */
+    transition: margin-top 0.5s ease-out; /* Suaviza el frenado */
 }
 
-/* Cada "fruta" o segmento dentro de la tira */
+/* CADA FRUTA (Corregido para encajar la imagen de 100x900px) */
 .strip li { 
     width: 100px; 
     height: 150px; 
-    background-size: 100px 150px; 
-    background-repeat: no-repeat;
-    position: absolute; 
-    backface-visibility: hidden; /* Esto oculta la parte de atrás del rodillo */
+    background-size: 100px 900px !important; /* Ancho 100px, Alto 900px (6x150) */
+    background-repeat: no-repeat !important; 
+    display: block;
 }
 
-/* Botones */
-.spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+/* Animación de giro */
+.strip.spin {
+    animation: spinAnim 0.2s infinite linear;
+}
+
+@keyframes spinAnim {
+    from { margin-top: 0; }
+    to { margin-top: -900px; } /* Recorre toda la tira y vuelve a empezar */
+}
+
+/* BOTONES */
+.spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; margin-top: 20px;}
+.spin-button:disabled { background: #4b5563; }
 .btn-volver { background: #374151; padding: 15px 30px; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px; }
+#mensaje-premio { font-size: 24px; color: #a3e635; margin-bottom: 15px; height: 35px; font-weight: bold; }
