@@ -6,15 +6,16 @@ const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
 
-// Importar modelo Minigame
+// Importar modelos externos
 const Minigame = require('./models/Minigame');
+const User = require('./models/User'); // <-- ACÁ IMPORTAMOS TU NUEVO ARCHIVO USER.JS
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
 // ==============================================================
-// 📝 1. MODELOS DE DATOS
+// 📝 1. MODELOS DE DATOS INTERNOS (Dejamos intactos los tuyos)
 // ==============================================================
 const Cliente = mongoose.model('Cliente', new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
@@ -86,7 +87,7 @@ app.use(session({
     secret: 'CasinoFenix2026_Seguro',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 } // 24 horas de sesión
+    cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
 
 const requireLogin = (req, res, next) => {
@@ -96,10 +97,7 @@ const requireLogin = (req, res, next) => {
 // ==============================================================
 // 🔐 4. RUTAS DE ACCESO (PRIORIDAD AL LOGIN)
 // ==============================================================
-
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+app.get('/', (req, res) => { res.sendFile(path.join(__dirname, 'public', 'index.html')); });
 
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -116,12 +114,10 @@ app.get('/logout', (req, res) => {
     res.redirect('/login.html');
 });
 
-// INTERCEPTAMOS EL PANEL DE ADMIN PARA PEDIR LOGIN
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-// AHORA SÍ, SERVIR ARCHIVOS ESTÁTICOS PÚBLICOS
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==============================================================
@@ -176,15 +172,11 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
     }
 });
 
-// RUTA PARA GUARDAR EL COSTO DE LOS MINIJUEGOS POR NOMBRE
 app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res) => {
     try {
         const { name, nuevoCosto } = req.body;
         const minijuego = await Minigame.findOneAndUpdate({ name: name }, { creditCost: nuevoCosto }, { new: true });
-        
-        if (!minijuego) {
-            return res.status(404).json({ success: false, message: `Minijuego '${name}' no encontrado en la base de datos.` });
-        }
+        if (!minijuego) return res.status(404).json({ success: false, message: `Minijuego '${name}' no encontrado.` });
         res.json({ success: true, message: `El costo de ${name} ha sido actualizado a ${nuevoCosto} Créditos.` });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
@@ -192,7 +184,7 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
 });
 
 // ==============================================================
-// 🎰 NUEVO: MOTOR DEL SLOT PREMIUM (FÉNIX SLOTS)
+// 🎰 NUEVO: MOTOR DEL SLOT PREMIUM CONECTADO A USER.JS
 // ==============================================================
 const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
 const tablaPremios = {
@@ -207,13 +199,14 @@ const tablaPremios = {
 app.get('/api/obtener-saldo', async (req, res) => {
     try {
         const { usuario } = req.query;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario }); 
+        // Buscamos en el modelo User por 'username'
+        const userDB = await User.findOne({ username: usuario }); 
 
-        if (!cliente) {
+        if (!userDB) {
             return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
         }
-        // Devolvemos el campo CREDITOS
-        res.json({ exito: true, saldo: cliente.creditos });
+        // Devolvemos el campo 'credits'
+        res.json({ exito: true, saldo: userDB.credits });
     } catch (error) {
         console.error("Error al obtener saldo:", error);
         res.status(500).json({ exito: false, mensaje: "Error del servidor" });
@@ -225,16 +218,16 @@ app.post('/api/jugar-slot', async (req, res) => {
     try {
         const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
 
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        const userDB = await User.findOne({ username: usuario });
+        if (!userDB) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
 
         // Verificamos fondos
-        if (!esGiroGratis && cliente.creditos < apuestaGasto) {
+        if (!esGiroGratis && userDB.credits < apuestaGasto) {
             return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
         }
 
-        // Descontamos la apuesta de sus créditos
-        cliente.creditos -= apuestaGasto;
+        // Descontamos la apuesta de sus credits
+        userDB.credits -= apuestaGasto;
 
         // SORTEO REAL DEL LADO DEL SERVIDOR
         const rodillos = [
@@ -252,18 +245,18 @@ app.post('/api/jugar-slot', async (req, res) => {
             premio = apuestaCalculoPremio * tablaPremios[simbolo];
         }
 
-        // Si gana un premio normal, se lo sumamos directamente a sus créditos
+        // Si gana un premio normal, se lo sumamos directamente a sus credits
         if (!esGiroGratis && premio > 0) {
-            cliente.creditos += premio;
+            userDB.credits += premio;
         }
 
         // Guardamos el cambio en MongoDB
-        await cliente.save();
+        await userDB.save();
 
         res.json({
             exito: true,
             rodillos: rodillos,
-            nuevoSaldo: cliente.creditos,
+            nuevoSaldo: userDB.credits,
             premioGanado: premio
         });
 
@@ -280,14 +273,14 @@ app.post('/api/sumar-premio-bonus', async (req, res) => {
 
         if (premio <= 0) return res.json({ exito: true });
 
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        const userDB = await User.findOne({ username: usuario });
+        if (!userDB) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
 
         // Sumamos todo lo ganado en las tiradas gratis
-        cliente.creditos += premio;
-        await cliente.save();
+        userDB.credits += premio;
+        await userDB.save();
 
-        res.json({ exito: true, nuevoSaldo: cliente.creditos });
+        res.json({ exito: true, nuevoSaldo: userDB.credits });
 
     } catch (error) {
         console.error("Error sumando bonus:", error);
@@ -307,33 +300,24 @@ require('./routes/eventos')(app, requireLogin, io, sharedState);
 // 🔌 7. COMUNICACIÓN EN VIVO (SOCKETS)
 // ==============================================================
 io.on('connection', (socket) => {
-    
     socket.on('identificar_admin', async () => {
         sharedState.adminSocketId = socket.id;
         socket.emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
-        
         try {
             const clientesDB = await Cliente.find();
             const retirosDB = await Retiro.find();
             const internosDB = await UsuarioInterno.find();
             const panelConfigDB = await PanelConfig.findOne({ identificador: 'global' }); 
-            
             const ruletaDB = await Ruleta.findOne();
             const raspaDB = await Raspa.findOne(); 
             const tragaDB = await Tragamonedas.findOne();
             const cartasDB = await Cartas.findOne();
             const monedaDB = await Moneda.findOne();
-            
             socket.emit('cargar_datos_tablas', {
-                clientes: clientesDB,
-                retiros: retirosDB,
-                usuariosInternos: internosDB,
-                ruleta: ruletaDB ? ruletaDB.configuracion : [],
-                raspa: raspaDB ? raspaDB.configuracion : [],
-                tragamonedas: tragaDB ? tragaDB.configuracion : [],
-                cartas: cartasDB ? cartasDB.configuracion : [],
-                moneda: monedaDB ? monedaDB.configuracion : [],
-                panelConfig: panelConfigDB 
+                clientes: clientesDB, retiros: retirosDB, usuariosInternos: internosDB,
+                ruleta: ruletaDB ? ruletaDB.configuracion : [], raspa: raspaDB ? raspaDB.configuracion : [],
+                tragamonedas: tragaDB ? tragaDB.configuracion : [], cartas: cartasDB ? cartasDB.configuracion : [],
+                moneda: monedaDB ? monedaDB.configuracion : [], panelConfig: panelConfigDB 
             });
         } catch (e) { console.log(e); }
     });
@@ -354,7 +338,6 @@ io.on('connection', (socket) => {
     socket.on('identificar_usuario', async (datos) => {
         socket.username = datos.usuario;
         let clienteDB = await Cliente.findOne({ usuarioCasino: datos.usuario });
-        
         if (!clienteDB) {
             clienteDB = new Cliente({
                 usuarioCasino: datos.usuario,
@@ -362,7 +345,6 @@ io.on('connection', (socket) => {
             });
             await clienteDB.save();
         }
-
         let usuarioExistente = sharedState.usuariosConectados.find(u => u.nombre === datos.usuario);
         if (!usuarioExistente) {
             sharedState.usuariosConectados.push({ id: socket.id, nombre: datos.usuario, estado: 'Menú', historial: clienteDB.historialChat });
@@ -370,14 +352,9 @@ io.on('connection', (socket) => {
             usuarioExistente.id = socket.id; 
             usuarioExistente.historial = clienteDB.historialChat; 
         }
-        
         socket.emit('resultado_validacion', { 
-            exito: true, 
-            usuario: datos.usuario, 
-            historial: clienteDB.historialChat,
-            creditos: clienteDB.creditos || 0
+            exito: true, usuario: datos.usuario, historial: clienteDB.historialChat, creditos: clienteDB.creditos || 0
         });
-        
         if (sharedState.adminSocketId) {
             io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
             const clientesDB = await Cliente.find();
@@ -390,12 +367,9 @@ io.on('connection', (socket) => {
         if (usuario) {
             usuario.estado = datos.estado;
             let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
-
             if (datos.mensajeCliente) { usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); }
             if (datos.mensajeBot) { usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); }
-
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
-
             if (sharedState.adminSocketId) {
                 io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
                 io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
@@ -409,9 +383,7 @@ io.on('connection', (socket) => {
         if (usuario) {
             let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
             usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensaje, leido: estaMirandome });
-
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
-
             if (sharedState.adminSocketId) {
                 io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
                 io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
@@ -455,50 +427,36 @@ async function inicializarDatosDePrueba() {
     
     if (await Ruleta.countDocuments() === 0) {
         await new Ruleta({ configuracion: [
-            { id: 0, premio: '🏆 JACKPOT', valor: 50000, probabilidad: 2 },
-            { id: 1, premio: '🔥 Premio Mayor', valor: 10000, probabilidad: 8 },
-            { id: 2, premio: '⭐ Premio Medio', valor: 5000, probabilidad: 12 },
-            { id: 3, premio: '🍀 Premio Chico', valor: 2000, probabilidad: 18 },
-            { id: 4, premio: '✨ Consolación', valor: 500, probabilidad: 20 },
-            { id: 5, premio: '🎁 Sorpresa', valor: 100, probabilidad: 40 }
+            { id: 0, premio: '🏆 JACKPOT', valor: 50000, probabilidad: 2 }, { id: 1, premio: '🔥 Premio Mayor', valor: 10000, probabilidad: 8 },
+            { id: 2, premio: '⭐ Premio Medio', valor: 5000, probabilidad: 12 }, { id: 3, premio: '🍀 Premio Chico', valor: 2000, probabilidad: 18 },
+            { id: 4, premio: '✨ Consolación', valor: 500, probabilidad: 20 }, { id: 5, premio: '🎁 Sorpresa', valor: 100, probabilidad: 40 }
         ]}).save();
     }
     if (await Raspa.countDocuments() === 0) {
         await new Raspa({ configuracion: [
-            { id: 0, premio: '💎 MEGA BONO', valor: 30000, probabilidad: 3 },
-            { id: 1, premio: '👑 Premio Alto', valor: 15000, probabilidad: 7 },
-            { id: 2, premio: '💵 Premio Intermedio', valor: 4000, probabilidad: 15 },
-            { id: 3, premio: '📦 Premio Base', valor: 1500, probabilidad: 25 },
-            { id: 4, premio: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 },
-            { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
+            { id: 0, premio: '💎 MEGA BONO', valor: 30000, probabilidad: 3 }, { id: 1, premio: '👑 Premio Alto', valor: 15000, probabilidad: 7 },
+            { id: 2, premio: '💵 Premio Intermedio', valor: 4000, probabilidad: 15 }, { id: 3, premio: '📦 Premio Base', valor: 1500, probabilidad: 25 },
+            { id: 4, premio: '🪙 Recompensa Menor', valor: 600, probabilidad: 20 }, { id: 5, premio: '🎈 Suerte Loca', valor: 200, probabilidad: 30 }
         ]}).save();
     }
     if (await Tragamonedas.countDocuments() === 0) {
         await new Tragamonedas({ configuracion: [
-            { id: 0, premio: '🎰 PLENO 777', valor: 50000, probabilidad: 2 },
-            { id: 1, premio: '💎 Diamantes', valor: 15000, probabilidad: 8 },
-            { id: 2, premio: '🔔 Campanas', valor: 5000, probabilidad: 15 },
-            { id: 3, premio: '🍋 Limones', valor: 1500, probabilidad: 25 },
-            { id: 4, premio: '🍒 Cerezas', valor: 500, probabilidad: 30 },
-            { id: 5, premio: '❌ Sin Suerte', valor: 0, probabilidad: 20 }
+            { id: 0, premio: '🎰 PLENO 777', valor: 50000, probabilidad: 2 }, { id: 1, premio: '💎 Diamantes', valor: 15000, probabilidad: 8 },
+            { id: 2, premio: '🔔 Campanas', valor: 5000, probabilidad: 15 }, { id: 3, premio: '🍋 Limones', valor: 1500, probabilidad: 25 },
+            { id: 4, premio: '🍒 Cerezas', valor: 500, probabilidad: 30 }, { id: 5, premio: '❌ Sin Suerte', valor: 0, probabilidad: 20 }
         ]}).save();
     }
     if (await Cartas.countDocuments() === 0) {
         await new Cartas({ configuracion: [
-            { id: 0, premio: '🃏 AS (Jackpot)', valor: 25000, probabilidad: 5 },
-            { id: 1, premio: '🤴 Rey (Alto)', valor: 10000, probabilidad: 10 },
-            { id: 2, premio: '👸 Reina (Medio)', valor: 5000, probabilidad: 20 },
-            { id: 3, premio: '🃋 10 de Trébol', valor: 2000, probabilidad: 25 },
-            { id: 4, premio: '🃈 7 Diamantes', valor: 500, probabilidad: 30 },
-            { id: 5, premio: '🃂 2 Corazones', valor: 100, probabilidad: 10 }
+            { id: 0, premio: '🃏 AS (Jackpot)', valor: 25000, probabilidad: 5 }, { id: 1, premio: '🤴 Rey (Alto)', valor: 10000, probabilidad: 10 },
+            { id: 2, premio: '👸 Reina (Medio)', valor: 5000, probabilidad: 20 }, { id: 3, premio: '🃋 10 de Trébol', valor: 2000, probabilidad: 25 },
+            { id: 4, premio: '🃈 7 Diamantes', valor: 500, probabilidad: 30 }, { id: 5, premio: '🃂 2 Corazones', valor: 100, probabilidad: 10 }
         ]}).save();
     }
     if (await Moneda.countDocuments() === 0) {
         await new Moneda({ configuracion: [
-            { id: 0, premio: '🟡 Cara Dorada', valor: 10000, probabilidad: 5 },
-            { id: 1, premio: '⚪ Cruz Plata', valor: 5000, probabilidad: 15 },
-            { id: 2, premio: '🪙 Cara Normal', valor: 2000, probabilidad: 30 },
-            { id: 3, premio: '🪙 Cruz Normal', valor: 1000, probabilidad: 30 },
+            { id: 0, premio: '🟡 Cara Dorada', valor: 10000, probabilidad: 5 }, { id: 1, premio: '⚪ Cruz Plata', valor: 5000, probabilidad: 15 },
+            { id: 2, premio: '🪙 Cara Normal', valor: 2000, probabilidad: 30 }, { id: 3, premio: '🪙 Cruz Normal', valor: 1000, probabilidad: 30 },
             { id: 4, premio: '💥 Moneda Caída', valor: 200, probabilidad: 20 }
         ]}).save();
     }
