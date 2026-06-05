@@ -12,31 +12,27 @@
     <div class="sidebar">
         <h2>⚡ Club Fenix</h2>
         <div class="menu-category">Soporte</div>
-        <!-- Nota: Agregamos ocultarTienda() a todos los botones para que no choquen -->
-        <button id="btn-nav-chats" class="nav-btn active-nav" onclick="ocultarTienda(); cambiarSeccion('chats')">💬 Chats en Vivo</button>
-        
+        <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')">💬 Chats en Vivo</button>
         <div class="menu-category">Control Personal</div>
-        <button id="btn-nav-usuarios" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
-        <button id="btn-nav-clientes" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('clientes')">📇 Clientes</button>
-        
+        <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
+        <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Clientes</button>
         <div class="menu-category">Finanzas</div>
-        <button id="btn-nav-retiros" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('retiros')">💸 Control de Retiros</button>
-        <button id="btn-nav-billetera" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
-        <button id="btn-nav-creditos" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('creditos')" style="color:#ffaa00;">🟡 Solicitudes Créditos</button>
-        <button id="btn-nav-cierre" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('cierre')" style="color:#a3e635;">📊 Cierre de Caja</button>
-        <button id="btn-nav-resumen" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('resumen')" style="color:#a3e635;">📈 Resumen Cajas</button>
-        <button id="btn-nav-historial" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('historial')" style="color:#a3e635;">📅 Historial de Cajas</button>
-        
+        <button id="btn-nav-retiros" class="nav-btn" onclick="cambiarSeccion('retiros')">💸 Control de Retiros</button>
+        <button id="btn-nav-billetera" class="nav-btn" onclick="cambiarSeccion('billetera')">💳 Billetera Vinculada</button>
+        <button id="btn-nav-creditos" class="nav-btn" onclick="cambiarSeccion('creditos')" style="color:#ffaa00;">🟡 Solicitudes Créditos</button>
+        <button id="btn-nav-cierre" class="nav-btn" onclick="cambiarSeccion('cierre')" style="color:#a3e635;">📊 Cierre de Caja</button>
+        <button id="btn-nav-resumen" class="nav-btn" onclick="cambiarSeccion('resumen')" style="color:#a3e635;">📈 Resumen Cajas</button>
+        <button id="btn-nav-historial" class="nav-btn" onclick="cambiarSeccion('historial')" style="color:#a3e635;">📅 Historial de Cajas</button>
         <div class="menu-category">Marketing</div>
-        <button id="btn-nav-push" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('push')">📣 Notificaciones y Push</button>
-        <button id="btn-nav-retencion" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('retencion')">⏳ Retención Auto</button>
-        <button id="btn-nav-eventos" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
-        <!-- BOTÓN DE TIENDA CON FUNCIÓN ÚNICA -->
-        <button id="btn-nav-tienda" class="nav-btn" onclick="abrirSeccionTienda()">🛒 Configurar Tienda</button>
+        <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
+        <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
+        <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
+        
+        <button id="btn-nav-tienda" class="nav-btn" onclick="mostrarTiendaAdmin()">🛒 Configurar Tienda</button>
         
         <div class="menu-category">Sistema</div>
-        <button id="btn-nav-apis" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('apis')">🔗 Configuración APIs</button>
-        <button id="btn-nav-costos" class="nav-btn" onclick="ocultarTienda(); cambiarSeccion('costos')">🪙 Costos Minijuegos</button>
+        <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
+        <button id="btn-nav-costos" class="nav-btn" onclick="cambiarSeccion('costos')">🪙 Costos Minijuegos</button>
         <button class="nav-btn" onclick="abrirImportador()" style="color: #f59e0b;">📥 Importar de Ganamos</button>
 
         <div class="menu-category">Plataformas Externas</div>
@@ -64,8 +60,7 @@
                 </div>
             </div>
 
-            <!-- SECCIÓN TIENDA PURA Y AISLADA -->
-            <div id="section-tienda" class="view-section" style="display: none; padding: 20px;">
+            <div id="section-tienda" class="view-section">
                 <div class="panel-inside">
                     <h3 style="color:white; margin-bottom:20px;">🛒 Configurar Productos de la Tienda</h3>
                     <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:15px; max-width: 500px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151;">
@@ -89,7 +84,7 @@
                             <input type="text" id="p-nombre-3" placeholder="Nombre (ej: Bono 10%)" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
                             <input type="number" id="p-costo-3" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
                         </div>
-                        <button onclick="guardarTiendaAdmin()" class="btn-save" style="margin-top:10px; width:100%; border:none; cursor:pointer; font-size:16px;">💾 GUARDAR TIENDA</button>
+                        <button onclick="guardarTiendaAdmin()" class="btn-save" style="margin:0; width:100%; border:none; cursor:pointer; font-size:16px;">💾 GUARDAR TIENDA</button>
                     </div>
                 </div>
             </div>
@@ -190,6 +185,7 @@
                     </div>
                 </div>
             </div>
+            
             <div id="section-cierre" class="view-section">
                 <div class="panel-inside">
                     <h3 style="color:white; margin-top:0;">Registro Operativo - Cierre de Caja</h3>
@@ -299,7 +295,6 @@
                     <button class="btn-save" onclick="guardarConfig('retencion')">Guardar Reglas</button>
                 </div>
             </div>
-
             <div id="section-eventos" class="view-section">
                 <div class="panel-inside">
                     <div class="event-tabs-header">
@@ -309,9 +304,6 @@
                         <button class="event-tab-btn" id="tab-ev-cartas" onclick="cambiarSubJuego('cartas')">🃏<br>Cartas</button>
                         <button class="event-tab-btn" id="tab-ev-moneda" onclick="cambiarSubJuego('moneda')">🪙<br>Moneda</button>
                     </div>
-
-                    <!-- Div fantasma para prevenir que admin.js tire error -->
-                    <div id="view-tienda" style="display:none;"></div>
 
                     <div id="subview-ruleta" class="event-subview active-subview">
                         <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Ruleta Diaria</h4>
@@ -552,42 +544,30 @@
         </div>
     </div>
 
-    <!-- SCRIPT DE HERRAMIENTAS INDEPENDIENTES PARA LA TIENDA -->
     <script>
-        // Oculta la vista de la tienda para que admin.js pueda mostrar sus vistas normales
-        function ocultarTienda() {
-            const secTienda = document.getElementById('section-tienda');
-            if(secTienda) {
-                secTienda.style.display = 'none';
-                secTienda.classList.remove('active-view');
-            }
-            const btnTienda = document.getElementById('btn-nav-tienda');
-            if(btnTienda) {
-                btnTienda.classList.remove('active-nav');
-            }
+        function mostrarTiendaAdmin() {
+            // Usa las clases CSS de tu archivo admin.css para hacer el cambio
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            
+            document.getElementById('section-tienda').classList.add('active-view');
+            document.getElementById('btn-nav-tienda').classList.add('active-nav');
+            document.getElementById('panel-title').innerText = "Panel de Control - Configuración Tienda";
+            
+            cargarValoresTienda(); // Trae los valores actuales si existen
         }
 
-        // Muestra exclusivamente la tienda aislando el comportamiento
-        function abrirSeccionTienda() {
-            document.querySelectorAll('.view-section').forEach(s => {
-                s.style.display = 'none';
-                s.classList.remove('active-view');
-            });
-            document.querySelectorAll('.nav-btn').forEach(b => {
-                b.classList.remove('active-nav');
-            });
-            
-            const secTienda = document.getElementById('section-tienda');
-            if(secTienda) {
-                secTienda.style.display = 'block';
-                secTienda.classList.add('active-view');
-            }
-            
-            const btnTienda = document.getElementById('btn-nav-tienda');
-            if(btnTienda) btnTienda.classList.add('active-nav');
-            
-            const panelTitle = document.getElementById('panel-title');
-            if(panelTitle) panelTitle.innerText = "Panel de Control - Configuración de Tienda";
+        async function cargarValoresTienda() {
+            try {
+                const res = await fetch('/api/tienda');
+                const prods = await res.json();
+                for(let i=0; i<4; i++) {
+                    if(prods[i]) {
+                        document.getElementById(`p-nombre-${i}`).value = prods[i].nombre || '';
+                        document.getElementById(`p-costo-${i}`).value = prods[i].costo || '';
+                    }
+                }
+            } catch(e) { console.log('Error cargando los datos visuales de la tienda'); }
         }
 
         async function guardarTiendaAdmin() {
@@ -611,7 +591,6 @@
         }
     </script>
     
-    <!-- SCRIPT ORIGINAL (Tu admin.js queda completamente a salvo y vuelve a la vida) -->
     <script src="/js/admin.js"></script>
 </body>
 </html>
