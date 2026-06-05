@@ -78,7 +78,7 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 }
 
 // ==============================================================
-// ⚙️ 3. MIDDLEWARES, SESIÓN Y SEGURIDAD (CORREGIDO)
+// ⚙️ 3. MIDDLEWARES, SESIÓN Y SEGURIDAD
 // ==============================================================
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json()); 
@@ -94,8 +94,13 @@ const requireLogin = (req, res, next) => {
 };
 
 // ==============================================================
-// 🔐 4. RUTAS DE ACCESO (DEBEN ESTAR ANTES DEL STATIC)
+// 🔐 4. RUTAS DE ACCESO (PRIORIDAD AL LOGIN)
 // ==============================================================
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
 app.post('/login', (req, res) => {
     const { username, password } = req.body;
     if (username === 'admin' && password === '1234') {
@@ -194,29 +199,23 @@ app.post('/api/tirar-slot-premium', async (req, res) => {
         const { usuario } = req.body;
         if (!usuario) return res.json({ exito: false, mensaje: "Usuario no identificado." });
 
-        // Buscamos al cliente en la base de datos
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         if (!cliente) return res.json({ exito: false, mensaje: "Cliente no encontrado." });
 
-        // Buscamos el costo configurado en el panel de admin
         const minijuego = await Minigame.findOne({ name: 'Tragamonedas' });
         const costoTiro = minijuego ? minijuego.creditCost : 10;
 
-        // Verificamos si tiene créditos suficientes
         if (cliente.creditos < costoTiro) {
             return res.json({ exito: false, mensaje: `Necesitas al menos ${costoTiro} Créditos 🟡 para girar.` });
         }
 
-        // Buscamos la configuración de premios y probabilidades del Admin
         const configTraga = await Tragamonedas.findOne();
         if (!configTraga || !configTraga.configuracion || configTraga.configuracion.length === 0) {
             return res.json({ exito: false, mensaje: "Máquina en mantenimiento." });
         }
 
-        // Le descontamos el tiro
         cliente.creditos -= costoTiro;
 
-        // MATEMÁTICA DEL AZAR (Probabilidades exactas del panel)
         const config = configTraga.configuracion;
         const random = Math.random() * 100;
         let sumaProb = 0;
@@ -230,20 +229,15 @@ app.post('/api/tirar-slot-premium', async (req, res) => {
             }
         }
 
-        // Mapeamos los IDs de tu panel a Emojis (después serán tus fotos)
         const iconos = ['🎰', '💎', '🔔', '🍋', '🍒'];
         let res1, res2, res3;
 
         if (premioGanado.id < 5) {
-            // Es GANADOR: Hacemos que los 3 símbolos sean el mismo
             res1 = iconos[premioGanado.id];
             res2 = iconos[premioGanado.id];
             res3 = iconos[premioGanado.id];
-            
-            // Sumamos el premio al SALDO del cliente (Plata real/fichas)
             cliente.saldo += premioGanado.valor;
         } else {
-            // PERDEDOR (ID 5: Sin Suerte): Forzamos 3 símbolos distintos
             res1 = iconos[Math.floor(Math.random() * iconos.length)];
             res2 = iconos[Math.floor(Math.random() * iconos.length)];
             do {
@@ -251,16 +245,14 @@ app.post('/api/tirar-slot-premium', async (req, res) => {
             } while (res1 === res2 && res2 === res3); 
         }
 
-        // Guardamos todo en la base de datos
         await cliente.save();
 
-        // Le mandamos la respuesta a la animación del celular
         res.json({
             exito: true,
             rodillos: [res1, res2, res3],
             premioNombre: premioGanado.premio,
             premioValor: premioGanado.valor,
-            creditosRestantes: cliente.creditos // Para actualizar la pantalla
+            creditosRestantes: cliente.creditos
         });
 
     } catch (error) {
