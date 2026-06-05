@@ -9,10 +9,13 @@ function SlotMachine(container, reels, callback, options) {
         const ul = document.createElement('ul');
         ul.classList.add('strip');
         
-        for (let i = 0; i < 6; i++) {
+        // TRUCO DE MAGIA: Duplicamos la tira (12 símbolos en vez de 6) 
+        // Esto crea un loop infinito perfecto hacia abajo sin cortes.
+        for (let i = 0; i < 12; i++) {
+            const indexSimbolo = i % 6; // Repite 0,1,2,3,4,5,0,1,2...
             const li = document.createElement('li');
             li.style.backgroundImage = `url("${config.imageSrc}")`;
-            li.style.backgroundPosition = `0px -${i * 150}px`;
+            li.style.backgroundPosition = `0px -${indexSimbolo * 150}px`;
             ul.appendChild(li);
         }
         config['element'] = ul;
@@ -28,18 +31,23 @@ function SlotMachine(container, reels, callback, options) {
 
     self.startSpinAnimation = function() {
         reels.forEach(r => {
-            // Empezamos con el margen negativo (oculto abajo)
-            let pos = -750; 
+            // Arrancamos desde la mitad inferior de la tira larga (-900px)
+            let pos = -900; 
+            const speed = 25; // Velocidad de caída. Subí este número si querés que gire más rápido.
             
-            r.interval = setInterval(() => {
-                // SUMAMOS 40px para que la tira "caiga" hacia abajo
-                pos += 40; 
+            function animate() {
+                pos += speed; // Sumamos píxeles para que caiga por gravedad
                 
-                // Si la imagen ya bajó del todo, la volvemos a subir invisiblemente para el bucle
-                if (pos >= 0) pos = -750; 
+                // Cuando llega a la copia idéntica de arriba (0px), lo teletransportamos abajo (-900px)
+                // El (pos - 0) mantiene los decimales para que no haya ni un micro-salto
+                if (pos >= 0) pos = -900 + pos; 
                 
                 r.element.style.marginTop = pos + "px";
-            }, 30);
+                r.animationId = requestAnimationFrame(animate); // Animación a 60FPS fluidos
+            }
+            
+            // Iniciamos el motor fluido
+            r.animationId = requestAnimationFrame(animate);
         });
     };
 
@@ -49,13 +57,21 @@ function SlotMachine(container, reels, callback, options) {
             const simbolo = reel.symbols.find(s => s.name === resultadoArray[index]);
             const finalPos = simbolo ? simbolo.position : 0;
 
-            // El (index * 400) es el truco que hace que frenen en cascada (uno por uno)
+            // El multiplicador de index (index * 400) frena los rodillos en cascada
             setTimeout(() => {
-                clearInterval(reel.interval); 
-                ul.style.marginTop = `-${finalPos}px`; // Clava la imagen ganadora
+                // Detenemos el motor fluido
+                cancelAnimationFrame(reel.animationId); 
                 
-                // Le avisamos al juego que terminó el último rodillo
-                if (index === reels.length - 1 && callback) callback(resultadoArray);
+                // Le damos un micro-efecto de "clavado" al frenar
+                ul.style.transition = "margin-top 0.1s ease-out"; 
+                ul.style.marginTop = `-${finalPos}px`; 
+                
+                // Limpiamos todo para el próximo giro
+                setTimeout(() => {
+                    ul.style.transition = "none"; 
+                    if (index === reels.length - 1 && callback) callback(resultadoArray);
+                }, 100);
+
             }, 1000 + (index * 400)); 
         });
     };
