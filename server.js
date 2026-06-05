@@ -44,7 +44,8 @@ const PanelConfig = mongoose.model('PanelConfig', new mongoose.Schema({
     retencion: { type: Array, default: [] },
     apis: { type: Object, default: {} },
     push: { type: Object, default: {} },
-    billetera: { type: Object, default: {} }
+    billetera: { type: Object, default: {} },
+    tienda: { type: Array, default: [] }
 }));
 
 const CierreCaja = mongoose.model('CierreCaja', new mongoose.Schema({
@@ -89,7 +90,6 @@ app.use(session({
     saveUninitialized: false,
     cookie: { maxAge: 1000 * 60 * 60 * 24 }
 }));
-
 
 const requireLogin = (req, res, next) => {
     if (req.session.loggedIn) { next(); } else { res.redirect('/login.html'); }
@@ -160,11 +160,12 @@ app.post('/api/webhook/billetera', async (req, res) => {
         }
     } catch (error) { console.error("🔴 Error procesando Webhook:", error); }
 });
+
 // --- RUTA PARA OBTENER TIENDA ---
 app.get('/api/tienda', async (req, res) => {
     try {
         const config = await PanelConfig.findOne({ identificador: 'global' });
-        res.json(config.tienda || [
+        res.json(config.tienda && config.tienda.length > 0 ? config.tienda : [
             { nombre: 'Bono 10%', costo: 500 },
             { nombre: '10 Tiradas', costo: 1000 },
             { nombre: 'Bono 20%', costo: 2000 },
@@ -176,10 +177,40 @@ app.get('/api/tienda', async (req, res) => {
 // --- RUTA PARA GUARDAR TIENDA DESDE ADMIN ---
 app.post('/api/admin/actualizar-tienda', requireLogin, async (req, res) => {
     try {
-        const { productos } = req.body; // Se espera un array de 4 objetos
-        await PanelConfig.updateOne({ identificador: 'global' }, { $set: { tienda: productos } });
+        const { productos } = req.body; 
+        await PanelConfig.updateOne({ identificador: 'global' }, { $set: { tienda: productos } }, { upsert: true });
         res.json({ exito: true, mensaje: "Tienda actualizada" });
     } catch (e) { res.status(500).json({ exito: false }); }
+});
+
+// --- RUTAS FALTANTES AGREGADAS (CONFIGURACIONES Y CIERRES) ---
+app.post(['/api/guardar-config', '/api/configuracion'], requireLogin, async (req, res) => {
+    try {
+        // Captura el tipo de config (apis, billetera, push, retencion)
+        const tipo = req.body.tipo || req.body.seccion; 
+        const datos = req.body.datos || req.body.configuracion || req.body;
+        
+        if (!tipo) return res.status(400).json({ exito: false, mensaje: "Falta el tipo de configuración" });
+        
+        let updateQuery = {};
+        updateQuery[tipo] = datos;
+        
+        await PanelConfig.updateOne({ identificador: 'global' }, { $set: updateQuery }, { upsert: true });
+        res.json({ exito: true, mensaje: `Configuración de ${tipo} guardada.` });
+    } catch (error) {
+        console.error("Error al guardar configuración:", error);
+        res.status(500).json({ exito: false, mensaje: "Error del servidor" });
+    }
+});
+
+app.post('/api/guardar-cierre', requireLogin, async (req, res) => {
+    try {
+        const nuevoCierre = new CierreCaja(req.body);
+        await nuevoCierre.save();
+        res.json({ exito: true, mensaje: "Cierre de caja guardado con éxito" });
+    } catch (error) {
+        res.status(500).json({ exito: false, mensaje: "Error al guardar el cierre de caja" });
+    }
 });
 
 app.post('/api/simular-pago-test', requireLogin, (req, res) => {
@@ -206,21 +237,15 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
         res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
     }
 });
+
 app.post('/api/canjear-producto', async (req, res) => {
     try {
         const { usuario, nombre, costo } = req.body;
-        // Buscamos al cliente
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         
-        if (!cliente) {
-            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
-        }
-        
-        if (cliente.creditos < costo) {
-            return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
-        }
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        if (cliente.creditos < costo) return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
 
-        // Descontamos créditos
         cliente.creditos -= costo;
         await cliente.save();
 
