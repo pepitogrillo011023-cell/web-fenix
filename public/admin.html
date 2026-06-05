@@ -27,11 +27,8 @@
         <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
         <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
         <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
-        <!-- Debajo de Eventos Especiales -->
-<div class="sidebar-item" onclick="showView('view-tienda')">
-    <i class="fas fa-shopping-cart"></i> <!-- O el icono que uses -->
-    <span>Configurar Tienda</span>
-</div>
+        <button id="btn-nav-tienda" class="nav-btn" onclick="cambiarSeccion('tienda')">🛒 Configurar Tienda</button>
+        
         <div class="menu-category">Sistema</div>
         <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
         <button id="btn-nav-costos" class="nav-btn" onclick="cambiarSeccion('costos')">🪙 Costos Minijuegos</button>
@@ -115,7 +112,6 @@
             <div id="section-costos" class="view-section">
                 <div class="panel-inside">
                     <h3 style="color:white; margin-bottom:15px;">Costos de Minijuegos (En Créditos)</h3>
-                    <p style="color:#94a3b8; font-size:13px; margin-bottom:20px;">Definí el costo de cada tirada extra una vez que el jugador consume su tiro diario gratuito.</p>
                     <div class="api-grid" id="grid-costos">
                         <div class="api-card">
                             <div class="api-card-header">🎯 Ruleta</div>
@@ -163,49 +159,6 @@
                 <div class="panel-inside">
                     <h3 style="color:white; margin-top:0;">Registro Operativo - Cierre de Caja</h3>
                     <div class="excel-card">
-                        <div class="excel-grid">
-                            <div>
-                                <table class="table-custom">
-                                    <tr><th>Fecha Inicio</th><td><input type="date" id="cc-fecha-inicio" class="input-text-adv" style="margin-bottom:0;"></td><th>Fecha Fin</th><td><input type="date" id="cc-fecha-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
-                                    <tr><th>Hora Inicio</th><td><input type="time" id="cc-hora-inicio" class="input-text-adv" style="margin-bottom:0;"></td><th>Hora Fin</th><td><input type="time" id="cc-hora-fin" class="input-text-adv" style="margin-bottom:0;"></td></tr>
-                                    <tr><th colspan="2">Cajero</th><td colspan="2"><input type="text" id="cc-cajero" class="input-text-adv" style="margin-bottom:0;"></td></tr>
-                                    <tr><th colspan="2">Turno</th><td colspan="2"><select id="cc-turno" class="input-text-adv" style="margin-bottom:0;"><option value="Mañana">Mañana</option><option value="Tarde">Tarde</option><option value="Noche">Noche</option></select></td></tr>
-                                </table>
-                                <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">GASTOS JORNADA</h4>
-                                <table class="table-custom" id="tabla-gastos"><thead><tr><th>Tipo</th><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <button class="btn-add" onclick="addGastoRow()">+ Agregar Gasto</button>
-                                    <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-gastos">0.00</span></div>
-                                </div>
-                            </div>
-                            <div>
-                                <table class="table-custom">
-                                    <tr><th>Ingreso</th><th>Saldo Oro</th><th>Saldo Ganamos</th><th>EGRESO (Ing.+Oro+Gan)</th></tr>
-                                    <tr>
-                                        <td><input type="number" id="cc-ingreso" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
-                                        <td><input type="number" id="cc-oro" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
-                                        <td><input type="number" id="cc-ganamos" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
-                                        <td><input type="number" id="cc-egreso" class="input-text-adv val-num" readonly style="color:#ef4444; font-weight:bold; margin-bottom:0;"></td>
-                                    </tr>
-                                    <tr><th colspan="4" style="text-align:center;">CIERRE</th></tr>
-                                    <tr><th>Monto Esperado (Egre-Gast-Prop)</th><th colspan="2">Monto Real Final</th><th>Sob/Faltante</th></tr>
-                                    <tr>
-                                        <td><input type="number" id="cc-esperado" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
-                                        <td colspan="2"><input type="number" id="cc-real" class="input-text-adv val-num" style="margin-bottom:0;" oninput="calcCierre()"></td>
-                                        <td><input type="number" id="cc-dif" class="input-text-adv val-num" readonly style="margin-bottom:0;"></td>
-                                    </tr>
-                                </table>
-                                <div style="display:flex; justify-content:flex-end; margin-top:10px;">
-                                    <table class="table-custom" style="width:150px;"><tr><th style="background:#a3e635; color:black;">RESERVA</th></tr><tr><td><input type="number" id="cc-reserva" value="400000" class="input-text-adv val-num" style="margin-bottom:0;"></td></tr></table>
-                                </div>
-                                <h4 style="color:#38bdf8; margin: 20px 0 5px 0;">PROPINAS JORNADA</h4>
-                                <table class="table-custom" id="tabla-propinas"><thead><tr><th>Usuario</th><th>Monto</th><th></th></tr></thead><tbody></tbody></table>
-                                <div style="display:flex; justify-content:space-between; align-items:center;">
-                                    <button class="btn-add" onclick="addPropinaRow()">+ Agregar Propina</button>
-                                    <div style="background:#002b5e; color:#38bdf8; padding:8px 15px; font-weight:bold;">TOTAL: $<span id="tot-propinas">0.00</span></div>
-                                </div>
-                            </div>
-                        </div>
                         <button class="btn-save" style="float:none; width:100%; margin-top:20px;" onclick="guardarCierreDB()">💾 GUARDAR CIERRE DE CAJA OFICIAL</button>
                     </div>
                 </div>
@@ -217,251 +170,17 @@
                         <h3 style="margin:0; color:#38bdf8;">INGRESAR FECHA PARA RESUMEN:</h3>
                         <input type="date" id="res-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarResumen()">
                     </div>
-                    <table class="resumen-table"><thead><tr><th>DATOS CAJA</th><th class="col-m">MAÑANA</th><th class="col-t">TARDE</th><th class="col-n">NOCHE</th><th class="col-tot">TOTAL 24HS</th></tr></thead><tbody id="res-diario"></tbody></table>
-                    <div style="display:grid; grid-template-columns: 1fr 1.5fr; gap:20px;">
-                        <table class="resumen-table"><thead><tr><th style="background:#4c0519;">CIERRE MENSUAL</th><th style="background:#b45309;">SALIDAS TOTALES >>>></th><th id="res-salida-tot">0</th></tr></thead><tbody id="res-mensual-salidas"></tbody></table>
-                        <div>
-                            <table class="resumen-table" style="margin-bottom:15px;"><thead><tr><th style="background:#4c0519;">FICHAS MENSUALES</th><th style="background:#701a35;">PESOS</th></tr></thead><tbody id="res-mensual-fichas"></tbody></table>
-                            <table class="resumen-table"><thead><tr><th style="background:#4c0519;">BONOS</th><th style="background:#701a35;">NUEVOS (BB)</th><th style="background:#b45309;">RECOMENDADOS (BR)</th></tr></thead><tbody id="res-mensual-bonos"></tbody></table>
-                        </div>
-                    </div>
                 </div>
             </div>
 
             <div id="section-historial" class="view-section">
                 <div class="panel-inside">
                     <div style="display:flex; gap:15px; align-items:center; background:#111827; padding:15px; border-radius:8px; margin-bottom:20px; border: 1px solid #1f2937;">
-                        <h3 style="margin:0; color:#38bdf8;">SELECCIONAR FECHA PARA HISTORIAL COMPLETO:</h3>
+                        <h3 style="margin:0; color:#38bdf8;">SELECCIONAR FECHA PARA HISTORIAL:</h3>
                         <input type="date" id="hist-fecha" class="input-text-adv" style="width:200px; margin:0; background:#a3e635; color:black; font-weight:bold;" onchange="buscarHistorialCajas()">
                     </div>
-                    <div id="historial-resultados"><p style="color:#64748b; font-size:14px; text-align:center; margin-top:40px;">Por favor, seleccioná una fecha para ver las planillas de caja guardadas.</p></div>
                 </div>
             </div>
-
-            <div id="section-push" class="view-section">
-                <div class="panel-inside">
-                    <div class="push-layout">
-                        <div class="push-form-card">
-                            <h4 style="margin:0; color:white;">Lanzador de Notificaciones</h4>
-                            <div class="form-row"><label>Título</label><input type="text" id="push-titulo" class="input-text-adv" value="Casino 463 - Bono Especial!"></div>
-                            <div class="form-row"><label>Mensaje Masivo</label><textarea id="push-mensaje" class="input-text-adv" rows="3" style="resize:none;">Tenés un bono del 200% esperándote...</textarea></div>
-                            <div style="display:flex; gap:10px;">
-                                <button class="btn-save" style="margin:0; background-color: #374151;" onclick="guardarConfig('push')">💾 Guardar Borrador</button>
-                                <button class="btn-save" style="margin:0;" onclick="alert('Push lanzado')">🚀 Enviar Push Masivo</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div id="section-retencion" class="view-section">
-                <div class="panel-inside">
-                    <h4 style="color:white; font-size: 20px; margin: 0 0 5px 0;">Automatización de Retención</h4>
-                    <p style="color: #64748b; font-size:13.5px; margin: 0 0 20px 0;">Activá las alertas por inactividad.</p>
-                    <div class="retencion-container">
-                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-0" checked><span class="slider"></span></label><span>Inactivo 24 hs</span></div><input type="text" id="ret-txt-0" class="input-retencion-large" value="¡Te extrañamos! ¿Y si hoy es tu día de suerte? 🍀"></div>
-                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-1" checked><span class="slider"></span></label><span>Inactivo 3 días</span></div><input type="text" id="ret-txt-1" class="input-retencion-large" value="Tenés un BONO esperándote. Volvé hoy y aprovechá un 200% extra 💰"></div>
-                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-2" checked><span class="slider"></span></label><span>Inactivo 7 días</span></div><input type="text" id="ret-txt-2" class="input-retencion-large" value="🔥 BONO EXCLUSIVO 200% solo por volver hoy. ¡No lo dejes vencer!"></div>
-                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-3"><span class="slider"></span></label><span>Inactivo 15 días</span></div><input type="text" id="ret-txt-3" class="input-retencion-large" value="Manda la palabra 'REGALO' al soporte y te cargamos fichas gratis 🎁"></div>
-                        <div class="retencion-block"><div class="retencion-header-row"><label class="switch"><input type="checkbox" id="ret-chk-4"><span class="slider"></span></label><span>Inactivo 30 días</span></div><input type="text" id="ret-txt-4" class="input-retencion-large" value="¿Hace mucho que no jugás? Te dejamos un beneficio reingresando hoy."></div>
-                    </div>
-                    <button class="btn-save" onclick="guardarConfig('retencion')">Guardar Reglas</button>
-                </div>
-            </div>
-
-            <div id="section-eventos" class="view-section">
-                <div class="panel-inside">
-                    <div class="event-tabs-header">
-                        <button class="event-tab-btn active-event-tab" id="tab-ev-ruleta" onclick="cambiarSubJuego('ruleta')">🎯<br>Ruleta</button>
-                        <button class="event-tab-btn" id="tab-ev-raspa" onclick="cambiarSubJuego('raspa')">🎫<br>Raspa/Gana</button>
-                        <button class="event-tab-btn" id="tab-ev-tragamonedas" onclick="cambiarSubJuego('tragamonedas')">🍒<br>Slots</button>
-                        <button class="event-tab-btn" id="tab-ev-cartas" onclick="cambiarSubJuego('cartas')">🃏<br>Cartas</button>
-                        <button class="event-tab-btn" id="tab-ev-moneda" onclick="cambiarSubJuego('moneda')">🪙<br>Moneda</button>
-                    </div>
-                    <!-- Nueva Vista de Tienda -->
-<div id="view-tienda" class="admin-content" style="display: none; padding: 20px;">
-    <h2>🛒 Configurar Tienda (4 Productos)</h2>
-    <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:15px; max-width: 400px; margin-top: 20px;">
-        <script>
-            for(let i=0; i<4; i++) {
-                document.write(`
-                    <div style="display:flex; gap:10px; background: #1b2635; padding: 10px; border-radius: 8px;">
-                        <input type="text" id="p-nombre-${i}" placeholder="Nombre Producto ${i+1}" style="flex:2; padding:8px; border-radius:4px; border:none;">
-                        <input type="number" id="p-costo-${i}" placeholder="Costo" style="flex:1; padding:8px; border-radius:4px; border:none;">
-                    </div>
-                `);
-            }
-        </script>
-        <button onclick="guardarTiendaAdmin()" class="btn-primary" style="background: #3b82f6; border:none; padding:12px; cursor:pointer; color:white; border-radius:6px;">GUARDAR TIENDA</button>
-    </div>
-</div>
-
-                    <div id="subview-ruleta" class="event-subview active-subview">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Ruleta Diaria</h4>
-                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 450px;">
-                                <table class="ruleta-table" id="tabla-config-ruleta">
-                                    <thead><tr><th>ID</th><th>Premio / Segmento</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
-                                    <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text" oninput="dibujarRuletaAdmin()"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input" oninput="dibujarRuletaAdmin()"> %</td></tr>
-                                    </tbody>
-                                </table>
-                                <button class="btn-save" onclick="guardarEvento('ruleta')">Guardar Configuración Ruleta</button>
-                            </div>
-                            <div style="width: 280px; text-align: center;">
-                                <div class="ruleta-container">
-                                    <div class="ruleta-pointer">▼</div>
-                                    <canvas id="ruleta-admin-canvas" width="240" height="240"></canvas>
-                                </div>
-                                <button id="btn-spin-admin" class="btn-spin-admin" onclick="simularJuego('ruleta')">🎲 Simular Tiro</button>
-                                <div id="res-ruleta" style="margin-top:10px; color:#ffaa00; font-weight:bold; font-size:13px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="subview-raspa" class="event-subview">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Raspa y Gana</h4>
-                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 450px;">
-                                <table class="ruleta-table" id="tabla-config-raspa">
-                                    <thead><tr><th>ID</th><th>Premio / Tarjeta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
-                                    <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                    </tbody>
-                                </table>
-                                <button class="btn-save" onclick="guardarEvento('raspa')">Guardar Configuración Raspa</button>
-                            </div>
-                            <div style="width: 280px; text-align: center; background: #0b0f19; border: 1px solid #ffaa00; border-radius: 12px; padding: 20px;">
-                                <h4 style="margin: 0; color: #ffaa00;">Simulador</h4>
-                                <div class="raspa-grid-board" id="tablero-prueba-raspa">
-                                    <div class="raspa-block-card" onclick="simularRaspa(0)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="simularRaspa(1)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="simularRaspa(2)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="simularRaspa(3)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="simularRaspa(4)"><div class="raspa-cover-layer">?</div></div>
-                                    <div class="raspa-block-card" onclick="simularRaspa(5)"><div class="raspa-cover-layer">?</div></div>
-                                </div>
-                                <button class="btn-spin-admin" style="background: #1f2937; border: 1px solid #374151; color: white;" onclick="resetSimulador('raspa')">🔄 Reiniciar</button>
-                                <div id="res-raspa" style="margin-top: 15px; color: #38bdf8; font-weight: bold; font-size:12px; min-height: 35px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="subview-tragamonedas" class="event-subview">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Tragamonedas (Slots)</h4>
-                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 450px;">
-                                <table class="ruleta-table" id="tabla-config-tragamonedas">
-                                    <thead><tr><th>ID</th><th>Línea Ganadora</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
-                                    <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                    </tbody>
-                                </table>
-                                <button class="btn-save" onclick="guardarEvento('tragamonedas')">Guardar Configuración Slots</button>
-                            </div>
-                            <div style="width: 280px; text-align: center;">
-                                <div class="slot-machine">
-                                    <div class="slot-reel" id="slot-1">🎰</div>
-                                    <div class="slot-reel" id="slot-2">🎰</div>
-                                    <div class="slot-reel" id="slot-3">🎰</div>
-                                </div>
-                                <button id="btn-spin-tragamonedas" class="btn-spin-admin" onclick="simularJuego('tragamonedas')">🕹️ Simular Tirada</button>
-                                <div id="res-tragamonedas" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="subview-cartas" class="event-subview">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Carta de la Suerte</h4>
-                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 450px;">
-                                <table class="ruleta-table" id="tabla-config-cartas">
-                                    <thead><tr><th>ID</th><th>Carta</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
-                                    <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 5</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                    </tbody>
-                                </table>
-                                <button class="btn-save" onclick="guardarEvento('cartas')">Guardar Configuración Cartas</button>
-                            </div>
-                            <div style="width: 280px; text-align: center;">
-                                <div class="card-flip" onclick="simularJuego('cartas')">
-                                    <div class="card-inner" id="card-inner-admin">
-                                        <div class="card-front">?</div>
-                                        <div class="card-back">
-                                            <div id="card-val" style="font-size:30px; font-weight:bold;">🃏</div>
-                                            <div id="card-desc" style="font-size:12px; margin-top:10px;">Click para Voltear</div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <button id="btn-spin-cartas" class="btn-spin-admin" onclick="resetSimulador('cartas')">🔄 Reiniciar Carta</button>
-                                <div id="res-cartas" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div id="subview-moneda" class="event-subview">
-                        <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Cara o Cruz</h4>
-                        <div style="display: flex; gap: 30px; flex-wrap: wrap;">
-                            <div style="flex: 1; min-width: 450px;">
-                                <table class="ruleta-table" id="tabla-config-moneda">
-                                    <thead><tr><th>ID</th><th>Lado / Resultado</th><th>Valor Fichas</th><th>Probabilidad</th></tr></thead>
-                                    <tbody>
-                                        <tr><td># 0</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 1</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 2</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 3</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                        <tr><td># 4</td><td><input type="text" class="input-ruleta-text"></td><td><input type="text" class="input-ruleta-val"></td><td><input type="text" class="prob-input"> %</td></tr>
-                                    </tbody>
-                                </table>
-                                <button class="btn-save" onclick="guardarEvento('moneda')">Guardar Configuración Moneda</button>
-                            </div>
-                            <div style="width: 280px; text-align: center;">
-                                <div class="coin-flip" id="coin-admin" onclick="simularJuego('moneda')">🪙</div>
-                                <button id="btn-spin-moneda" class="btn-spin-admin" onclick="resetSimulador('moneda')">🔄 Reiniciar Moneda</button>
-                                <div id="res-moneda" style="margin-top:15px; color:#ffaa00; font-weight:bold; font-size:13px; min-height: 35px;"></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="seccion-admin">
-    <h3>⚙️ Configurar Tienda (4 Productos)</h3>
-    <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:10px;">
-        <!-- Generamos 4 campos -->
-        <script>
-            for(let i=0; i<4; i++) {
-                document.write(`
-                    <div style="display:flex; gap:10px;">
-                        <input type="text" id="p-nombre-${i}" placeholder="Nombre Producto ${i+1}">
-                        <input type="number" id="p-costo-${i}" placeholder="Costo ${i+1}">
-                    </div>
-                `);
-            }
-        </script>
-        <button onclick="guardarTiendaAdmin()" class="btn-primary">GUARDAR TIENDA</button>
-    </div>
-</div>
-
             <div id="section-apis" class="view-section">
                 <div class="panel-inside">
                     <h4 style="color:white; font-size: 20px; margin: 0 0 20px 0;">Integraciones y Llaves de API</h4>
@@ -533,30 +252,59 @@
                 Transfiriendo fondos para el usuario:<br>
                 <strong id="gestion-usuario-texto" style="color:#38bdf8; font-size: 16px;">---</strong>
             </p>
-
             <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(100)">100</button>
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(500)">500</button>
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(1000)">1.000</button>
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(10000)">10.000</button>
             </div>
-
             <div class="form-row" style="text-align:left;">
                 <label>Ingrese la cantidad</label>
                 <input type="number" id="gestion-monto" class="input-dark" placeholder="0" style="font-size: 20px; font-weight: bold; text-align: center;">
             </div>
-
             <input type="hidden" id="gestion-tipo-saldo"> 
-            
             <div style="display: flex; gap: 15px; margin-top: 25px;">
                 <button class="btn-save" style="background-color: #10b981; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('add')">DEPOSITAR</button>
                 <button class="btn-save" style="background-color: #ef4444; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('remove')">RETIRAR</button>
             </div>
-            
             <button class="btn-action-small" style="margin-top:15px; width:100%; padding:12px; background-color:#374151; border: none; font-size: 14px;" onclick="cerrarModalGeneral('modal-gestion-creditos')">CANCELAR</button>
         </div>
     </div>
 
+    <script>
+        function cambiarSeccion(seccion) {
+            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
+            
+            const targetSection = document.getElementById('section-' + seccion);
+            if(targetSection) targetSection.classList.add('active-view');
+            
+            const targetBtn = document.getElementById('btn-nav-' + seccion);
+            if(targetBtn) targetBtn.classList.add('active-nav');
+            
+            document.getElementById('panel-title').innerText = "Panel de Control - " + seccion.charAt(0).toUpperCase() + seccion.slice(1);
+        }
+
+        async function guardarTiendaAdmin() {
+            let productos = [];
+            for(let i=0; i<4; i++) {
+                productos.push({
+                    nombre: document.getElementById(`p-nombre-${i}`).value,
+                    costo: Number(document.getElementById(`p-costo-${i}`).value)
+                });
+            }
+            try {
+                const res = await fetch('/api/admin/actualizar-tienda', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ productos })
+                });
+                const data = await res.json();
+                if(data.exito) alert("Tienda guardada con éxito");
+                else alert("Error al guardar: " + data.mensaje);
+            } catch(e) { alert("Error de conexión"); }
+        }
+    </script>
     <script src="/js/admin.js"></script>
 </body>
 </html>
