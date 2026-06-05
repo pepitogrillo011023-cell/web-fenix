@@ -128,27 +128,26 @@
 
     <script src="/js/index.js"></script>
     <script>
-        function abrirTienda() { document.getElementById('modal-tienda').style.display = 'flex'; }
+        async function abrirTienda() {
+    try {
+        const res = await fetch('/api/tienda');
+        const productos = await res.json();
         
-        async function canjearProducto(nombre, costo) {
-            if (misCreditos < costo) return alert("Créditos insuficientes.");
-            if (!confirm(`¿Confirmar canje de ${nombre} por ${costo} CR?`)) return;
-
-            try {
-                const res = await fetch('/api/canjear-producto', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ usuario: window.usuarioLogueado, nombre, costo })
-                });
-                const data = await res.json();
-                if (data.exito) {
-                    alert("¡Canje exitoso!");
-                    cerrarModal('tienda');
-                    misCreditos = data.nuevoSaldo;
-                    document.getElementById('txt-creditos').innerText = misCreditos;
-                } else { alert(data.mensaje); }
-            } catch (e) { alert("Error de conexión al canjear producto."); }
-        }
+        const grid = document.querySelector('.tienda-grid');
+        grid.innerHTML = ''; // Limpiar
+        
+        productos.forEach(prod => {
+            grid.innerHTML += `
+                <div class="producto-card">
+                    <p>${prod.nombre}</p>
+                    <span class="producto-precio">${prod.costo} CR</span>
+                    <button class="btn-primary" onclick="canjearProducto('${prod.nombre}', ${prod.costo})">Canjear</button>
+                </div>
+            `;
+        });
+        document.getElementById('modal-tienda').style.display = 'flex';
+    } catch(e) { alert("Error cargando la tienda"); }
+}
     </script>
 </body>
 </html>
