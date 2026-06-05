@@ -77,14 +77,36 @@
     <script>
         const usuarioActual = localStorage.getItem('casino_fenix_user');
         
-        // 1. MAPEAMOS LAS NUEVAS IMÁGENES
-        const baseSymbols = [
+        // 1. MAPEAMOS LAS 3 TIRAS DE IMÁGENES DIFERENTES
+        
+        // Rodillo 1 (Tu diseño original)
+        const simbolosRodillo1 = [
             { name: 'laud', position: 0, weight: 1 },
             { name: 'bufon', position: 150, weight: 1 },
             { name: 'zapatos', position: 300, weight: 1 },
             { name: 'bonus', position: 450, weight: 1 },
             { name: 'clavas', position: 600, weight: 1 },
             { name: 'esfera', position: 750, weight: 1 }
+        ];
+
+        // Rodillo 2 (Mezclado para dar variedad)
+        const simbolosRodillo2 = [
+            { name: 'bonus', position: 0, weight: 1 },
+            { name: 'laud', position: 150, weight: 1 },
+            { name: 'esfera', position: 300, weight: 1 },
+            { name: 'bufon', position: 450, weight: 1 },
+            { name: 'zapatos', position: 600, weight: 1 },
+            { name: 'clavas', position: 750, weight: 1 }
+        ];
+
+        // Rodillo 3 (Otra mezcla distinta)
+        const simbolosRodillo3 = [
+            { name: 'zapatos', position: 0, weight: 1 },
+            { name: 'esfera', position: 150, weight: 1 },
+            { name: 'clavas', position: 300, weight: 1 },
+            { name: 'laud', position: 450, weight: 1 },
+            { name: 'bonus', position: 600, weight: 1 },
+            { name: 'bufon', position: 750, weight: 1 }
         ];
 
         // 2. TABLA DE PREMIOS
@@ -97,7 +119,7 @@
         };
 
         // Variables de estado global
-        let saldoActual = 5000; // Saldo simulado inicial
+        let saldoActual = 5000; 
         let girosGratisRestantes = 0;
         let totalGanadoEnGratis = 0;
         let isSpinning = false;
@@ -111,16 +133,15 @@
             const mensajePremio = document.getElementById('mensaje-premio');
             const saldoDisplay = document.getElementById('saldo-actual');
 
-            // Actualiza el texto del saldo en la pantalla
             function actualizarPantallaSaldo() {
                 saldoDisplay.innerText = saldoActual;
             }
 
-            // INICIALIZAMOS LA MÁQUINA
+            // INICIALIZAMOS LA MÁQUINA CON LAS 3 IMÁGENES Y MAPAS DISTINTOS
             slot = slotMachine(container, [
-                { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols },
-                { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols },
-                { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols }
+                { imageSrc: '/slot/images/reel-strip1.png', symbols: simbolosRodillo1 },
+                { imageSrc: '/slot/images/reel-strip2.png', symbols: simbolosRodillo2 },
+                { imageSrc: '/slot/images/reel-strip3.png', symbols: simbolosRodillo3 }
             ], (resultadoFinal) => {
                 evaluarPremio(resultadoFinal); 
             }, { reelHeight: 150, reelWidth: 100 });
@@ -135,7 +156,6 @@
                     return;
                 }
 
-                // Descontar saldo si NO es un tiro gratis
                 if (!enModoBonus) {
                     if (saldoActual < apuestaActual) {
                         alert("Saldo insuficiente para esta apuesta.");
@@ -160,7 +180,7 @@
                     const r3 = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
                     
                     let rodillosFinales = [r1, r2, r3];
-                    if (Math.random() > 0.85) { 
+                    if (Math.random() > 0.85) { // 15% de chances de forzar premio para probar más rápido
                         const premioForzado = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
                         rodillosFinales = [premioForzado, premioForzado, premioForzado];
                     }
@@ -177,76 +197,60 @@
 
                 isSpinning = false; 
 
-                // CASO 1: SACÓ BONUS
                 if (esIgual && simbolo === 'bonus') {
                     if (!enModoBonus) {
-                        // Es la primera vez que saca el bonus
                         enModoBonus = true;
                         girosGratisRestantes = 10;
                         totalGanadoEnGratis = 0;
                         document.getElementById('modal-inicio-bonus').style.display = 'flex';
-                        return; // Frenamos acá. El jugador tiene que apretar "Empezar"
+                        return; 
                     } else {
-                        // Sacó bonus DENTRO de los tiros gratis
                         girosGratisRestantes += 10;
                         mensajePremio.innerText = "¡+10 GIROS EXTRAS!";
                     }
                 } 
-                // CASO 2: GANÓ PREMIO NORMAL
                 else if (esIgual && tablaPremios[simbolo]) {
                     const premio = apuestaActual * tablaPremios[simbolo];
                     if (enModoBonus) {
                         totalGanadoEnGratis += premio;
                         mensajePremio.innerText = `¡Ganaste $${premio}! (Acumulado: $${totalGanadoEnGratis})`;
                     } else {
-                        saldoActual += premio; // Suma directa al saldo
+                        saldoActual += premio; 
                         actualizarPantallaSaldo();
                         mensajePremio.innerText = `¡Ganaste $${premio}!`;
                     }
                 } 
-                // CASO 3: NO GANÓ NADA
                 else {
                     mensajePremio.innerText = enModoBonus ? "Sigue girando..." : "¡Suerte para la próxima!";
                 }
 
-                // GESTIÓN DEL FLUJO DE TIROS AUTOMÁTICOS
                 if (enModoBonus && girosGratisRestantes > 0) {
                     girosGratisRestantes--;
                     setTimeout(window.ejecutarGiro, 1500); 
                 } 
-                // FIN DE LOS TIROS GRATIS
                 else if (enModoBonus && girosGratisRestantes === 0) {
                     document.getElementById('monto-bonus-final').innerText = `$${totalGanadoEnGratis}`;
                     document.getElementById('modal-fin-bonus').style.display = 'flex';
                 } 
-                // TIRO NORMAL TERMINADO
                 else {
                     btnGirar.disabled = false;
                     inputApuesta.disabled = false;
                 }
             }
 
-            // Evento del botón principal
             btnGirar.addEventListener('click', window.ejecutarGiro);
         };
 
-        // Función llamada por el botón "Empezar" del primer modal
         function empezarTirosGratis() {
             document.getElementById('modal-inicio-bonus').style.display = 'none';
-            // Ejecutamos el primer tiro gratis, restando 1 a la cuenta
             girosGratisRestantes--;
             window.ejecutarGiro();
         }
 
-        // Función para cerrar la ventana final, sumar el pozo y reiniciar
         function cerrarModalFinBonus() {
             document.getElementById('modal-fin-bonus').style.display = 'none';
-            
-            // Sumamos todo lo ganado al saldo real
             saldoActual += totalGanadoEnGratis;
             document.getElementById('saldo-actual').innerText = saldoActual;
-
-            // Apagamos el modo bonus
             enModoBonus = false; 
             isSpinning = false;
             document.getElementById('play-button').disabled = false;
