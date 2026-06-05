@@ -63,18 +63,28 @@ function cambiarSubJuego(juego) {
 }
 
 // ==========================================
-// POPUP DE PLATAFORMAS EXTERNAS
+// POPUP DE PLATAFORMAS EXTERNAS (TAMAÑO ENCAJADO)
 // ==========================================
 function abrirGanamosPopup() {
-    // Definimos el tamaño de la ventanita flotante
-    const width = 1000;
-    const height = 700;
-    
-    // Calculamos el centro de la pantalla del usuario
-    const left = (screen.width - width) / 2;
-    const top = (screen.height - height) / 2;
-    
-    // Abrimos la ventana con parámetros estrictos para que parezca una app
+    // 1. Tamaños fijos de tu diseño (según tu CSS)
+    const sidebarWidth = 240; // Ancho del menú lateral oscuro
+    const topbarHeight = 60;  // Alto de la barra "Panel de Control"
+
+    // 2. Calculamos el tamaño libre que queda en tu pantalla
+    const width = window.innerWidth - sidebarWidth;
+    const height = window.innerHeight - topbarHeight;
+
+    // 3. Calculamos la posición exacta en el monitor de quien lo usa
+    // Averiguamos cuánto espacio ocupan las pestañas y barra de URL de Google Chrome
+    const offsetNavegadorY = window.outerHeight - window.innerHeight;
+    const offsetNavegadorX = window.outerWidth - window.innerWidth;
+
+    // Sumamos la posición del navegador + el tamaño de tu menú
+    const left = window.screenX + sidebarWidth + (offsetNavegadorX / 2);
+    // Sumamos la posición del navegador + las pestañas de Chrome + tu barra superior
+    const top = window.screenY + topbarHeight + offsetNavegadorY - 8; 
+
+    // 4. Abrimos la ventana obligándola a encajar en esas coordenadas
     window.open(
         'https://agents.ganamosnet.club/users/all', 
         'GanamosPanel', 
