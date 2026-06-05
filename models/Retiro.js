@@ -13,4 +13,4 @@ const RetiroSchema = new mongoose.Schema({
     fechaCreacion: { type: Date, default: Date.now }
 });
 
-module.exports = mongoose.model('Retiro', RetiroSchema);
+module.exports = mongoose.models.Retiro || mongoose.model('Retiro', RetiroSchema);
