@@ -8,8 +8,8 @@
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
 
-        /* Panel de Saldo */
-        .saldo-container { display: flex; align-items: center; justify-content: center; background: #064e3b; padding: 10px 30px; border-radius: 10px; border: 2px solid #10b981; margin-bottom: 15px; font-size: 20px; font-weight: bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); }
+        /* Panel de Créditos */
+        .saldo-container { display: flex; align-items: center; justify-content: center; background: #064e3b; padding: 10px 30px; border-radius: 10px; border: 2px solid #10b981; margin-bottom: 15px; font-size: 20px; font-weight: bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); text-transform: uppercase;}
         .saldo-container span { margin-left: 10px; color: #6ee7b7; font-size: 28px; }
 
         /* Controles de Apuesta */
@@ -19,27 +19,11 @@
 
         .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
         
-        /* Rodillo individual con sombra 3D */
-        .reel { 
-            width: 100px; 
-            height: 150px; 
-            overflow: hidden; 
-            border: 2px solid #555; 
-            background: #000; 
-            position: relative; 
-        }
-
+        .reel { width: 100px; height: 150px; overflow: hidden; border: 2px solid #555; background: #000; position: relative; }
         .reel::after {
-            content: "";
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0px 35px 20px -15px rgba(0,0,0,0.95), 
-                        inset 0px -35px 20px -15px rgba(0,0,0,0.95);
-            pointer-events: none; 
-            z-index: 10;
+            content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            box-shadow: inset 0px 35px 20px -15px rgba(0,0,0,0.95), inset 0px -35px 20px -15px rgba(0,0,0,0.95);
+            pointer-events: none; z-index: 10;
         }
 
         .strip { list-style: none; padding: 0; margin: 0; width: 100px; transition: margin-top 0.3s ease-out; }
@@ -65,7 +49,7 @@
     <h1 style="color:#ffaa00; margin-bottom: 10px;">FÉNIX SLOTS</h1>
 
     <div class="saldo-container">
-        MI SALDO: $<span id="saldo-actual">5000</span>
+        CRÉDITOS: <span id="saldo-actual">Cargando...</span>
     </div>
 
     <div class="controles-apuesta">
@@ -77,7 +61,7 @@
     
     <div id="slot-machine-container" class="slot-machine"></div>
 
-    <button id="play-button" class="spin-button">GIRAR AHORA</button>
+    <button id="play-button" class="spin-button" disabled>CARGANDO...</button>
     <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
 
     <div id="modal-inicio-bonus" class="modal-overlay">
@@ -91,69 +75,64 @@
     <div id="modal-fin-bonus" class="modal-overlay">
         <div class="modal-content">
             <h2 class="modal-title">¡Fin del Bonus!</h2>
-            <p class="modal-texto">Ganaste en tus tiradas gratis:<br> <span id="monto-bonus-final" class="modal-monto">$0</span></p>
+            <p class="modal-texto">Ganaste en tus tiradas gratis:<br> <span id="monto-bonus-final" class="modal-monto">0</span></p>
             <button class="btn-aceptar" onclick="cerrarModalFinBonus()">Aceptar</button>
         </div>
     </div>
 
     <script type="text/javascript" src="slot-machine.js"></script>
     <script>
-        const usuarioActual = localStorage.getItem('casino_fenix_user');
+        const usuarioActual = localStorage.getItem('casino_fenix_user') || 'invitado';
         
-        const simbolosRodillo1 = [
-            { name: 'laud', position: 0, weight: 1 },
-            { name: 'bufon', position: 150, weight: 1 },
-            { name: 'zapatos', position: 300, weight: 1 },
-            { name: 'bonus', position: 450, weight: 1 },
-            { name: 'clavas', position: 600, weight: 1 },
-            { name: 'esfera', position: 750, weight: 1 }
-        ];
+        const simbolosRodillo1 = [ { name: 'laud', position: 0, weight: 1 }, { name: 'bufon', position: 150, weight: 1 }, { name: 'zapatos', position: 300, weight: 1 }, { name: 'bonus', position: 450, weight: 1 }, { name: 'clavas', position: 600, weight: 1 }, { name: 'esfera', position: 750, weight: 1 } ];
+        const simbolosRodillo2 = [ { name: 'bonus', position: 0, weight: 1 }, { name: 'laud', position: 150, weight: 1 }, { name: 'esfera', position: 300, weight: 1 }, { name: 'bufon', position: 450, weight: 1 }, { name: 'zapatos', position: 600, weight: 1 }, { name: 'clavas', position: 750, weight: 1 } ];
+        const simbolosRodillo3 = [ { name: 'zapatos', position: 0, weight: 1 }, { name: 'esfera', position: 150, weight: 1 }, { name: 'clavas', position: 300, weight: 1 }, { name: 'laud', position: 450, weight: 1 }, { name: 'bonus', position: 600, weight: 1 }, { name: 'bufon', position: 750, weight: 1 } ];
 
-        const simbolosRodillo2 = [
-            { name: 'bonus', position: 0, weight: 1 },
-            { name: 'laud', position: 150, weight: 1 },
-            { name: 'esfera', position: 300, weight: 1 },
-            { name: 'bufon', position: 450, weight: 1 },
-            { name: 'zapatos', position: 600, weight: 1 },
-            { name: 'clavas', position: 750, weight: 1 }
-        ];
+        const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
 
-        const simbolosRodillo3 = [
-            { name: 'zapatos', position: 0, weight: 1 },
-            { name: 'esfera', position: 150, weight: 1 },
-            { name: 'clavas', position: 300, weight: 1 },
-            { name: 'laud', position: 450, weight: 1 },
-            { name: 'bonus', position: 600, weight: 1 },
-            { name: 'bufon', position: 750, weight: 1 }
-        ];
-
-        const tablaPremios = {
-            'bufon': 10,
-            'laud': 8,
-            'clavas': 6,
-            'zapatos': 3,
-            'esfera': 1
-        };
-
-        let saldoActual = 5000; 
+        let creditosActuales = 0; 
         let girosGratisRestantes = 0;
         let totalGanadoEnGratis = 0;
         let isSpinning = false;
         let enModoBonus = false; 
         let slot;
 
-        window.onload = function() {
+        window.onload = async function() {
             const btnGirar = document.getElementById('play-button');
             const container = document.getElementById('slot-machine-container');
             const inputApuesta = document.getElementById('apuesta-input');
             const mensajePremio = document.getElementById('mensaje-premio');
             const saldoDisplay = document.getElementById('saldo-actual');
 
-            function actualizarPantallaSaldo() {
-                saldoDisplay.innerText = saldoActual;
+            // 1. OBTENER CRÉDITOS REALES DEL SERVIDOR
+            async function cargarCreditos() {
+                try {
+                    // INTENTA buscar el saldo real en tu backend
+                    const res = await fetch(`/api/obtener-saldo?usuario=${usuarioActual}`);
+                    if (res.ok) {
+                        const data = await res.json();
+                        creditosActuales = data.saldo; 
+                    } else {
+                        // SALVACAÍDAS: Si no encuentra la API, te da 5000 para que puedas seguir testeando
+                        creditosActuales = 5000;
+                    }
+                } catch (error) {
+                    console.warn("API no disponible todavía, usando saldo de prueba.");
+                    creditosActuales = 5000;
+                }
+                
+                actualizarPantallaCreditos();
+                btnGirar.innerText = "GIRAR AHORA";
+                btnGirar.disabled = false;
             }
 
-            // Inicializamos la máquina
+            function actualizarPantallaCreditos() {
+                saldoDisplay.innerText = creditosActuales;
+            }
+
+            // Llamamos a la función apenas carga la página
+            await cargarCreditos();
+
             slot = slotMachine(container, [
                 { imageSrc: '/slot/images/reel-strip1.png', symbols: simbolosRodillo1 },
                 { imageSrc: '/slot/images/reel-strip2.png', symbols: simbolosRodillo2 },
@@ -172,12 +151,13 @@
                 }
 
                 if (!enModoBonus) {
-                    if (saldoActual < apuestaActual) {
-                        alert("Saldo insuficiente para esta apuesta.");
+                    if (creditosActuales < apuestaActual) {
+                        alert("Créditos insuficientes para esta apuesta.");
                         return;
                     }
-                    saldoActual -= apuestaActual;
-                    actualizarPantallaSaldo();
+                    // Descontamos visualmente al instante (luego el servidor lo confirma)
+                    creditosActuales -= apuestaActual;
+                    actualizarPantallaCreditos();
                 }
 
                 isSpinning = true;
@@ -187,6 +167,10 @@
                 mensajePremio.innerText = enModoBonus ? `¡GIRO GRATIS! (${girosGratisRestantes} restantes)` : "Girando...";
                 slot.startSpinAnimation();
 
+                // ----------------------------------------------------------------------
+                // SIMULADOR: Mantiene el código de prueba funcionando 
+                // Cuando tu backend esté listo, borrás el setTimeout y usás el fetch real
+                // ----------------------------------------------------------------------
                 setTimeout(() => {
                     const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
                     const r1 = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
@@ -226,11 +210,12 @@
                     const premio = apuestaActual * tablaPremios[simbolo];
                     if (enModoBonus) {
                         totalGanadoEnGratis += premio;
-                        mensajePremio.innerText = `¡Ganaste $${premio}! (Acumulado: $${totalGanadoEnGratis})`;
+                        mensajePremio.innerText = `¡Ganaste ${premio} créditos! (Acumulado: ${totalGanadoEnGratis})`;
                     } else {
-                        saldoActual += premio; 
-                        actualizarPantallaSaldo();
-                        mensajePremio.innerText = `¡Ganaste $${premio}!`;
+                        creditosActuales += premio; 
+                        actualizarPantallaCreditos();
+                        mensajePremio.innerText = `¡Ganaste ${premio} créditos!`;
+                        // Aquí enviarías al servidor que el usuario ganó
                     }
                 } 
                 else {
@@ -242,7 +227,7 @@
                     setTimeout(window.ejecutarGiro, 1500); 
                 } 
                 else if (enModoBonus && girosGratisRestantes === 0) {
-                    document.getElementById('monto-bonus-final').innerText = `$${totalGanadoEnGratis}`;
+                    document.getElementById('monto-bonus-final').innerText = totalGanadoEnGratis;
                     document.getElementById('modal-fin-bonus').style.display = 'flex';
                 } 
                 else {
@@ -262,8 +247,9 @@
 
         function cerrarModalFinBonus() {
             document.getElementById('modal-fin-bonus').style.display = 'none';
-            saldoActual += totalGanadoEnGratis;
-            document.getElementById('saldo-actual').innerText = saldoActual;
+            creditosActuales += totalGanadoEnGratis;
+            document.getElementById('saldo-actual').innerText = creditosActuales;
+            // Aquí enviarías al servidor la suma total del bonus
             enModoBonus = false; 
             isSpinning = false;
             document.getElementById('play-button').disabled = false;
