@@ -1,126 +1,56 @@
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+/* Borra todo lo que tenías y pegá esto */
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body { 
+    background: #0b0f19; 
+    height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    color: white; 
+    font-family: sans-serif; 
 }
 
-body {
-    background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    overflow: hidden; /* Evita que la pantalla se mueva en el celu */
-    color: white;
+/* El contenedor principal de la máquina */
+.slot-machine { 
+    display: flex; 
+    justify-content: center; 
+    gap: 10px; 
+    background: #000; 
+    padding: 20px; 
+    border: 4px solid #ffaa00; 
+    border-radius: 15px; 
 }
 
-.slot-container {
-    width: 100%;
-    max-width: 450px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 30px;
+/* El rodillo (Contenedor 3D) */
+.reel { 
+    width: 100px; 
+    height: 150px; 
+    overflow: hidden; 
+    position: relative; 
+    perspective: 1000px; /* IMPORTANTE: Esto activa el efecto 3D */
 }
 
-.slot-title {
-    color: #ffaa00;
-    font-size: 32px;
-    text-shadow: 0 0 15px rgba(255, 170, 0, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 2px;
+/* La tira que se mueve */
+.strip { 
+    list-style: none; 
+    padding: 0; 
+    margin: 0; 
+    width: 100px; 
+    transform-style: preserve-3d; /* IMPORTANTE */
 }
 
-/* LA MÁQUINA */
-.slot-machine {
-    display: flex;
-    gap: 10px;
-    background: #111827;
-    padding: 20px;
-    border-radius: 15px;
-    border: 4px solid #ffaa00;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8), inset 0 0 20px rgba(0,0,0,0.9);
+/* Cada "fruta" o segmento dentro de la tira */
+.strip li { 
+    width: 100px; 
+    height: 150px; 
+    background-size: 100px 150px; 
+    background-repeat: no-repeat;
+    position: absolute; 
+    backface-visibility: hidden; /* Esto oculta la parte de atrás del rodillo */
 }
 
-.reel-container {
-    width: 90px;
-    height: 120px;
-    background: white;
-    border-radius: 8px;
-    border: 3px solid #374151;
-    overflow: hidden;
-    position: relative;
-    box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* El contenido del rodillo (los emojis o fotos) */
-.reel {
-    font-size: 60px;
-    text-align: center;
-    transition: transform 0.1s linear;
-}
-
-/* CONTROLES Y BOTONES */
-.controls {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    gap: 15px;
-}
-
-.balance-box {
-    background: #1f2937;
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-    font-size: 20px;
-    font-weight: bold;
-    border: 1px solid #374151;
-}
-
-#creditos-display {
-    color: #10b981;
-}
-
-.spin-button {
-    background: linear-gradient(to bottom, #f59e0b, #d97706);
-    color: white;
-    border: none;
-    padding: 20px;
-    font-size: 24px;
-    font-weight: bold;
-    border-radius: 50px;
-    cursor: pointer;
-    box-shadow: 0 5px 15px rgba(245, 158, 11, 0.4);
-    transition: transform 0.1s, filter 0.2s;
-    text-transform: uppercase;
-}
-
-.spin-button:active {
-    transform: scale(0.95);
-}
-
-.spin-button:disabled {
-    background: #4b5563;
-    color: #9ca3af;
-    box-shadow: none;
-    cursor: not-allowed;
-}
-
-/* MENSAJE DE PREMIO */
-.mensaje-oculto {
-    opacity: 0;
-    transition: opacity 0.3s;
-    font-size: 28px;
-    color: #a3e635;
-    font-weight: bold;
-    text-shadow: 0 0 10px rgba(163, 230, 53, 0.5);
-}
-.mensaje-visible {
-    opacity: 1;
-}
+/* Botones */
+.spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+.btn-volver { background: #374151; padding: 15px 30px; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px; }
