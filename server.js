@@ -171,7 +171,7 @@ app.post('/api/simular-pago-test', requireLogin, (req, res) => {
     }
 });
 
-// NUEVA RUTA DIRECTA PARA GUARDAR EL COSTO DE LOS MINIJUEGOS POR NOMBRE
+// RUTA PARA GUARDAR EL COSTO DE LOS MINIJUEGOS POR NOMBRE
 app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res) => {
     try {
         const { name, nuevoCosto } = req.body;
@@ -183,6 +183,89 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
         res.json({ success: true, message: `El costo de ${name} ha sido actualizado a ${nuevoCosto} Créditos.` });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
+    }
+});
+
+// ==============================================================
+// 🎰 NUEVO: API PARA EL SLOT PREMIUM GRÁFICO
+// ==============================================================
+app.post('/api/tirar-slot-premium', async (req, res) => {
+    try {
+        const { usuario } = req.body;
+        if (!usuario) return res.json({ exito: false, mensaje: "Usuario no identificado." });
+
+        // Buscamos al cliente en la base de datos
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        if (!cliente) return res.json({ exito: false, mensaje: "Cliente no encontrado." });
+
+        // Buscamos el costo configurado en el panel de admin
+        const minijuego = await Minigame.findOne({ name: 'Tragamonedas' });
+        const costoTiro = minijuego ? minijuego.creditCost : 10;
+
+        // Verificamos si tiene créditos suficientes
+        if (cliente.creditos < costoTiro) {
+            return res.json({ exito: false, mensaje: `Necesitas al menos ${costoTiro} Créditos 🟡 para girar.` });
+        }
+
+        // Buscamos la configuración de premios y probabilidades del Admin
+        const configTraga = await Tragamonedas.findOne();
+        if (!configTraga || !configTraga.configuracion || configTraga.configuracion.length === 0) {
+            return res.json({ exito: false, mensaje: "Máquina en mantenimiento." });
+        }
+
+        // Le descontamos el tiro
+        cliente.creditos -= costoTiro;
+
+        // MATEMÁTICA DEL AZAR (Probabilidades exactas del panel)
+        const config = configTraga.configuracion;
+        const random = Math.random() * 100;
+        let sumaProb = 0;
+        let premioGanado = null;
+
+        for (let item of config) {
+            sumaProb += item.probabilidad;
+            if (random <= sumaProb) {
+                premioGanado = item;
+                break;
+            }
+        }
+
+        // Mapeamos los IDs de tu panel a Emojis (después serán tus fotos)
+        const iconos = ['🎰', '💎', '🔔', '🍋', '🍒'];
+        let res1, res2, res3;
+
+        if (premioGanado.id < 5) {
+            // Es GANADOR: Hacemos que los 3 símbolos sean el mismo
+            res1 = iconos[premioGanado.id];
+            res2 = iconos[premioGanado.id];
+            res3 = iconos[premioGanado.id];
+            
+            // Sumamos el premio al SALDO del cliente (Plata real/fichas)
+            cliente.saldo += premioGanado.valor;
+        } else {
+            // PERDEDOR (ID 5: Sin Suerte): Forzamos 3 símbolos distintos
+            res1 = iconos[Math.floor(Math.random() * iconos.length)];
+            res2 = iconos[Math.floor(Math.random() * iconos.length)];
+            do {
+                res3 = iconos[Math.floor(Math.random() * iconos.length)];
+            } while (res1 === res2 && res2 === res3); 
+        }
+
+        // Guardamos todo en la base de datos
+        await cliente.save();
+
+        // Le mandamos la respuesta a la animación del celular
+        res.json({
+            exito: true,
+            rodillos: [res1, res2, res3],
+            premioNombre: premioGanado.premio,
+            premioValor: premioGanado.valor,
+            creditosRestantes: cliente.creditos // Para actualizar la pantalla
+        });
+
+    } catch (error) {
+        console.error("Error en Slot Premium:", error);
+        res.status(500).json({ exito: false, mensaje: "Error del servidor." });
     }
 });
 
