@@ -360,6 +360,21 @@ async function actualizarCostoMinijuego(nombre, inputId) {
         alert(data.message);
     } catch (error) { alert("Error al actualizar."); }
 }
+async function guardarTiendaAdmin() {
+    let productos = [];
+    for(let i=0; i<4; i++) {
+        productos.push({
+            nombre: document.getElementById(`p-nombre-${i}`).value,
+            costo: Number(document.getElementById(`p-costo-${i}`).value)
+        });
+    }
+    const res = await fetch('/api/admin/actualizar-tienda', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ productos })
+    });
+    if((await res.json()).exito) alert("Tienda guardada con éxito");
+}
 
 // ==========================================
 // CONFIGURACIÓN GENÉRICA JUEGOS
