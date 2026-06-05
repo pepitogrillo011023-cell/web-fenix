@@ -278,6 +278,23 @@
                         <button class="event-tab-btn" id="tab-ev-cartas" onclick="cambiarSubJuego('cartas')">🃏<br>Cartas</button>
                         <button class="event-tab-btn" id="tab-ev-moneda" onclick="cambiarSubJuego('moneda')">🪙<br>Moneda</button>
                     </div>
+                    <!-- Nueva Vista de Tienda -->
+<div id="view-tienda" class="admin-content" style="display: none; padding: 20px;">
+    <h2>🛒 Configurar Tienda (4 Productos)</h2>
+    <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:15px; max-width: 400px; margin-top: 20px;">
+        <script>
+            for(let i=0; i<4; i++) {
+                document.write(`
+                    <div style="display:flex; gap:10px; background: #1b2635; padding: 10px; border-radius: 8px;">
+                        <input type="text" id="p-nombre-${i}" placeholder="Nombre Producto ${i+1}" style="flex:2; padding:8px; border-radius:4px; border:none;">
+                        <input type="number" id="p-costo-${i}" placeholder="Costo" style="flex:1; padding:8px; border-radius:4px; border:none;">
+                    </div>
+                `);
+            }
+        </script>
+        <button onclick="guardarTiendaAdmin()" class="btn-primary" style="background: #3b82f6; border:none; padding:12px; cursor:pointer; color:white; border-radius:6px;">GUARDAR TIENDA</button>
+    </div>
+</div>
 
                     <div id="subview-ruleta" class="event-subview active-subview">
                         <h4 style="margin:0 0 5px 0; color:white; font-size: 16px;">Configurar Ruleta Diaria</h4>
