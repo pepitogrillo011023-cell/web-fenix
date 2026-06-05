@@ -5,26 +5,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slot Premium - Casino Fénix</title>
     <style>
-        body { margin: 0; background: linear-gradient(135deg, #0f0c29, #302b63); height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
+        body { margin: 0; background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
         
-        /* Contenedor principal con borde dorado */
-        .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 15px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
+        .slot-machine { display: flex; justify-content: center; gap: 10px; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
         
-        /* Rodillo ajustado exactamente a 100px x 150px */
+        /* CORRECCIÓN CRÍTICA DE CSS */
         .reel { 
             width: 100px; 
             height: 150px; 
             overflow: hidden; 
-            background: #fff; 
-            border: 2px solid #374151; 
-            border-radius: 5px;
+            border: 2px solid #555; 
+            background: #000;
+        }
+        
+        /* Forzamos el tamaño de la tira de imágenes: 100px ancho, 900px alto (6 símbolos * 150px) */
+        .strip { 
+            list-style: none; padding: 0; margin: 0; 
+            width: 100px;
+            background-image: url('images/reel-strip1.png');
+            background-size: 100px 900px; 
+            background-repeat: repeat-y;
         }
 
         .spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
         .spin-button:disabled { background: #4b5563; }
         .btn-volver { background: #374151; padding: 15px 30px; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px; }
-        
-        #mensaje-premio { font-size: 24px; color: #a3e635; margin-bottom: 10px; height: 30px; font-weight: bold; }
+        #mensaje-premio { font-size: 24px; color: #a3e635; margin-bottom: 15px; height: 35px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -34,30 +40,27 @@
     
     <div id="slot-machine-container" class="slot-machine"></div>
 
-    <div style="display:flex; flex-direction:column; align-items:center;">
-        <button id="play-button" class="spin-button">GIRAR AHORA</button>
-        <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
-    </div>
+    <button id="play-button" class="spin-button">GIRAR AHORA</button>
+    <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
 
     <script type="text/javascript" src="slot-machine.js"></script>
     <script>
         const usuarioActual = localStorage.getItem('casino_fenix_user');
         
-        // CALIBRACIÓN DE SÍMBOLOS: 
-        // Si tu imagen mide 150px por fruta, estas posiciones 0, 150, 300, 450, 600 son correctas.
+        // POSICIONES EXACTAS (cada 150px)
         const baseSymbols = [
             { name: 'cherry', position: 0, weight: 1 },
             { name: 'plum', position: 150, weight: 1 },
             { name: 'orange', position: 300, weight: 1 },
             { name: 'bell', position: 450, weight: 1 },
-            { name: 'cherry2', position: 600, weight: 1 }
+            { name: 'cherry2', position: 600, weight: 1 },
+            { name: 'plum2', position: 750, weight: 1 }
         ];
 
         window.onload = function() {
             const btnGirar = document.getElementById('play-button');
             const container = document.getElementById('slot-machine-container');
             
-            // Inicializar máquina
             const slot = slotMachine(container, [
                 { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
                 { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
@@ -81,10 +84,9 @@
                         document.getElementById('mensaje-premio').innerText = "¡Ganaste!";
                     } else {
                         alert(data.mensaje);
-                        // Frenar en algo visible
                         slot.stopSpinAndShowResult(['cherry', 'cherry', 'cherry']);
                     }
-                } catch(e) { alert("Error de conexión"); }
+                } catch(e) { alert("Error"); }
                 btnGirar.disabled = false;
             });
         };
