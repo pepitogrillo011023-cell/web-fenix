@@ -8,10 +8,8 @@ function SlotMachine(container, reels, callback, options) {
         div.classList.add('reel');
         const ul = document.createElement('ul');
         ul.classList.add('strip');
-        
         for (let i = 0; i < 6; i++) {
             const li = document.createElement('li');
-            // ¡ESTO ES LO QUE FALTABA!
             li.style.backgroundImage = `url("${config.imageSrc}")`;
             li.style.backgroundPosition = `0px -${i * 150}px`;
             ul.appendChild(li);
@@ -21,7 +19,6 @@ function SlotMachine(container, reels, callback, options) {
         return div;
     }
 
-    // Inicializar
     const divSlots = document.createElement('div');
     divSlots.classList.add('slots');
     divSlots.style.display = "flex";
@@ -29,7 +26,10 @@ function SlotMachine(container, reels, callback, options) {
     container.appendChild(divSlots);
 
     self.startSpinAnimation = function() {
-        reels.forEach(r => r.element.classList.add('spin'));
+        reels.forEach(r => {
+            r.element.classList.remove('stop');
+            r.element.classList.add('spin');
+        });
     };
 
     self.stopSpinAndShowResult = function(resultadoArray) {
@@ -40,9 +40,10 @@ function SlotMachine(container, reels, callback, options) {
 
             setTimeout(() => {
                 ul.classList.remove('spin');
+                ul.classList.add('stop'); // Activamos la transición de frenado suave
                 ul.style.marginTop = `-${finalPos}px`;
                 if (index === reels.length - 1 && callback) callback();
-            }, 1000 + (index * 500));
+            }, 1000 + (index * 400));
         });
     };
     return self;
