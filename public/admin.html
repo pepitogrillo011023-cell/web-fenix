@@ -27,9 +27,8 @@
         <button id="btn-nav-push" class="nav-btn" onclick="cambiarSeccion('push')">📣 Notificaciones y Push</button>
         <button id="btn-nav-retencion" class="nav-btn" onclick="cambiarSeccion('retencion')">⏳ Retención Auto</button>
         <button id="btn-nav-eventos" class="nav-btn" onclick="cambiarSeccion('eventos')">🎁 Eventos Especiales</button>
-        
         <button id="btn-nav-tienda" class="nav-btn" onclick="cambiarSeccion('tienda')">🛒 Configurar Tienda</button>
-
+        
         <div class="menu-category">Sistema</div>
         <button id="btn-nav-apis" class="nav-btn" onclick="cambiarSeccion('apis')">🔗 Configuración APIs</button>
         <button id="btn-nav-costos" class="nav-btn" onclick="cambiarSeccion('costos')">🪙 Costos Minijuegos</button>
@@ -56,6 +55,26 @@
                     <div class="monitor-input-area">
                         <input type="text" id="admin-message-input" class="admin-chat-input" placeholder="Escribí un mensaje..." disabled>
                         <button class="btn-save" id="btn-enviar-msg" onclick="enviarMensajeManual()" style="margin-top: 0;" disabled>Enviar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="section-tienda" class="view-section">
+                <div class="panel-inside">
+                    <h3 style="color:white; margin-bottom:20px;">🛒 Configurar Productos de la Tienda</h3>
+                    <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:15px; max-width: 500px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151;">
+                        <script>
+                            for(let i=0; i<4; i++) {
+                                document.write(`
+                                    <div style="display:flex; gap:15px; align-items:center; background: #1b2635; padding: 12px; border-radius: 8px;">
+                                        <span style="color:#94a3b8; font-weight:bold; min-width:80px;">Prod. ${i+1}:</span>
+                                        <input type="text" id="p-nombre-${i}" placeholder="Nombre" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
+                                        <input type="number" id="p-costo-${i}" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
+                                    </div>
+                                `);
+                            }
+                        </script>
+                        <button onclick="guardarTiendaAdmin()" class="btn-save" style="margin:0; width:100%; border:none; cursor:pointer; font-size:16px;">💾 GUARDAR TIENDA</button>
                     </div>
                 </div>
             </div>
@@ -156,7 +175,6 @@
                     </div>
                 </div>
             </div>
-            
             <div id="section-cierre" class="view-section">
                 <div class="panel-inside">
                     <h3 style="color:white; margin-top:0;">Registro Operativo - Cierre de Caja</h3>
@@ -425,28 +443,7 @@
                     </div>
                 </div>
             </div>
-            <!-- SECCIÓN TIENDA INTEGRADA (NUEVA) -->
-            <div id="section-tienda" class="view-section">
-                <div class="panel-inside">
-                    <h3 style="color:white; margin-bottom:20px;">🛒 Configurar Productos de la Tienda</h3>
-                    <div id="tienda-admin-form" style="display:flex; flex-direction:column; gap:15px; max-width: 500px; background: #111827; padding: 25px; border-radius: 12px; border: 1px solid #374151;">
-                        <script>
-                            for(let i=0; i<4; i++) {
-                                document.write(`
-                                    <div style="display:flex; gap:15px; align-items:center; background: #1b2635; padding: 12px; border-radius: 8px;">
-                                        <span style="color:#94a3b8; font-weight:bold; min-width:80px;">Prod. ${i+1}:</span>
-                                        <input type="text" id="p-nombre-${i}" placeholder="Nombre (ej: Bono 10%)" class="input-text-adv" style="flex:2; margin:0; border:none; padding:10px;">
-                                        <input type="number" id="p-costo-${i}" placeholder="Costo CR" class="input-text-adv" style="flex:1; margin:0; border:none; padding:10px;">
-                                    </div>
-                                `);
-                            }
-                        </script>
-                        <button onclick="guardarTiendaAdmin()" class="btn-save" style="margin-top:10px; width:100%; border:none; cursor:pointer; font-size:16px;">💾 GUARDAR TIENDA</button>
-                    </div>
-                </div>
-            </div>
 
-            <!-- SECCIÓN APIs -->
             <div id="section-apis" class="view-section">
                 <div class="panel-inside">
                     <h4 style="color:white; font-size: 20px; margin: 0 0 20px 0;">Integraciones y Llaves de API</h4>
@@ -483,7 +480,6 @@
         </div>
     </div>
 
-    <!-- MODALES -->
     <div id="modalImportador" class="modal-overlay">
         <div class="modal-content">
             <h3>📥 Importar de Ganamos.net</h3>
@@ -519,51 +515,26 @@
                 Transfiriendo fondos para el usuario:<br>
                 <strong id="gestion-usuario-texto" style="color:#38bdf8; font-size: 16px;">---</strong>
             </p>
-
             <div style="display: flex; gap: 8px; justify-content: center; margin-bottom: 20px;">
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(100)">100</button>
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(500)">500</button>
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(1000)">1.000</button>
                 <button class="btn-action-small" style="background-color: #1f2937; border: 1px solid #374151; padding: 8px; flex: 1;" onclick="sumarInputModal(10000)">10.000</button>
             </div>
-
             <div class="form-row" style="text-align:left;">
                 <label>Ingrese la cantidad</label>
                 <input type="number" id="gestion-monto" class="input-dark" placeholder="0" style="font-size: 20px; font-weight: bold; text-align: center;">
             </div>
-
             <input type="hidden" id="gestion-tipo-saldo"> 
-            
             <div style="display: flex; gap: 15px; margin-top: 25px;">
                 <button class="btn-save" style="background-color: #10b981; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('add')">DEPOSITAR</button>
                 <button class="btn-save" style="background-color: #ef4444; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('remove')">RETIRAR</button>
             </div>
-            
             <button class="btn-action-small" style="margin-top:15px; width:100%; padding:12px; background-color:#374151; border: none; font-size: 14px;" onclick="cerrarModalGeneral('modal-gestion-creditos')">CANCELAR</button>
         </div>
     </div>
 
-    <!-- SCRIPT DE NAVEGACIÓN Y GUARDADO DE TIENDA (NUEVO) -->
     <script>
-        // Función para cambiar la sección visible desde la barra lateral
-        function cambiarSeccion(seccion) {
-            document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
-            
-            const targetSection = document.getElementById('section-' + seccion);
-            if(targetSection) targetSection.classList.add('active-view');
-            
-            const targetBtn = document.getElementById('btn-nav-' + seccion);
-            if(targetBtn) targetBtn.classList.add('active-nav');
-            
-            let titulo = seccion.charAt(0).toUpperCase() + seccion.slice(1);
-            if(seccion === 'tienda') titulo = 'Configuración de Tienda';
-            
-            const panelTitle = document.getElementById('panel-title');
-            if(panelTitle) panelTitle.innerText = "Panel de Control - " + titulo;
-        }
-
-        // Lógica de guardado de los 4 productos de la tienda
         async function guardarTiendaAdmin() {
             let productos = [];
             for(let i=0; i<4; i++) {
@@ -585,7 +556,6 @@
         }
     </script>
     
-    <!-- SCRIPT ORIGINAL -->
     <script src="/js/admin.js"></script>
 </body>
 </html>
