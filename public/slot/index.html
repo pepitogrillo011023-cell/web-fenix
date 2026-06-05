@@ -4,107 +4,184 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Slot Premium - Casino Fénix</title>
-    <style>
-        body { margin: 0; background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
-        
-        .slot-machine { display: flex; justify-content: center; background: #000; padding: 20px; border: 4px solid #ffaa00; border-radius: 15px; margin-bottom: 20px; }
-        
-        /* Rodillo ajustado */
-        .reel { 
-            width: 100px; 
-            height: 150px; 
-            overflow: hidden; 
-            border: 2px solid #555; 
-            background: #000;
-            position: relative;
-        }
-
-        /* Tira de imágenes */
-        .strip { list-style: none; padding: 0; margin: 0; width: 100px; }
-        
-        /* Forzamos el tamaño de la fruta para que encaje 100x150 */
-        .strip li { 
-            width: 100px; 
-            height: 150px; 
-            background-size: 100px 900px !important; 
-            background-repeat: no-repeat !important;
-            list-style: none;
-        }
-
-        .spin-button { background: linear-gradient(135deg, #f59e0b, #d97706); padding: 20px 40px; border: none; border-radius: 50px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .spin-button:disabled { background: #4b5563; cursor: not-allowed; }
-        .btn-volver { background: #374151; padding: 15px 30px; border: none; border-radius: 8px; color: white; cursor: pointer; margin-top: 10px; }
-        #mensaje-premio { font-size: 24px; color: #a3e635; margin-bottom: 15px; height: 35px; font-weight: bold; }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
     <h1 style="color:#ffaa00; margin-bottom: 10px;">FÉNIX SLOTS</h1>
-    <div id="mensaje-premio"></div>
+
+    <div class="controles-apuesta">
+        <label for="apuesta-input">Apuesta:</label>
+        <input type="number" id="apuesta-input" value="100" min="10" step="10">
+    </div>
+
+    <div id="mensaje-premio">¡Gira para ganar!</div>
     
     <div id="slot-machine-container" class="slot-machine"></div>
 
     <button id="play-button" class="spin-button">GIRAR AHORA</button>
     <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
 
+    <div id="modal-bonus" class="modal-overlay">
+        <div class="modal-content">
+            <h2 class="modal-title">¡Fin del Bonus!</h2>
+            <p class="modal-texto">Ganaste en 10 tiradas gratis:<br> <span id="monto-bonus-final" class="modal-monto">$0</span></p>
+            <button class="btn-aceptar" onclick="cerrarModal()">Aceptar</button>
+        </div>
+    </div>
+
     <script type="text/javascript" src="slot-machine.js"></script>
     <script>
         const usuarioActual = localStorage.getItem('casino_fenix_user');
         
-        // POSICIONES EXACTAS (La imagen tiene 6 símbolos de 150px = 900px total)
+        // 1. MAPEAMOS LAS NUEVAS IMÁGENES
         const baseSymbols = [
-    { name: 'laud', position: 0, weight: 1 },       // Arriba de todo (0px)
-    { name: 'bufon', position: 150, weight: 1 },    // 150px
-    { name: 'zapatos', position: 300, weight: 1 },  // 300px
-    { name: 'bonus', position: 450, weight: 1 },    // 450px
-    { name: 'clavas', position: 600, weight: 1 },   // 600px
-    { name: 'esfera', position: 750, weight: 1 }    // 750px (Abajo de todo)
-];
+            { name: 'laud', position: 0, weight: 1 },
+            { name: 'bufon', position: 150, weight: 1 },
+            { name: 'zapatos', position: 300, weight: 1 },
+            { name: 'bonus', position: 450, weight: 1 },
+            { name: 'clavas', position: 600, weight: 1 },
+            { name: 'esfera', position: 750, weight: 1 }
+        ];
+
+        // 2. TABLA DE PREMIOS (Multiplicadores)
+        const tablaPremios = {
+            'bufon': 10,
+            'laud': 8,
+            'clavas': 6,
+            'zapatos': 3,
+            'esfera': 1
+        };
+
+        // Variables de estado
+        let girosGratisRestantes = 0;
+        let totalGanadoEnGratis = 0;
+        let isSpinning = false;
+        let slot;
 
         window.onload = function() {
             const btnGirar = document.getElementById('play-button');
             const container = document.getElementById('slot-machine-container');
-            
-            // Usamos ruta absoluta /slot/images/... para asegurar que encuentre el archivo
-            const rutaImagen = '/slot/images/reel-strip1.png';
+            const inputApuesta = document.getElementById('apuesta-input');
+            const mensajePremio = document.getElementById('mensaje-premio');
 
-            const slot = slotMachine(container, [
-                { imageSrc: rutaImagen, symbols: baseSymbols },
-                { imageSrc: rutaImagen, symbols: baseSymbols },
-                { imageSrc: rutaImagen, symbols: baseSymbols }
-            ], null, { reelHeight: 150, reelWidth: 100 });
+            // INICIALIZAMOS LA MÁQUINA
+            slot = slotMachine(container, [
+                { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols },
+                { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols },
+                { imageSrc: '/slot/images/reel-strip1.png', symbols: baseSymbols }
+            ], (resultadoFinal) => {
+                evaluarPremio(resultadoFinal); // Se ejecuta al terminar de girar
+            }, { reelHeight: 150, reelWidth: 100 });
 
-            // SCRIPT DE CORRECCIÓN: Fuerza el tamaño de las imágenes por si el JS falla
-            setTimeout(() => {
-                document.querySelectorAll('.strip li').forEach(li => {
-                    li.style.backgroundSize = "100px 900px";
-                    li.style.backgroundRepeat = "no-repeat";
-                });
-            }, 100);
-
-            btnGirar.addEventListener('click', async () => {
-                btnGirar.disabled = true;
-                slot.startSpinAnimation();
+            // FUNCIÓN PRINCIPAL DE GIRO
+            async function ejecutarGiro() {
+                if (isSpinning) return;
                 
+                let apuestaActual = parseFloat(inputApuesta.value);
+                if (apuestaActual <= 0 || isNaN(apuestaActual)) {
+                    alert("Ingresa un monto de apuesta válido.");
+                    return;
+                }
+
+                isSpinning = true;
+                btnGirar.disabled = true;
+                inputApuesta.disabled = girosGratisRestantes > 0; // Bloquea la apuesta en tiros gratis
+
+                mensajePremio.innerText = girosGratisRestantes > 0 ? `¡GIRO GRATIS! (${girosGratisRestantes} restantes)` : "Girando...";
+                slot.startSpinAnimation();
+
                 try {
+                    // LLAMADA AL BACKEND (¡Asegurate de que el backend soporte esto!)
                     const res = await fetch('/api/tirar-slot-premium', { 
                         method: 'POST', 
                         headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({ usuario: usuarioActual }) 
+                        body: JSON.stringify({ 
+                            usuario: usuarioActual, 
+                            apuesta: apuestaActual,
+                            esGiroGratis: girosGratisRestantes > 0 
+                        }) 
                     });
                     const data = await res.json();
                     
                     if(data.exito) {
-                        slot.stopSpinAndShowResult(data.rodillos);
-                        document.getElementById('mensaje-premio').innerText = "¡Ganaste!";
+                        slot.stopSpinAndShowResult(data.rodillos); // Detiene visualmente y llama a evaluarPremio()
                     } else {
                         alert(data.mensaje);
-                        slot.stopSpinAndShowResult(['cherry', 'cherry', 'cherry']);
+                        slot.stopSpinAndShowResult(['esfera', 'esfera', 'esfera']);
                     }
-                } catch(e) { alert("Error"); }
-                btnGirar.disabled = false;
-            });
+                } catch(e) { 
+                    alert("Error de conexión"); 
+                    slot.stopSpinAndShowResult(['esfera', 'esfera', 'esfera']);
+                }
+            }
+
+            // FUNCIÓN DE LÓGICA DE PREMIOS
+            function evaluarPremio(rodillos) {
+                let apuestaActual = parseFloat(inputApuesta.value);
+                const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
+                const simbolo = rodillos[0];
+
+                if (esIgual && simbolo === 'bonus') {
+                    if (girosGratisRestantes === 0) {
+                        // Activar 10 tiros gratis
+                        girosGratisRestantes = 10;
+                        totalGanadoEnGratis = 0;
+                        mensajePremio.innerText = "¡BONUS ACTIVADO!";
+                        setTimeout(ejecutarGiro, 1500); // Dispara el primer giro gratis automático
+                        return;
+                    } else {
+                        // Le damos 10 tiros más si saca bonus dentro del bonus
+                        girosGratisRestantes += 10;
+                        mensajePremio.innerText = "¡+10 GIROS EXTRAS!";
+                    }
+                } else if (esIgual && tablaPremios[simbolo]) {
+                    // Ganó un premio normal
+                    const premio = apuestaActual * tablaPremios[simbolo];
+                    
+                    if (girosGratisRestantes > 0) {
+                        totalGanadoEnGratis += premio; // Acumulamos en el pozo del bonus
+                        mensajePremio.innerText = `¡Ganaste $${premio}! (Total Bonus: $${totalGanadoEnGratis})`;
+                    } else {
+                        mensajePremio.innerText = `¡Ganaste $${premio}!`;
+                        // AQUÍ ES DONDE EL BACKEND DEBE SUMARLE LA PLATA AL USUARIO
+                    }
+                } else {
+                    mensajePremio.innerText = girosGratisRestantes > 0 ? "Sigue girando..." : "¡Suerte para la próxima!";
+                }
+
+                // GESTIÓN DE FLUJO (¿Sigue tirando solo o se frena?)
+                if (girosGratisRestantes > 0) {
+                    girosGratisRestantes--;
+                    if (girosGratisRestantes === 0) {
+                        // Se acabaron los giros gratis -> MOSTRAMOS MODAL
+                        document.getElementById('monto-bonus-final').innerText = `$${totalGanadoEnGratis}`;
+                        document.getElementById('modal-bonus').style.display = 'flex';
+                    } else {
+                        // Sigue girando automáticamente
+                        setTimeout(ejecutarGiro, 1500);
+                    }
+                } else {
+                    // Terminó el giro normal
+                    isSpinning = false;
+                    btnGirar.disabled = false;
+                    inputApuesta.disabled = false;
+                }
+            }
+
+            // Evento del botón
+            btnGirar.addEventListener('click', ejecutarGiro);
         };
+
+        // Función para cerrar la ventana del bonus
+        function cerrarModal() {
+            document.getElementById('modal-bonus').style.display = 'none';
+            // Reseteamos el estado para que pueda volver a jugar normal
+            isSpinning = false;
+            document.getElementById('play-button').disabled = false;
+            document.getElementById('apuesta-input').disabled = false;
+            document.getElementById('mensaje-premio').innerText = "¡Gira para ganar!";
+        }
     </script>
 </body>
 </html>
