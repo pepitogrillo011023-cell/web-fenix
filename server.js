@@ -276,6 +276,13 @@ app.post('/api/sumar-premio-bonus', async (req, res) => {
 // ==============================================================
 // 6. IMPORTACIÓN DE RUTAS MODULARES
 // ==============================================================
+// 1. Primero cargamos todos los modelos
+require('./models/User');
+require('./models/Transaction');
+require('./models/Minigame');
+require('./models/Retiro'); // <--- Ponelo acá arriba con los otros
+
+// 2. Luego cargamos las rutas y les pasamos los parámetros necesarios
 require('./routes/finanzas')(app, requireLogin, io, sharedState);
 require('./routes/clientes')(app, requireLogin, io, sharedState);
 require('./routes/eventos')(app, requireLogin, io, sharedState);
