@@ -5,6 +5,7 @@ const Transaction = require('../models/Transaction');
 module.exports = function(app, requireLogin, io, sharedState) {
     const CierreCaja = mongoose.model('CierreCaja');
     const Cliente = mongoose.model('Cliente');
+    const Retiro = mongoose.model('Retiro'); // Modelo de Retiros importado
 
     // Función auxiliar para notificar al panel administrativo
     const notificarPanelAdmin = async () => {
@@ -114,10 +115,32 @@ module.exports = function(app, requireLogin, io, sharedState) {
     });
 
     // ==============================================================
+    // 💸 RUTAS DE CONTROL DE RETIROS (NUEVO)
+    // ==============================================================
+    app.post('/api/guardar-retiros', requireLogin, async (req, res) => {
+        try {
+            const { fechaTurno, turnoGlobal, retiros } = req.body;
+            const filtro = { fecha: fechaTurno, turno: turnoGlobal };
+            await Retiro.findOneAndUpdate(filtro, { fecha: fechaTurno, turno: turnoGlobal, retiros: retiros }, { upsert: true, new: true });
+            res.json({ success: true, mensaje: "Retiros guardados" });
+        } catch (err) {
+            res.status(500).json({ success: false, mensaje: err.message });
+        }
+    });
+
+    app.get('/api/retiros/:fecha/:turno', requireLogin, async (req, res) => {
+        try {
+            const registro = await Retiro.findOne({ fecha: req.params.fecha, turno: req.params.turno });
+            res.json(registro ? registro.retiros : []);
+        } catch (err) {
+            res.status(500).json([]);
+        }
+    });
+
+    // ==============================================================
     // 💳 RUTAS DE GESTIÓN DE CRÉDITOS
     // ==============================================================
 
-    // RUTA: Obtener transacciones pendientes
     app.get('/api/transacciones-pendientes', requireLogin, async (req, res) => {
         try {
             const tipo = req.query.tipo;
@@ -128,11 +151,9 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
-    // CLIENTE: Solicitar carga de créditos
     app.post('/api/solicitar-carga-creditos', requireLogin, async (req, res) => {
         try {
             const { userId, amount, receiptUrl } = req.body;
-            
             const nuevaTransaccion = new Transaction({
                 userId,
                 type: 'credit_charge',
@@ -140,16 +161,14 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 receiptUrl,
                 status: 'pending'
             });
-            
             await nuevaTransaccion.save();
-            await notificarPanelAdmin(); // Avisar al cajero que hay nueva solicitud
+            await notificarPanelAdmin();
             res.json({ success: true, message: 'Reporte de pago enviado.' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
         }
     });
 
-    // CAJERO: Aprobar carga de créditos
     app.post('/api/aprobar-carga-creditos', requireLogin, async (req, res) => {
         try {
             const { transactionId } = req.body;
@@ -167,7 +186,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
             cliente.creditos = (cliente.creditos || 0) + transaccion.amount;
             await cliente.save();
 
-            // Notificar al cliente en tiempo real
             const socketCliente = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
             if (socketCliente && io) {
                 io.to(socketCliente.socketId).emit('actualizar_creditos', { nuevosCreditos: cliente.creditos });
@@ -180,7 +198,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
-    // CAJERO: Gestión manual
     app.post('/api/gestion-manual-creditos', requireLogin, async (req, res) => {
         try {
             const { userId, amount, action } = req.body;
