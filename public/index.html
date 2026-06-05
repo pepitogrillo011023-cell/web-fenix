@@ -12,7 +12,6 @@
         .header-title { display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
         
-        /* NUEVO: Badge de créditos en el header */
         .badge-creditos { background-color: #ffaa00; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; box-shadow: 0 0 8px rgba(255, 170, 0, 0.4); }
 
         .auth-body { padding: 40px 25px; display: flex; flex-direction: column; align-items: center; }
@@ -46,7 +45,7 @@
         
         .hidden { display: none !important; }
 
-        /* MODALES DE MINIJUEGOS Y CRÉDITOS */
+        /* MODALES */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; }
         .modal-content { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 330px; background: #111827; padding: 25px; border-radius: 16px; border: 1px solid #ffaa00; box-shadow: 0 0 30px rgba(255, 170, 0, 0.4); text-align: center; box-sizing: border-box; }
         .btn-spin { background: linear-gradient(90deg, #ff007f, #ffaa00); color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 25px; text-transform: uppercase; box-shadow: 0 4px 15px rgba(255,170,0,0.3); }
@@ -85,7 +84,7 @@
             <div class="header-title">
                 <div class="status-dot"></div>
                 <span id="header-title-text">Chat Asistencia (En línea)</span>
-                <span id="badge-creditos" class="badge-creditos hidden">🟡 <span id="txt-creditos">0</span> CR</span>
+                <span id="badge-creditos" class="badge-creditos">🟡 <span id="txt-creditos">0</span> CR</span>
             </div>
             <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Salir</button>
         </div>
@@ -148,7 +147,7 @@
     <div id="modal-cargar-creditos" class="modal-overlay">
         <div class="modal-content" style="border-color: #ffaa00;">
             <h3 style="color:white; margin-top:0; font-size: 20px;">🟡 Comprar Créditos</h3>
-            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos de minijuegos.</p>
+            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos.</p>
             <input type="number" id="input-creditos-monto" class="input-dark" placeholder="Monto transferido ($)...">
             <input type="url" id="input-creditos-url" class="input-dark" placeholder="URL de la imagen del comprobante...">
             <button class="btn-spin" style="background: #ffaa00; color: #000; margin-top:10px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4);" onclick="solicitarCargaCreditos()">ENVIAR REPORTE</button>
@@ -229,6 +228,7 @@
         let ruletaConfig = []; let raspaConfig = [];
         let currentRotation = 0; let raspaYaJugada = false;
         let tragaJugado = false; let cartasJugado = false; let monedaJugado = false;
+        let misCreditos = 0; // NUEVA VARIABLE
 
         // ==========================================
         // VISTAS Y NAVEGACIÓN
@@ -236,8 +236,6 @@
         function cambiarVista(vista) {
             document.getElementById('vista-login').classList.add('hidden');
             document.getElementById('vista-registro').classList.add('hidden');
-            
-            // CORRECCIÓN 2: Le removemos el 'hidden' correctamente a la vista del chat
             document.getElementById('vista-chat').classList.add('hidden');
             document.getElementById('btn-cerrar-sesion').classList.add('hidden');
 
@@ -290,7 +288,7 @@
             window.usuarioLogueado = null;
             document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
             document.getElementById('header-title-text').innerText = "Chat Asistencia (En línea)";
-            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar créditos
+            document.getElementById('badge-creditos').classList.add('hidden'); // Ocultar
             msgArea.innerHTML = '';
             cambiarVista('login');
         }
@@ -302,27 +300,22 @@
             if (respuesta.exito) {
                 document.getElementById('header-title-text').innerText = "Hola, " + respuesta.usuario;
                 
-                // NUEVO: Mostrar los créditos en el header si el backend los envía
-                if(respuesta.creditos !== undefined) {
-                    document.getElementById('badge-creditos').classList.remove('hidden');
-                    document.getElementById('txt-creditos').innerText = respuesta.creditos;
-                }
+                // Mostrar y actualizar créditos
+                misCreditos = respuesta.creditos || 0;
+                document.getElementById('txt-creditos').innerText = misCreditos;
+                document.getElementById('badge-creditos').classList.remove('hidden');
                 
-                // CORRECCIÓN 3: Al entrar, limpiamos y re-dibujamos el historial real de la base de datos
                 msgArea.innerHTML = '';
                 if(respuesta.historial && respuesta.historial.length > 0) {
                     respuesta.historial.forEach(h => {
-                        if (h.emisor === 'bot') {
-                            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${h.mensaje}</div></div>`;
-                        } else if (h.emisor === 'admin') {
-                            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${h.mensaje}</div></div>`;
-                        } else if (h.emisor === 'cliente') {
+                        if (h.emisor === 'bot') msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${h.mensaje}</div></div>`;
+                        else if (h.emisor === 'admin') msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${h.mensaje}</div></div>`;
+                        else if (h.emisor === 'cliente') {
                             let check = h.leido ? '<span class="status-text visto">✓ Visto</span>' : '<span class="status-text">✓ Enviado</span>';
                             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${h.mensaje}</div>${check}</div>`;
                         }
                     });
                 }
-                
                 cambiarVista('chat');
                 irAlMenuPrincipal();
             }
@@ -395,7 +388,7 @@
         });
 
         // ==========================================
-        // SISTEMA DE MINIJUEGOS Y MODALES
+        // SISTEMA DE MINIJUEGOS Y CRÉDITOS
         // ==========================================
         function abrirModal(juego) {
             if (juego === 'cargar-creditos') {
@@ -432,10 +425,25 @@
 
         function cerrarModal(juego) {
             document.getElementById(`modal-${juego}`).style.display = 'none';
-            // Solo volver al menú si no es el modal de créditos, para no interferir con las pantallas de chat.
-            if(juego !== 'cargar-creditos') {
-                irAlMenuPrincipal();
-            }
+            if(juego !== 'cargar-creditos') irAlMenuPrincipal();
+        }
+
+        async function solicitarCargaCreditos() {
+            const monto = document.getElementById('input-creditos-monto').value;
+            const url = document.getElementById('input-creditos-url').value;
+            if(!monto || !url) return alert("Por favor, completá los datos.");
+
+            try {
+                const res = await fetch('/api/solicitar-carga-creditos', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: window.usuarioLogueado, amount: Number(monto), receiptUrl: url })
+                });
+                const data = await res.json();
+                if(data.success) {
+                    cerrarModal('cargar-creditos');
+                    alert("Reporte enviado. Esperando aprobación.");
+                } else alert(data.message);
+            } catch(e) { alert("Error de conexión."); }
         }
 
         function anunciarVictoria(emoji, titulo, msg) {
@@ -445,46 +453,7 @@
             socket.emit('cliente_accion', { estado: 'Menú' }); 
         }
 
-        // --- LÓGICA DE CRÉDITOS ---
-        async function solicitarCargaCreditos() {
-            const monto = document.getElementById('input-creditos-monto').value;
-            const url = document.getElementById('input-creditos-url').value;
-            
-            if(!monto || !url) {
-                return alert("Por favor, ingresá el monto y la URL del comprobante.");
-            }
-
-            try {
-                // Enviamos el usuarioLogueado como userId para mantener la coherencia con tu base de datos de clientes
-                const res = await fetch('/api/solicitar-carga-creditos', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ userId: window.usuarioLogueado, amount: Number(monto), receiptUrl: url })
-                });
-                
-                const data = await res.json();
-                
-                if(data.success) {
-                    cerrarModal('cargar-creditos');
-                    document.getElementById('input-creditos-monto').value = '';
-                    document.getElementById('input-creditos-url').value = '';
-                    
-                    // Mostramos el reporte en el chat
-                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🟡 Reporté pago de ${monto} Créditos.<br>Comprobante adjuntado.</div><span class="status-text">✓ Enviado</span></div>`;
-                    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">✅ ${data.message}</div></div>`;
-                    msgArea.scrollTop = msgArea.scrollHeight;
-                    
-                    socket.emit('cliente_accion', { estado: 'Carga Créditos', mensajeCliente: `Reporté pago de ${monto} Créditos`, mensajeBot: data.message });
-                } else {
-                    alert(data.message || "Error al procesar la solicitud.");
-                }
-            } catch(e) {
-                alert("Error de conexión al solicitar los créditos.");
-            }
-        }
-
-        // --- RUEDAS Y TIRADAS ---
-        function jugarRuleta() {
+              function jugarRuleta() {
             document.getElementById('btn-spin-ruleta').disabled = true;
             fetch('/api/tirar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
             .then(r => r.json()).then(data => {
