@@ -1,73 +1,49 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Slot Premium - Casino Fénix</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-    <h1 style="color:#ffaa00; margin-bottom: 10px;">FÉNIX SLOTS</h1>
-    <div id="mensaje-premio"></div>
+<script>
+    const usuarioActual = localStorage.getItem('casino_fenix_user');
     
-    <div id="slot-machine-container" class="slot-machine"></div>
+    const baseSymbols = [
+        { name: 'cherry', position: 0, weight: 1 },
+        { name: 'plum', position: 150, weight: 1 },
+        { name: 'orange', position: 300, weight: 1 },
+        { name: 'bell', position: 450, weight: 1 },
+        { name: 'cherry2', position: 600, weight: 1 },
+        { name: 'plum2', position: 750, weight: 1 }
+    ];
 
-    <button id="play-button" class="spin-button">GIRAR AHORA</button>
-    <button class="btn-volver" onclick="window.location.href='/'">↩️ Volver al Casino</button>
-
-    <script type="text/javascript" src="slot-machine.js"></script>
-    <script>
-        const usuarioActual = localStorage.getItem('casino_fenix_user');
+    window.onload = function() {
+        const btnGirar = document.getElementById('play-button');
+        const container = document.getElementById('slot-machine-container');
         
-        const baseSymbols = [
-            { name: 'cherry', position: 0, weight: 1 },
-            { name: 'plum', position: 150, weight: 1 },
-            { name: 'orange', position: 300, weight: 1 },
-            { name: 'bell', position: 450, weight: 1 },
-            { name: 'cherry2', position: 600, weight: 1 },
-            { name: 'plum2', position: 750, weight: 1 }
-        ];
+        // RUTA CORREGIDA: Empieza con / para asegurar que busque bien desde la raíz
+        const rutaImagen = '/slot/images/reel-strip1.png';
 
-        window.onload = function() {
-            const btnGirar = document.getElementById('play-button');
-            const container = document.getElementById('slot-machine-container');
+        const slot = slotMachine(container, [
+            { imageSrc: rutaImagen, symbols: baseSymbols },
+            { imageSrc: rutaImagen, symbols: baseSymbols },
+            { imageSrc: rutaImagen, symbols: baseSymbols }
+        ], null, { reelHeight: 150, reelWidth: 100 });
+
+        btnGirar.addEventListener('click', async () => {
+            btnGirar.disabled = true;
+            slot.startSpinAnimation();
             
-            const slot = slotMachine(container, [
-                { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
-                { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols },
-                { imageSrc: 'images/reel-strip1.png', symbols: baseSymbols }
-            ], null, { reelHeight: 150, reelWidth: 100 });
-
-            // MODIFICACIÓN: Aplicamos estilo extra a las imágenes después de que JS las crea
-            setTimeout(() => {
-                document.querySelectorAll('.strip li').forEach(li => {
-                    li.style.backgroundSize = "100px 900px";
-                    li.style.backgroundRepeat = "no-repeat";
+            try {
+                const res = await fetch('/api/tirar-slot-premium', { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ usuario: usuarioActual }) 
                 });
-            }, 100);
-
-            btnGirar.addEventListener('click', async () => {
-                btnGirar.disabled = true;
-                slot.startSpinAnimation();
-                try {
-                    const res = await fetch('/api/tirar-slot-premium', { 
-                        method: 'POST', 
-                        headers: {'Content-Type': 'application/json'}, 
-                        body: JSON.stringify({ usuario: usuarioActual }) 
-                    });
-                    const data = await res.json();
-                    if(data.exito) {
-                        slot.stopSpinAndShowResult(data.rodillos);
-                        document.getElementById('mensaje-premio').innerText = "¡Ganaste!";
-                    } else {
-                        alert(data.mensaje);
-                        slot.stopSpinAndShowResult(['cherry', 'cherry', 'cherry']);
-                    }
-                } catch(e) { alert("Error"); }
-                btnGirar.disabled = false;
-            });
-        };
-    </script>
-</body>
-</html>
+                const data = await res.json();
+                
+                if(data.exito) {
+                    slot.stopSpinAndShowResult(data.rodillos);
+                    document.getElementById('mensaje-premio').innerText = "¡Ganaste!";
+                } else {
+                    alert(data.mensaje);
+                    slot.stopSpinAndShowResult(['cherry', 'cherry', 'cherry']);
+                }
+            } catch(e) { alert("Error"); }
+            btnGirar.disabled = false;
+        });
+    };
+</script>
