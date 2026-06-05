@@ -44,8 +44,8 @@ function cambiarSeccion(seccion) {
         chats: "Chats en Vivo", usuarios: "Operadores Internos", clientes: "Clientes", 
         retiros: "Auditoría de Retiros", billetera: "Billetera y Saldos", creditos: "Solicitudes Créditos",
         costos: "Costos Minijuegos", push: "Notificaciones Masivas", retencion: "Automatización de Retención", 
-        eventos: "Consola de Eventos y Minijuegos", apis: "Integraciones y Llaves de API", cierre: "Cierre de Caja", 
-        resumen: "Resumen Cajas", historial: "Historial de Cajas", ganamos: "Plataforma Ganamos" 
+        eventos: "Consola de Eventos y Minijuegos", apis: "Integraciones y Llaves de API", administrarcajas: "Administración de Cajas", 
+        ganamos: "Plataforma Ganamos" 
     };
     document.getElementById('panel-title').innerText = "Panel de Control - " + (titulos[seccion] || "");
 
@@ -66,23 +66,15 @@ function cambiarSubJuego(juego) {
 // POPUP DE PLATAFORMAS EXTERNAS (ENCASTRE PERFECTO)
 // ==========================================
 function abrirGanamosPopup() {
-    // 1. Obtenemos el ancho exacto y real del menú lateral de tu diseño
     const sidebar = document.querySelector('.sidebar');
-    const sidebarWidth = sidebar ? sidebar.offsetWidth : 250; // Fallback por seguridad
-
-    // 2. Tamaño de la ventana: todo el ancho sobrante y todo el alto visible
+    const sidebarWidth = sidebar ? sidebar.offsetWidth : 250; 
     const popupWidth = window.innerWidth - sidebarWidth;
     const popupHeight = window.innerHeight;
-
-    // 3. Calculamos el grosor de los bordes del navegador (Chrome) y las pestañas
     const borderX = (window.outerWidth - window.innerWidth) / 2;
     const headerHeight = window.outerHeight - window.innerHeight - borderX;
-
-    // 4. Calculamos la posición milimétrica en el monitor
     const popupLeft = window.screenX + borderX + sidebarWidth;
     const popupTop = window.screenY + headerHeight;
 
-    // 5. Abrimos la ventana encajada
     window.open(
         'https://agents.ganamosnet.club/users/all', 
         'GanamosPanel', 
@@ -113,6 +105,7 @@ function buscarCliente() {
 
 function renderizarTablaClientes() {
     const tbody = document.querySelector('#section-clientes .data-table tbody');
+    if(!tbody) return;
     tbody.innerHTML = '';
     
     let clientesAMostrar = clientesBuscador;
@@ -145,6 +138,7 @@ function renderizarTablaClientes() {
 
 function renderizarControlesPaginacion() {
     const contenedor = document.getElementById('paginacion-clientes');
+    if(!contenedor) return;
     contenedor.innerHTML = '';
     
     if (filasPorPaginaClientes === 'todos' || clientesBuscador.length === 0) return;
@@ -219,7 +213,7 @@ async function guardarEdicionCliente() {
 }
 
 // ==========================================
-// NUEVO: SISTEMA GESTIÓN DE SALDOS Y CRÉDITOS
+// SISTEMA GESTIÓN DE SALDOS Y CRÉDITOS
 // ==========================================
 function abrirModalGestionFondos(id, username, tipo) {
     gestionIdSeleccionado = id;
@@ -244,7 +238,6 @@ async function ejecutarGestion(accion) {
     
     if (!monto || monto <= 0) return alert("Por favor, ingresá un monto mayor a 0.");
     
-    // Deshabilitar botones para evitar dobles clics
     const btnDepositar = document.querySelector('#modal-gestion-creditos .btn-save[style*="#10b981"]');
     const btnRetirar = document.querySelector('#modal-gestion-creditos .btn-save[style*="#ef4444"]');
     const textoDepositar = btnDepositar.innerText;
@@ -263,8 +256,6 @@ async function ejecutarGestion(accion) {
                 body: JSON.stringify({ userId: gestionIdSeleccionado, amount: monto, action: accion })
             });
         } else if (tipo === 'saldo') {
-            // Si es retirar, enviamos el monto en negativo si la API antigua solo sumaba.
-            // Si tu API maneja el retiro diferente, podés ajustar esto.
             let montoFinal = (accion === 'remove') ? -Math.abs(monto) : Math.abs(monto);
             res = await fetch('/api/cargar-saldo', { 
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, 
@@ -281,7 +272,6 @@ async function ejecutarGestion(accion) {
     } catch (error) {
         alert("Error técnico al conectar con el servidor.");
     } finally {
-        // Restaurar botones
         btnDepositar.disabled = false; btnRetirar.disabled = false;
         btnDepositar.innerText = textoDepositar; btnRetirar.innerText = textoRetirar;
     }
@@ -296,6 +286,7 @@ async function cargarSolicitudesCreditos() {
         if(!res.ok) return;
         const data = await res.json();
         const tbody = document.querySelector('#tabla-pendientes-creditos tbody');
+        if(!tbody) return;
         tbody.innerHTML = '';
         
         if(!data.transacciones || data.transacciones.length === 0) {
@@ -360,20 +351,223 @@ async function actualizarCostoMinijuego(nombre, inputId) {
         alert(data.message);
     } catch (error) { alert("Error al actualizar."); }
 }
-async function guardarTiendaAdmin() {
-    let productos = [];
-    for(let i=0; i<4; i++) {
-        productos.push({
-            nombre: document.getElementById(`p-nombre-${i}`).value,
-            costo: Number(document.getElementById(`p-costo-${i}`).value)
-        });
+
+// ==========================================
+// RETIROS (NUEVO CONTROL DE CAJAS)
+// ==========================================
+
+function inicializarTurnoLogico() {
+    const ahora = new Date();
+    let hora = ahora.getHours();
+    let min = ahora.getMinutes();
+    let tiempoDecimal = hora + (min / 60);
+
+    let fechaSelect = new Date(ahora);
+    let turnoSelect = "Noche";
+
+    // Lógica de horarios 
+    if (tiempoDecimal >= 5.75 && tiempoDecimal < 13.75) {
+        turnoSelect = "Mañana";
+    } else if (tiempoDecimal >= 13.75 && tiempoDecimal < 21.75) {
+        turnoSelect = "Tarde";
+    } else {
+        turnoSelect = "Noche";
+        // Si estamos pasada la medianoche pero antes del corte de las 5:45 AM, sigue siendo el día anterior administrativamente
+        if (tiempoDecimal < 5.75) {
+            fechaSelect.setDate(fechaSelect.getDate() - 1);
+        }
     }
-    const res = await fetch('/api/admin/actualizar-tienda', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({ productos })
+
+    const yyyy = fechaSelect.getFullYear();
+    const mm = String(fechaSelect.getMonth() + 1).padStart(2, '0');
+    const dd = String(fechaSelect.getDate()).padStart(2, '0');
+
+    const inputFecha = document.getElementById('global-retiro-fecha');
+    const inputTurno = document.getElementById('global-retiro-turno');
+    
+    if(inputFecha && inputTurno) {
+        inputFecha.value = `${yyyy}-${mm}-${dd}`;
+        inputTurno.value = turnoSelect;
+    }
+}
+
+function addRetiroRow() {
+    const tbody = document.getElementById('tbody-retiros');
+    if(!tbody) return;
+
+    const inputFecha = document.getElementById('global-retiro-fecha');
+    const inputTurno = document.getElementById('global-retiro-turno');
+    
+    const fechaGlobal = inputFecha ? inputFecha.value : '';
+    const turnoGlobal = inputTurno ? inputTurno.value : 'Noche';
+
+    if (!fechaGlobal) {
+        alert("Por favor, seleccioná una fecha para el turno antes de agregar retiros.");
+        return;
+    }
+
+    // Definir colores según tu Excel
+    let bgColor = "";
+    let textColor = "#000000"; 
+    
+    if (turnoGlobal === "Mañana") bgColor = "#fef08a"; // Amarillo
+    if (turnoGlobal === "Tarde") bgColor = "#fed7aa";  // Naranja
+    if (turnoGlobal === "Noche") bgColor = "#93c5fd";  // Azul claro
+
+    const ahora = new Date();
+    const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
+
+    const tr = document.createElement('tr');
+    tr.style.backgroundColor = bgColor;
+    tr.style.color = textColor;
+
+    const inputStyle = "margin:0; width:90%; border:1px solid #64748b; color:black; background:white; padding: 5px; border-radius: 4px;";
+
+    tr.innerHTML = `
+        <td class="ret-fecha" data-val="${fechaGlobal}" style="font-weight:bold; text-align:center;">${fechaGlobal.split('-').reverse().join('/')}</td>
+        <td style="text-align:center;"><input type="text" class="input-text-adv ret-cliente" placeholder="Usuario" style="${inputStyle}"></td>
+        <td style="text-align:center;"><input type="number" class="input-text-adv ret-monto" placeholder="Monto" style="${inputStyle}"></td>
+        <td style="text-align:center;"><input type="time" class="input-text-adv ret-hora" value="${horaActual}" style="${inputStyle}"></td>
+        <td style="text-align:center;"><input type="checkbox" class="ret-verifi" style="width:20px; height:20px; cursor:pointer;" checked></td>
+        <td class="ret-turno" data-val="${turnoGlobal}" style="font-weight:bold; text-align:center;">${turnoGlobal}</td>
+        <td style="text-align:center;"><button onclick="this.closest('tr').remove()" style="background:#ef4444; border:none; color:white; padding:5px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">X</button></td>
+    `;
+
+    tbody.appendChild(tr);
+}
+
+async function procesarCierreRetiros() {
+    const tbody = document.getElementById('tbody-retiros');
+    if(!tbody || tbody.children.length === 0) {
+        return alert("No hay retiros ingresados en la tabla para guardar.");
+    }
+
+    const fechaTurno = document.getElementById('global-retiro-fecha').value;
+    const turnoGlobal = document.getElementById('global-retiro-turno').value;
+
+    const retiros = [];
+    tbody.querySelectorAll('tr').forEach(tr => {
+        retiros.push({
+            fecha: tr.querySelector('.ret-fecha').getAttribute('data-val'),
+            cliente: tr.querySelector('.ret-cliente').value,
+            monto: Number(tr.querySelector('.ret-monto').value) || 0,
+            hora: tr.querySelector('.ret-hora').value,
+            verificado: tr.querySelector('.ret-verifi').checked,
+            turno: tr.querySelector('.ret-turno').getAttribute('data-val')
+        });
     });
-    if((await res.json()).exito) alert("Tienda guardada con éxito");
+
+    console.log("Paquete de retiros listo para enviar a la base de datos:", { fechaTurno, turnoGlobal, retiros });
+    
+    // Acá iría tu conexión a la base de datos cuando la armemos:
+    // const res = await fetch('/api/guardar-retiros', { method: 'POST', body: JSON.stringify({ fechaTurno, turnoGlobal, retiros }) });
+    
+    alert(`✅ Turno ${turnoGlobal} cerrado virtualmente.\nSe han empaquetado ${retiros.length} retiros para la base de datos.`);
+}
+
+// ==========================================
+// CIERRE DE CAJA
+// ==========================================
+const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
+function addGastoRow() {
+    const tbody = document.querySelector('#tabla-gastos tbody');
+    if(!tbody) return;
+    const tr = document.createElement('tr');
+    let options = opcionesGasto.map(o => `<option value="${o}">${o}</option>`).join('');
+    tr.innerHTML = `<td><select class="input-text-adv gt" onchange="calcCierre()" style="margin-bottom:0;">${options}</select></td><td><input type="text" class="input-text-adv gu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num gm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
+    tbody.appendChild(tr);
+}
+function addPropinaRow() {
+    const tbody = document.querySelector('#tabla-propinas tbody');
+    if(!tbody) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><input type="text" class="input-text-adv pu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num pm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
+    tbody.appendChild(tr);
+}
+function calcCierre() {
+    let totG = 0; document.querySelectorAll('.gm').forEach(i => totG += Number(i.value) || 0); 
+    if(document.getElementById('tot-gastos')) document.getElementById('tot-gastos').innerText = totG.toFixed(2); 
+
+    let totP = 0; document.querySelectorAll('.pm').forEach(i => totP += Number(i.value) || 0); 
+    if(document.getElementById('tot-propinas')) document.getElementById('tot-propinas').innerText = totP.toFixed(2);
+    
+    const ing = Number(document.getElementById('cc-ingreso')?.value) || 0; 
+    const oro = Number(document.getElementById('cc-oro')?.value) || 0; 
+    const ganamos = Number(document.getElementById('cc-ganamos')?.value) || 0; 
+
+    const egreso = ing + oro + ganamos;
+    if(document.getElementById('cc-egreso')) document.getElementById('cc-egreso').value = egreso;
+    
+    const esperado = egreso - (totG + totP);
+    if(document.getElementById('cc-esperado')) document.getElementById('cc-esperado').value = esperado;
+    
+    const real = Number(document.getElementById('cc-real')?.value) || 0;
+    const dif = real - esperado; 
+    
+    if(document.getElementById('cc-dif')) {
+        document.getElementById('cc-dif').value = dif; 
+        document.getElementById('cc-dif').style.color = dif < 0 ? '#ef4444' : '#10b981';
+    }
+}
+async function guardarCierreDB() {
+    if(!document.getElementById('cc-fecha-inicio').value) return alert("Ingresá la fecha de inicio.");
+    const gastos = []; document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 }));
+    const propinas = []; document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 }));
+    const payload = {
+        fecha: document.getElementById('cc-fecha-inicio').value,
+        fechaInicio: document.getElementById('cc-fecha-inicio').value,
+        fechaFin: document.getElementById('cc-fecha-fin').value,
+        horaInicio: document.getElementById('cc-hora-inicio').value, 
+        horaFin: document.getElementById('cc-hora-fin').value, 
+        turno: document.getElementById('cc-turno').value, 
+        cajero: document.getElementById('cc-cajero').value,
+        ingreso: Number(document.getElementById('cc-ingreso').value) || 0, 
+        saldoOro: Number(document.getElementById('cc-oro').value) || 0, 
+        saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0, 
+        egreso: Number(document.getElementById('cc-egreso').value) || 0,
+        montoEsperado: Number(document.getElementById('cc-esperado').value) || 0, 
+        montoRealFinal: Number(document.getElementById('cc-real').value) || 0, 
+        sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0, 
+        reserva: Number(document.getElementById('cc-reserva').value) || 0, 
+        gastos, 
+        propinas
+    };
+    const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+    if(res.redirected) return window.location.href = '/login.html';
+    if(res.ok) { alert("✅ Guardado!"); if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); }
+}
+
+addGastoRow(); addPropinaRow(); 
+if(document.getElementById('cc-fecha-inicio')) document.getElementById('cc-fecha-inicio').valueAsDate = new Date();
+if(document.getElementById('cc-fecha-fin')) document.getElementById('cc-fecha-fin').valueAsDate = new Date();
+
+// ==========================================
+// RESUMEN E HISTORIAL
+// ==========================================
+const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+async function buscarResumen() {
+    const fecha = document.getElementById('res-fecha').value; if(!fecha) return;
+    const res = await fetch('/api/resumen-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
+    const data = await res.json(); const d = data.dia; const m = data.mes;
+    document.getElementById('res-diario').innerHTML = `
+        <tr><td class="header-row">Ingreso Inicial</td><td>${f.format(d.manana.ingreso)}</td><td>${f.format(d.tarde.ingreso)}</td><td>${f.format(d.noche.ingreso)}</td><td style="color:#9ca3af">${f.format(d.total.ingreso)}</td></tr>
+        <tr><td class="header-row">Saldo Oro</td><td>${f.format(d.manana.oro)}</td><td>${f.format(d.tarde.oro)}</td><td>${f.format(d.noche.oro)}</td><td style="color:#9ca3af">${f.format(d.total.oro)}</td></tr>
+        <tr><td class="header-row">Saldo Ganamos</td><td>${f.format(d.manana.ganamos)}</td><td>${f.format(d.tarde.ganamos)}</td><td>${f.format(d.noche.ganamos)}</td><td style="color:#9ca3af">${f.format(d.total.ganamos)}</td></tr>
+        <tr><td class="header-row">Total Retiros</td><td>${f.format(d.manana.retiros)}</td><td>${f.format(d.tarde.retiros)}</td><td>${f.format(d.noche.retiros)}</td><td style="color:#9ca3af">${f.format(d.total.retiros)}</td></tr>
+        <tr><td class="header-row">Monto Real Final</td><td>${f.format(d.manana.real)}</td><td>${f.format(d.tarde.real)}</td><td>${f.format(d.noche.real)}</td><td style="color:#9ca3af">${f.format(d.total.real)}</td></tr>`;
+    document.getElementById('res-salida-tot').innerText = f.format(m.salidas.lean + m.salidas.nahue + m.salidas.brai + m.salidas.tati);
+    document.getElementById('res-mensual-salidas').innerHTML = `<tr><td class="header-row">TOTAL LEAN</td><td colspan="2">${f.format(m.salidas.lean)}</td></tr><tr><td class="header-row">TOTAL NAHUE</td><td colspan="2">${f.format(m.salidas.nahue)}</td></tr><tr><td class="header-row">TOTAL BRAI</td><td colspan="2">${f.format(m.salidas.brai)}</td></tr><tr><td class="header-row">TOTAL TATI</td><td colspan="2">${f.format(m.salidas.tati)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO ORO</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.oro)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.ganamos)}</td></tr>`;
+    document.getElementById('res-mensual-fichas').innerHTML = `<tr><td class="header-row">MEGAFARAON</td><td>${f.format(m.fichas.mega)}</td></tr><tr><td class="header-row">GANAMOS</td><td>${f.format(m.fichas.ganamos)}</td></tr><tr><td class="header-row">ORO</td><td>${f.format(m.fichas.oro)}</td></tr>`;
+    document.getElementById('res-mensual-bonos').innerHTML = `<tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr><tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>`;
+}
+async function buscarHistorialCajas() {
+    const fecha = document.getElementById('hist-fecha').value; const c = document.getElementById('historial-resultados'); if(!fecha) return;
+    try {
+        const res = await fetch('/api/historial-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
+        if (!res.ok) throw new Error(); const cierres = await res.json();
+        if (cierres.length === 0) return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay cajas guardadas para la fecha ${fecha}.</p>`;
+        c.innerHTML = cierres.map(cl => `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;"><h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">📅 ${cl.fecha} | 🕒 ${cl.turno || 'S/T'} | 👤 ${cl.cajero || 'N/D'}</h4><div class="excel-grid"><div><table class="table-custom"><tr><th style="width:50%">Apertura</th><td>${cl.horaInicio || '--:--'}</td></tr><tr><th>Cierre</th><td>${cl.horaFin || '--:--'}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE GASTOS</h5><table class="table-custom"><thead><tr><th>Tipo</th><th>Destino</th><th>Monto</th></tr></thead><tbody>${(cl.gastos && cl.gastos.length > 0) ? cl.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos</td></tr>'}</tbody></table></div><div><table class="table-custom"><tr><th>Ingreso</th><th>Oro</th><th>Ganamos</th><th>Egreso</th></tr><tr><td style="text-align:right;">${f.format(cl.ingreso || 0)}</td><td style="text-align:right;">${f.format(cl.saldoOro || 0)}</td><td style="text-align:right;">${f.format(cl.saldoGanamos || 0)}</td><td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(cl.egreso || 0)}</td></tr></table><table class="table-custom" style="margin-top:15px;"><tr><th>Esperado (Teórico)</th><th>Real Final (Caja)</th><th>Diferencia</th></tr><tr><td style="text-align:right;">${f.format(cl.montoEsperado || 0)}</td><td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(cl.montoRealFinal || 0)}</td><td style="text-align:right; font-weight:bold; color:${(cl.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(cl.sobranteFaltante || 0)}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS</h5><table class="table-custom"><thead><tr><th>Usuario</th><th>Monto</th></tr></thead><tbody>${(cl.propinas && cl.propinas.length > 0) ? cl.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas</td></tr>'}</tbody></table></div></div></div>`).join('');
+    } catch (e) { c.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center;"><p style="color:#cbd5e1;">Error al cargar el historial.</p></div>`; }
 }
 
 // ==========================================
@@ -506,8 +700,11 @@ socket.on('cargar_datos_tablas', (datos) => {
         buscarCliente(); // Actualiza y aplica la búsqueda si había alguna
     }
     if (datos.retiros) {
-        const tbody = document.querySelector('#section-retiros .data-table tbody'); tbody.innerHTML = '';
-        datos.retiros.forEach(r => { tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`; });
+        const tbody = document.querySelector('#section-retiros .data-table tbody'); 
+        if(tbody) {
+            tbody.innerHTML = '';
+            datos.retiros.forEach(r => { tbody.innerHTML += `<tr><td>${r.fecha}</td><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.cbuAlias}</td><td>${r.estado}</td></tr>`; });
+        }
     }
     
     ['ruleta', 'raspa', 'tragamonedas', 'cartas', 'moneda'].forEach(juego => {
@@ -591,15 +788,12 @@ function enviarMensajeManual() {
 }
 
 // ==========================================
-// NUEVO: ATAJOS DE TECLADO (ESC Y ENTER)
+// ATAJOS DE TECLADO (ESC Y ENTER)
 // ==========================================
 document.addEventListener('keydown', (e) => { 
-    // Atajo para enviar mensaje con Enter
     if (e.key === 'Enter' && document.activeElement.id === 'admin-message-input') {
         enviarMensajeManual(); 
     }
-
-    // Atajo para salir del chat activo con ESC
     if (e.key === 'Escape' && usuarioSeleccionadoActivo !== null) {
         cerrarChatActual();
     }
@@ -607,8 +801,6 @@ document.addEventListener('keydown', (e) => {
 
 function cerrarChatActual() {
     usuarioSeleccionadoActivo = null;
-    
-    // Restaurar panel de chat a la vista por defecto
     document.getElementById('active-chat-username').innerText = "Ningún usuario seleccionado";
     document.getElementById('active-chat-messages').innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div>';
     
@@ -617,7 +809,6 @@ function cerrarChatActual() {
     inputMsg.value = '';
     document.getElementById('btn-enviar-msg').disabled = true;
 
-    // Quitar el color activo al usuario en la barra lateral
     document.querySelectorAll('.user-item').forEach(item => {
         item.classList.remove('selected-user');
     });
@@ -655,104 +846,6 @@ async function procesarDatos() {
     } catch (error) { alert("Error de comunicación."); }
 }
 
-// ==========================================
-// CIERRE DE CAJA
-// ==========================================
-const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
-function addGastoRow() {
-    const tr = document.createElement('tr');
-    let options = opcionesGasto.map(o => `<option value="${o}">${o}</option>`).join('');
-    tr.innerHTML = `<td><select class="input-text-adv gt" onchange="calcCierre()" style="margin-bottom:0;">${options}</select></td><td><input type="text" class="input-text-adv gu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num gm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
-    document.querySelector('#tabla-gastos tbody').appendChild(tr);
-}
-function addPropinaRow() {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><input type="text" class="input-text-adv pu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num pm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
-    document.querySelector('#tabla-propinas tbody').appendChild(tr);
-}
-function calcCierre() {
-    let totG = 0; document.querySelectorAll('.gm').forEach(i => totG += Number(i.value) || 0); 
-    document.getElementById('tot-gastos').innerText = totG.toFixed(2); 
-
-    let totP = 0; document.querySelectorAll('.pm').forEach(i => totP += Number(i.value) || 0); 
-    document.getElementById('tot-propinas').innerText = totP.toFixed(2);
-    
-    const ing = Number(document.getElementById('cc-ingreso').value) || 0; 
-    const oro = Number(document.getElementById('cc-oro').value) || 0; 
-    const ganamos = Number(document.getElementById('cc-ganamos').value) || 0; 
-
-    const egreso = ing + oro + ganamos;
-    document.getElementById('cc-egreso').value = egreso;
-    
-    const esperado = egreso - (totG + totP);
-    document.getElementById('cc-esperado').value = esperado;
-    
-    const real = Number(document.getElementById('cc-real').value) || 0;
-    const dif = real - esperado; 
-    
-    document.getElementById('cc-dif').value = dif; 
-    document.getElementById('cc-dif').style.color = dif < 0 ? '#ef4444' : '#10b981';
-}
-async function guardarCierreDB() {
-    if(!document.getElementById('cc-fecha-inicio').value) return alert("Ingresá la fecha de inicio.");
-    const gastos = []; document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 }));
-    const propinas = []; document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 }));
-    const payload = {
-        fecha: document.getElementById('cc-fecha-inicio').value,
-        fechaInicio: document.getElementById('cc-fecha-inicio').value,
-        fechaFin: document.getElementById('cc-fecha-fin').value,
-        horaInicio: document.getElementById('cc-hora-inicio').value, 
-        horaFin: document.getElementById('cc-hora-fin').value, 
-        turno: document.getElementById('cc-turno').value, 
-        cajero: document.getElementById('cc-cajero').value,
-        ingreso: Number(document.getElementById('cc-ingreso').value) || 0, 
-        saldoOro: Number(document.getElementById('cc-oro').value) || 0, 
-        saldoGanamos: Number(document.getElementById('cc-ganamos').value) || 0, 
-        egreso: Number(document.getElementById('cc-egreso').value) || 0,
-        montoEsperado: Number(document.getElementById('cc-esperado').value) || 0, 
-        montoRealFinal: Number(document.getElementById('cc-real').value) || 0, 
-        sobranteFaltante: Number(document.getElementById('cc-dif').value) || 0, 
-        reserva: Number(document.getElementById('cc-reserva').value) || 0, 
-        gastos, 
-        propinas
-    };
-    const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-    if(res.redirected) return window.location.href = '/login.html';
-    if(res.ok) { alert("✅ Guardado!"); if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); }
-}
-
-addGastoRow(); addPropinaRow(); 
-document.getElementById('cc-fecha-inicio').valueAsDate = new Date();
-document.getElementById('cc-fecha-fin').valueAsDate = new Date();
-
-// ==========================================
-// RESUMEN E HISTORIAL
-// ==========================================
-const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
-async function buscarResumen() {
-    const fecha = document.getElementById('res-fecha').value; if(!fecha) return;
-    const res = await fetch('/api/resumen-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
-    const data = await res.json(); const d = data.dia; const m = data.mes;
-    document.getElementById('res-diario').innerHTML = `
-        <tr><td class="header-row">Ingreso Inicial</td><td>${f.format(d.manana.ingreso)}</td><td>${f.format(d.tarde.ingreso)}</td><td>${f.format(d.noche.ingreso)}</td><td style="color:#9ca3af">${f.format(d.total.ingreso)}</td></tr>
-        <tr><td class="header-row">Saldo Oro</td><td>${f.format(d.manana.oro)}</td><td>${f.format(d.tarde.oro)}</td><td>${f.format(d.noche.oro)}</td><td style="color:#9ca3af">${f.format(d.total.oro)}</td></tr>
-        <tr><td class="header-row">Saldo Ganamos</td><td>${f.format(d.manana.ganamos)}</td><td>${f.format(d.tarde.ganamos)}</td><td>${f.format(d.noche.ganamos)}</td><td style="color:#9ca3af">${f.format(d.total.ganamos)}</td></tr>
-        <tr><td class="header-row">Total Retiros</td><td>${f.format(d.manana.retiros)}</td><td>${f.format(d.tarde.retiros)}</td><td>${f.format(d.noche.retiros)}</td><td style="color:#9ca3af">${f.format(d.total.retiros)}</td></tr>
-        <tr><td class="header-row">Monto Real Final</td><td>${f.format(d.manana.real)}</td><td>${f.format(d.tarde.real)}</td><td>${f.format(d.noche.real)}</td><td style="color:#9ca3af">${f.format(d.total.real)}</td></tr>`;
-    document.getElementById('res-salida-tot').innerText = f.format(m.salidas.lean + m.salidas.nahue + m.salidas.brai + m.salidas.tati);
-    document.getElementById('res-mensual-salidas').innerHTML = `<tr><td class="header-row">TOTAL LEAN</td><td colspan="2">${f.format(m.salidas.lean)}</td></tr><tr><td class="header-row">TOTAL NAHUE</td><td colspan="2">${f.format(m.salidas.nahue)}</td></tr><tr><td class="header-row">TOTAL BRAI</td><td colspan="2">${f.format(m.salidas.brai)}</td></tr><tr><td class="header-row">TOTAL TATI</td><td colspan="2">${f.format(m.salidas.tati)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO ORO</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.oro)}</td></tr><tr><td class="header-row" style="background:#1d4ed8;">SALDO GANAMOS</td><td colspan="2" style="color:#38bdf8;">${f.format(m.saldos.ganamos)}</td></tr>`;
-    document.getElementById('res-mensual-fichas').innerHTML = `<tr><td class="header-row">MEGAFARAON</td><td>${f.format(m.fichas.mega)}</td></tr><tr><td class="header-row">GANAMOS</td><td>${f.format(m.fichas.ganamos)}</td></tr><tr><td class="header-row">ORO</td><td>${f.format(m.fichas.oro)}</td></tr>`;
-    document.getElementById('res-mensual-bonos').innerHTML = `<tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr><tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>`;
-}
-async function buscarHistorialCajas() {
-    const fecha = document.getElementById('hist-fecha').value; const c = document.getElementById('historial-resultados'); if(!fecha) return;
-    try {
-        const res = await fetch('/api/historial-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
-        if (!res.ok) throw new Error(); const cierres = await res.json();
-        if (cierres.length === 0) return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay cajas guardadas para la fecha ${fecha}.</p>`;
-        c.innerHTML = cierres.map(cl => `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;"><h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">📅 ${cl.fecha} | 🕒 ${cl.turno || 'S/T'} | 👤 ${cl.cajero || 'N/D'}</h4><div class="excel-grid"><div><table class="table-custom"><tr><th style="width:50%">Apertura</th><td>${cl.horaInicio || '--:--'}</td></tr><tr><th>Cierre</th><td>${cl.horaFin || '--:--'}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">DETALLE GASTOS</h5><table class="table-custom"><thead><tr><th>Tipo</th><th>Destino</th><th>Monto</th></tr></thead><tbody>${(cl.gastos && cl.gastos.length > 0) ? cl.gastos.map(g => `<tr><td>${g.tipo}</td><td>${g.usuario}</td><td style="text-align:right;">${f.format(g.monto)}</td></tr>`).join('') : '<tr><td colspan="3" style="text-align:center; color:#64748b;">Sin gastos</td></tr>'}</tbody></table></div><div><table class="table-custom"><tr><th>Ingreso</th><th>Oro</th><th>Ganamos</th><th>Egreso</th></tr><tr><td style="text-align:right;">${f.format(cl.ingreso || 0)}</td><td style="text-align:right;">${f.format(cl.saldoOro || 0)}</td><td style="text-align:right;">${f.format(cl.saldoGanamos || 0)}</td><td style="text-align:right; color:#ef4444; font-weight:bold;">${f.format(cl.egreso || 0)}</td></tr></table><table class="table-custom" style="margin-top:15px;"><tr><th>Esperado (Teórico)</th><th>Real Final (Caja)</th><th>Diferencia</th></tr><tr><td style="text-align:right;">${f.format(cl.montoEsperado || 0)}</td><td style="text-align:right; font-weight:bold; color:#38bdf8;">${f.format(cl.montoRealFinal || 0)}</td><td style="text-align:right; font-weight:bold; color:${(cl.sobranteFaltante || 0) < 0 ? '#ef4444' : '#10b981'};">${f.format(cl.sobranteFaltante || 0)}</td></tr></table><h5 style="color:#a3e635; margin:15px 0 5px 0; font-size:13px;">PROPINAS</h5><table class="table-custom"><thead><tr><th>Usuario</th><th>Monto</th></tr></thead><tbody>${(cl.propinas && cl.propinas.length > 0) ? cl.propinas.map(p => `<tr><td>${p.usuario}</td><td style="text-align:right;">${f.format(p.monto)}</td></tr>`).join('') : '<tr><td colspan="2" style="text-align:center; color:#64748b;">Sin propinas</td></tr>'}</tbody></table></div></div></div>`).join('');
-    } catch (e) { c.innerHTML = `<div style="background: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444; padding: 20px; border-radius: 8px; text-align: center;"><p style="color:#cbd5e1;">Error al cargar el historial.</p></div>`; }
-}
 // ==========================================
 // CONFIGURACIÓN DE LA TIENDA
 // ==========================================
@@ -812,3 +905,8 @@ async function guardarTiendaAdmin() {
         alert("❌ Error de conexión al guardar"); 
     }
 }
+
+// INICIALIZADOR GLOBAL DE LA PÁGINA
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarTurnoLogico();
+});
