@@ -66,21 +66,23 @@ function cambiarSubJuego(juego) {
 // POPUP DE PLATAFORMAS EXTERNAS (ENCASTRE PERFECTO)
 // ==========================================
 function abrirGanamosPopup() {
-    const sidebarWidth = 240; // El ancho exacto de tu menú lateral en CSS
+    // 1. Obtenemos el ancho exacto y real del menú lateral de tu diseño
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarWidth = sidebar ? sidebar.offsetWidth : 250; // Fallback por seguridad
 
-    // 1. Calculamos el tamaño exacto que debe tener la ventana
+    // 2. Tamaño de la ventana: todo el ancho sobrante y todo el alto visible
     const popupWidth = window.innerWidth - sidebarWidth;
     const popupHeight = window.innerHeight;
 
-    // 2. Calculamos la interfaz del navegador del usuario (Chrome/Edge)
+    // 3. Calculamos el grosor de los bordes del navegador (Chrome) y las pestañas
     const borderX = (window.outerWidth - window.innerWidth) / 2;
-    const browserHeaderHeight = window.outerHeight - window.innerHeight - borderX;
+    const headerHeight = window.outerHeight - window.innerHeight - borderX;
 
-    // 3. Posicionamos la ventana en las coordenadas exactas del monitor
-    const popupLeft = window.screenX + sidebarWidth + borderX;
-    const popupTop = window.screenY + browserHeaderHeight;
+    // 4. Calculamos la posición milimétrica en el monitor
+    const popupLeft = window.screenX + borderX + sidebarWidth;
+    const popupTop = window.screenY + headerHeight;
 
-    // 4. Abrimos la ventana con los datos milimétricos
+    // 5. Abrimos la ventana encajada
     window.open(
         'https://agents.ganamosnet.club/users/all', 
         'GanamosPanel', 
