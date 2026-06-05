@@ -26,14 +26,12 @@ function SlotMachine(container, reels, callback, options) {
     reels.forEach(reel => divSlots.appendChild(createReelElm(reel)));
     container.appendChild(divSlots);
 
-    // NUEVA ANIMACIÓN JS (Más robusta)
     self.startSpinAnimation = function() {
         reels.forEach(r => {
             let pos = 0;
-            // Guardamos el intervalo en el objeto para poder frenarlo luego
             r.interval = setInterval(() => {
-                pos -= 30; // Velocidad de giro (ajustar este número para más o menos velocidad)
-                if (pos <= -900) pos = 0; // Vuelve al inicio para el loop
+                pos -= 30; 
+                if (pos <= -900) pos = 0; 
                 r.element.style.marginTop = pos + "px";
             }, 30);
         });
@@ -46,9 +44,10 @@ function SlotMachine(container, reels, callback, options) {
             const finalPos = simbolo ? simbolo.position : 0;
 
             setTimeout(() => {
-                clearInterval(reel.interval); // DETENEMOS EL GIRO
-                ul.style.marginTop = `-${finalPos}px`; // SNAP a la posición ganadora
-                if (index === reels.length - 1 && callback) callback();
+                clearInterval(reel.interval); 
+                ul.style.marginTop = `-${finalPos}px`; 
+                // AQUÍ PASAMOS EL RESULTADO AL CALLBACK
+                if (index === reels.length - 1 && callback) callback(resultadoArray);
             }, 1000 + (index * 400));
         });
     };
