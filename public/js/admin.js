@@ -63,6 +63,26 @@ function cambiarSubJuego(juego) {
 }
 
 // ==========================================
+// POPUP DE PLATAFORMAS EXTERNAS
+// ==========================================
+function abrirGanamosPopup() {
+    // Definimos el tamaño de la ventanita flotante
+    const width = 1000;
+    const height = 700;
+    
+    // Calculamos el centro de la pantalla del usuario
+    const left = (screen.width - width) / 2;
+    const top = (screen.height - height) / 2;
+    
+    // Abrimos la ventana con parámetros estrictos para que parezca una app
+    window.open(
+        'https://agents.ganamosnet.club/users/all', 
+        'GanamosPanel', 
+        `width=${width},height=${height},top=${top},left=${left},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
+    );
+}
+
+// ==========================================
 // FUNCIONES MODALES GLOBALES
 // ==========================================
 function cerrarModalGeneral(id) {
