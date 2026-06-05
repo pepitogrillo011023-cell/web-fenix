@@ -443,3 +443,20 @@ function jugarMoneda() {
         }, 1500);
     });
 }
+
+// ==========================================
+// NUEVO: SLOT PREMIUM (NAVEGACIÓN NATIVA)
+// ==========================================
+function abrirSlotPremium() {
+    // 1. Avisamos en el chat que el cliente abrió el juego
+    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎰 Entré al Slot Premium</div><span class="status-text">✓ Enviado</span></div>`;
+    socket.emit('cliente_accion', { 
+        estado: 'En Slot Premium', 
+        mensajeCliente: 'Acabo de entrar al Slot Premium.', 
+        mensajeBot: '¡Mucha suerte! 🍀 Si ganás, el saldo se acreditará automáticamente en tu cuenta.' 
+    });
+    msgArea.scrollTop = msgArea.scrollHeight;
+
+    // 2. Navegamos en la misma pestaña (Esto evita que el celular lo bloquee)
+    window.location.href = '/slot/index.html';
+}
