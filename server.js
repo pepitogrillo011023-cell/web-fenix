@@ -199,44 +199,41 @@ const tablaPremios = {
 app.get('/api/obtener-saldo', async (req, res) => {
     try {
         const { usuario } = req.query;
-        // Buscamos en el modelo User por 'username'
-        const userDB = await User.findOne({ username: usuario }); 
+        // Buscamos en Cliente, usando usuarioCasino
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario }); 
 
-        if (!userDB) {
+        if (!cliente) {
             return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
         }
-        // Devolvemos el campo 'credits'
-        res.json({ exito: true, saldo: userDB.credits });
+        res.json({ exito: true, saldo: cliente.creditos });
     } catch (error) {
         console.error("Error al obtener saldo:", error);
         res.status(500).json({ exito: false, mensaje: "Error del servidor" });
     }
 });
 
-// 2. MOTOR PRINCIPAL DE GIROS Y APUESTAS
 app.post('/api/jugar-slot', async (req, res) => {
     try {
         const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
 
-        const userDB = await User.findOne({ username: usuario });
-        if (!userDB) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
 
         // Verificamos fondos
-        if (!esGiroGratis && userDB.credits < apuestaGasto) {
+        if (!esGiroGratis && cliente.creditos < apuestaGasto) {
             return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
         }
 
-        // Descontamos la apuesta de sus credits
-        userDB.credits -= apuestaGasto;
+        // Descontamos apuesta
+        cliente.creditos -= apuestaGasto;
 
-        // SORTEO REAL DEL LADO DEL SERVIDOR
+        // SORTEO
         const rodillos = [
             todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
             todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
             todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
         ];
 
-        // Calculamos el premio
         const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
         const simbolo = rodillos[0];
         let premio = 0;
@@ -245,20 +242,24 @@ app.post('/api/jugar-slot', async (req, res) => {
             premio = apuestaCalculoPremio * tablaPremios[simbolo];
         }
 
-        // Si gana un premio normal, se lo sumamos directamente a sus credits
         if (!esGiroGratis && premio > 0) {
-            userDB.credits += premio;
+            cliente.creditos += premio;
         }
 
-        // Guardamos el cambio en MongoDB
-        await userDB.save();
+        await cliente.save();
 
         res.json({
             exito: true,
             rodillos: rodillos,
-            nuevoSaldo: userDB.credits,
+            nuevoSaldo: cliente.creditos,
             premioGanado: premio
         });
+
+    } catch (error) {
+        console.error("Error en el Slot Premium:", error);
+        res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" });
+    }
+});
 
     } catch (error) {
         console.error("Error en el Slot Premium:", error);
@@ -270,18 +271,15 @@ app.post('/api/jugar-slot', async (req, res) => {
 app.post('/api/sumar-premio-bonus', async (req, res) => {
     try {
         const { usuario, premio } = req.body;
-
         if (premio <= 0) return res.json({ exito: true });
 
-        const userDB = await User.findOne({ username: usuario });
-        if (!userDB) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
 
-        // Sumamos todo lo ganado en las tiradas gratis
-        userDB.credits += premio;
-        await userDB.save();
+        cliente.creditos += premio;
+        await cliente.save();
 
-        res.json({ exito: true, nuevoSaldo: userDB.credits });
-
+        res.json({ exito: true, nuevoSaldo: cliente.creditos });
     } catch (error) {
         console.error("Error sumando bonus:", error);
         res.status(500).json({ exito: false, mensaje: "Error sumando el premio del bonus" });
