@@ -54,7 +54,7 @@ async function cargarCostosMinijuegos() {
 }
 
 // ==========================================
-// VISTAS Y AUTENTICACIÓN
+// VISTAS Y AUTENTICACIÓN (CORREGIDO Y SEGURO)
 // ==========================================
 function cambiarVista(vista) {
     const vLogin = document.getElementById('vista-login');
@@ -81,20 +81,26 @@ function cambiarVista(vista) {
 }
 
 async function registrarUsuario() {
-    const u = document.getElementById('reg-user').value.trim(); const p = document.getElementById('reg-pass').value.trim();
+    const u = document.getElementById('reg-user') ? document.getElementById('reg-user').value.trim() : ''; 
+    const p = document.getElementById('reg-pass') ? document.getElementById('reg-pass').value.trim() : '';
     if(!u || !p) return alert("Por favor, completá ambos campos.");
-    const btn = document.getElementById('btn-registro'); btn.innerText = 'Creando...'; btn.disabled = true;
+    
+    const btn = document.getElementById('btn-registro'); 
+    if (btn) { btn.innerText = 'Creando...'; btn.disabled = true; }
 
     try {
         const res = await fetch('/api/registrar-cliente', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: u, password: p }) });
         const data = await res.json();
-        btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false;
+        if (btn) { btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false; }
         if (data.exito) {
             alert("¡Cuenta creada con éxito! Ingresando al chat...");
             document.getElementById('login-user').value = u; document.getElementById('login-pass').value = p;
             validarAccesoManual(); 
         } else alert(data.mensaje);
-    } catch (e) { btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false; alert("Error al registrarse."); }
+    } catch (e) { 
+        if (btn) { btn.innerText = 'Crear Cuenta y Entrar'; btn.disabled = false; }
+        alert("Error al registrarse."); 
+    }
 }
 
 function validarAccesoManual() { validarAcceso(false); }
@@ -103,11 +109,12 @@ function validarAcceso(esAutoLogin) {
     const u = document.getElementById('login-user').value.trim(); const p = document.getElementById('login-pass').value.trim();
     if (!u || !p) { if(!esAutoLogin) alert('Ingresá usuario y contraseña.'); return; }
 
-    const btn = document.getElementById('btn-login'); btn.innerText = 'Validando...'; btn.disabled = true;
+    const btn = document.getElementById('btn-login'); 
+    if (btn) { btn.innerText = 'Validando...'; btn.disabled = true; }
 
     fetch('/api/validar-cliente', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: u, password: p }) })
     .then(res => res.json()).then(data => {
-        btn.innerText = 'Ingresar al Chat'; btn.disabled = false;
+        if (btn) { btn.innerText = 'Ingresar al Chat'; btn.disabled = false; }
         if(data.exito) {
             // === REFUERZO DEL PUENTE ===
             localStorage.setItem('casino_fenix_user', u);
@@ -118,7 +125,7 @@ function validarAcceso(esAutoLogin) {
             if(esAutoLogin) cerrarSesion(); else alert('Usuario o contraseña incorrectos.');
         }
     }).catch(err => { 
-        btn.innerText = 'Ingresar al Chat'; btn.disabled = false; 
+        if (btn) { btn.innerText = 'Ingresar al Chat'; btn.disabled = false; }
         if(!esAutoLogin) alert('Error con el servidor.'); 
     });
 }
@@ -128,15 +135,20 @@ function cerrarSesion() {
     localStorage.removeItem('casino_fenix_pass');
     socket.disconnect(); socket.connect(); 
     window.usuarioLogueado = null;
-    document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
-    document.getElementById('header-title-text').innerText = "Chat Asistencia";
-    document.getElementById('badge-creditos').classList.add('hidden');
+    if (document.getElementById('login-user')) document.getElementById('login-user').value = ''; 
+    if (document.getElementById('login-pass')) document.getElementById('login-pass').value = '';
+    if (document.getElementById('header-title-text')) document.getElementById('header-title-text').innerText = "Chat Asistencia";
+    const badge = document.getElementById('badge-creditos');
+    if (badge) badge.classList.add('hidden');
     msgArea.innerHTML = '';
-    document.getElementById('hero-welcome-container').classList.add('hidden');
+    const hero = document.getElementById('hero-welcome-container');
+    if (hero) hero.classList.add('hidden');
     cambiarVista('login');
 }
 
-// PROTECCIÓN DE LISTENERS (Evita errores de null en consola)
+// ==========================================
+// PROTECCIÓN DE LISTENERS
+// ==========================================
 const loginPassInput = document.getElementById('login-pass');
 if (loginPassInput) {
     loginPassInput.addEventListener('keypress', function (e) { 
@@ -158,14 +170,17 @@ if (chatInput) {
     });
 }
 
+// ==========================================
+// EVENTOS DE SOCKET
+// ==========================================
 socket.on('resultado_validacion', (respuesta) => {
     if (respuesta.exito) {
-        document.getElementById('header-title-text').innerText = "Conectado";
-        document.getElementById('welcome-name').innerText = "¡Hola, " + respuesta.usuario + "!";
+        if (document.getElementById('header-title-text')) document.getElementById('header-title-text').innerText = "Conectado";
+        if (document.getElementById('welcome-name')) document.getElementById('welcome-name').innerText = "¡Hola, " + respuesta.usuario + "!";
 
         misCreditos = respuesta.creditos || 0;
-        document.getElementById('txt-creditos').innerText = misCreditos;
-        document.getElementById('badge-creditos').classList.remove('hidden');
+        if (document.getElementById('txt-creditos')) document.getElementById('txt-creditos').innerText = misCreditos;
+        if (document.getElementById('badge-creditos')) document.getElementById('badge-creditos').classList.remove('hidden');
 
         cargarCostosMinijuegos();
 
@@ -189,14 +204,14 @@ socket.on('resultado_validacion', (respuesta) => {
 
 socket.on('actualizar_creditos', (data) => {
     misCreditos = data.nuevosCreditos;
-    document.getElementById('txt-creditos').innerText = misCreditos;
+    if (document.getElementById('txt-creditos')) document.getElementById('txt-creditos').innerText = misCreditos;
 });
 
 function descontarCreditoVisual(juegoKey) {
     let costo = costosMinijuegosCache[juegoKey] || 0;
     if(misCreditos >= costo && costo > 0) {
         misCreditos -= costo;
-        document.getElementById('txt-creditos').innerText = misCreditos;
+        if (document.getElementById('txt-creditos')) document.getElementById('txt-creditos').innerText = misCreditos;
     }
 }
 
@@ -204,32 +219,47 @@ function descontarCreditoVisual(juegoKey) {
 // MENÚS Y CHAT
 // ==========================================
 function irAlMenuPrincipal() {
-    document.getElementById('container-deposit-options').style.display = 'none';
-    document.getElementById('container-chat-input').style.display = 'none';
-    document.getElementById('container-games-options').style.display = 'none';
-    document.getElementById('messages-area').style.display = 'none';
-    document.getElementById('container-menu-options').style.display = 'flex';
+    const dep = document.getElementById('container-deposit-options');
+    const chatIn = document.getElementById('container-chat-input');
+    const games = document.getElementById('container-games-options');
+    const menu = document.getElementById('container-menu-options');
+
+    if (dep) dep.style.display = 'none';
+    if (chatIn) chatIn.style.display = 'none';
+    if (games) games.style.display = 'none';
+    if (msgArea) msgArea.style.display = 'none';
+    if (menu) menu.style.display = 'grid'; // <-- Usamos grid para que se vea ordenado
 }
 
 function mostrarChat() {
-    document.getElementById('container-menu-options').style.display = 'none';
-    document.getElementById('container-games-options').style.display = 'none';
-    document.getElementById('messages-area').style.display = 'flex';
-    document.getElementById('container-chat-input').style.display = 'flex';
+    const menu = document.getElementById('container-menu-options');
+    const games = document.getElementById('container-games-options');
+    const chatIn = document.getElementById('container-chat-input');
+
+    if (menu) menu.style.display = 'none';
+    if (games) games.style.display = 'none';
+    if (msgArea) msgArea.style.display = 'flex';
+    if (chatIn) chatIn.style.display = 'flex';
     msgArea.scrollTop = msgArea.scrollHeight;
 }
 
 function mostrarSubMenuMinijuegos() {
-    document.getElementById('container-menu-options').style.display = 'none';
-    document.getElementById('messages-area').style.display = 'none'; 
-    document.getElementById('container-games-options').style.display = 'flex';
+    const menu = document.getElementById('container-menu-options');
+    const games = document.getElementById('container-games-options');
+
+    if (menu) menu.style.display = 'none';
+    if (msgArea) msgArea.style.display = 'none'; 
+    if (games) games.style.display = 'grid'; // <-- Usamos grid para los botones
 }
 
 function seleccionarOpcion(opcion) {
-    document.getElementById('container-menu-options').style.display = 'none';
+    const menu = document.getElementById('container-menu-options');
+    if (menu) menu.style.display = 'none';
+    
     if (opcion === 'Depósito') {
         mostrarChat();
-        document.getElementById('container-deposit-options').style.display = 'grid';
+        const dep = document.getElementById('container-deposit-options');
+        if (dep) dep.style.display = 'grid';
         let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><br>Enviá el comprobante 📄`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
         socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
@@ -261,10 +291,14 @@ function ejecutarAccionDeposito(accion) {
 }
 
 function enviarMensajeLibreCliente() {
-    const input = document.getElementById('client-raw-input'); const texto = input.value.trim(); if (texto === '') return;
+    const input = document.getElementById('client-raw-input'); 
+    if (!input) return;
+    const texto = input.value.trim(); 
+    if (texto === '') return;
     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${texto}</div><span class="status-text">✓ Enviado</span></div>`;
     msgArea.scrollTop = msgArea.scrollHeight;
-    socket.emit('cliente_envia_mensaje_libre', { mensaje: texto }); input.value = '';
+    socket.emit('cliente_envia_mensaje_libre', { mensaje: texto }); 
+    input.value = '';
 }
 
 socket.on('recibir_mensaje_admin', (datos) => {
@@ -283,16 +317,21 @@ socket.on('tus_mensajes_fueron_leidos', () => {
 // ==========================================
 function abrirModalVictoria(msg, emoji = '🎉') {
     const cleanMsg = msg.replace(/<[^>]*>?/gm, '\n');
-    document.getElementById('vic-msg').innerText = cleanMsg;
-    document.getElementById('vic-emoji').innerText = emoji;
-    document.getElementById('modal-victoria').style.display = 'flex';
+    if (document.getElementById('vic-msg')) document.getElementById('vic-msg').innerText = cleanMsg;
+    if (document.getElementById('vic-emoji')) document.getElementById('vic-emoji').innerText = emoji;
+    const modal = document.getElementById('modal-victoria');
+    if (modal) modal.style.display = 'flex';
 }
 
-function cerrarModalVictoria() { document.getElementById('modal-victoria').style.display = 'none'; }
+function cerrarModalVictoria() { 
+    const modal = document.getElementById('modal-victoria');
+    if (modal) modal.style.display = 'none'; 
+}
 
 function abrirModal(juego) {
     if (juego === 'cargar-creditos') {
-        document.getElementById('modal-cargar-creditos').style.display = 'block';
+        const mod = document.getElementById('modal-cargar-creditos');
+        if (mod) mod.style.display = 'block';
         return;
     }
 
@@ -301,33 +340,63 @@ function abrirModal(juego) {
 
         if(juego === 'ruleta') {
             ruletaConfig = data.config; currentRotation = 0;
-            const c = document.getElementById('ruleta-canvas'); const ctx = c.getContext('2d');
-            ctx.clearRect(0,0,c.width,c.height); const sl = (2*Math.PI)/ruletaConfig.length; const cols = ['#ff007f','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'];
-            for(let i=0; i<ruletaConfig.length; i++) {
-                ctx.beginPath(); ctx.fillStyle = cols[i%cols.length]; ctx.moveTo(140,140); ctx.arc(140,140,138,i*sl,(i+1)*sl); ctx.fill(); ctx.stroke();
-                ctx.save(); ctx.translate(140,140); ctx.rotate(i*sl+sl/2); ctx.textAlign="right"; ctx.fillStyle="white"; ctx.font="bold 13px sans-serif"; ctx.fillText(ruletaConfig[i].premio.substring(0,15), 125, 5); ctx.restore();
+            const c = document.getElementById('ruleta-canvas'); 
+            if (c) {
+                const ctx = c.getContext('2d');
+                ctx.clearRect(0,0,c.width,c.height); const sl = (2*Math.PI)/ruletaConfig.length; const cols = ['#ff007f','#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'];
+                for(let i=0; i<ruletaConfig.length; i++) {
+                    ctx.beginPath(); ctx.fillStyle = cols[i%cols.length]; ctx.moveTo(140,140); ctx.arc(140,140,138,i*sl,(i+1)*sl); ctx.fill(); ctx.stroke();
+                    ctx.save(); ctx.translate(140,140); ctx.rotate(i*sl+sl/2); ctx.textAlign="right"; ctx.fillStyle="white"; ctx.font="bold 13px sans-serif"; ctx.fillText(ruletaConfig[i].premio.substring(0,15), 125, 5); ctx.restore();
+                }
+                c.style.transition='none'; c.style.transform='rotate(0deg)'; void c.offsetWidth; c.style.transition='transform 5s cubic-bezier(0.25,0.1,0.15,1)';
             }
-            c.style.transition='none'; c.style.transform='rotate(0deg)'; void c.offsetWidth; c.style.transition='transform 5s cubic-bezier(0.25,0.1,0.15,1)';
-            document.getElementById('btn-spin-ruleta').disabled = false;
+            if (document.getElementById('btn-spin-ruleta')) document.getElementById('btn-spin-ruleta').disabled = false;
         }
         else if (juego === 'raspa') {
             raspaConfig = data.config; raspaYaJugada = false;
-            document.getElementById('client-tablero-raspa').innerHTML = Array(6).fill('<div class="raspa-block-card" onclick="jugarRaspa(arguments[0])"><div class="raspa-cover-layer">?</div></div>').map((s,i) => s.replace('arguments[0]', i)).join('');
+            const tablero = document.getElementById('client-tablero-raspa');
+            if (tablero) tablero.innerHTML = Array(6).fill('<div class="raspa-block-card" onclick="jugarRaspa(arguments[0])"><div class="raspa-cover-layer">?</div></div>').map((s,i) => s.replace('arguments[0]', i)).join('');
         }
-        else if (juego === 'traga') { tragaJugado = false; document.getElementById('btn-spin-traga').disabled = false; ['1','2','3'].forEach(i => document.getElementById(`client-slot-${i}`).innerText='🎰'); }
-        else if (juego === 'cartas') { cartasJugado = false; document.getElementById('client-card').classList.remove('flipped'); }
-        else if (juego === 'moneda') { monedaJugado = false; document.getElementById('client-coin').style.transform='rotateY(0deg)'; document.getElementById('client-coin').innerText='🪙'; }
+        else if (juego === 'traga') { 
+            tragaJugado = false; 
+            if (document.getElementById('btn-spin-traga')) document.getElementById('btn-spin-traga').disabled = false; 
+            ['1','2','3'].forEach(i => {
+                const slot = document.getElementById(`client-slot-${i}`);
+                if (slot) slot.innerText='🎰';
+            }); 
+        }
+        else if (juego === 'cartas') { 
+            cartasJugado = false; 
+            const card = document.getElementById('client-card');
+            if (card) card.classList.remove('flipped'); 
+        }
+        else if (juego === 'moneda') { 
+            monedaJugado = false; 
+            const coin = document.getElementById('client-coin');
+            if (coin) {
+                coin.style.transform='rotateY(0deg)'; 
+                coin.innerText='🪙';
+            }
+        }
 
         document.querySelectorAll('.btn-close-modal').forEach(b => b.classList.add('hidden'));
-        document.getElementById(`modal-${juego}`).style.display = 'block';
+        const modal = document.getElementById(`modal-${juego}`);
+        if (modal) modal.style.display = 'block';
     });
 }
 
-function cerrarModal(juego) { document.getElementById(`modal-${juego}`).style.display = 'none'; }
+function cerrarModal(juego) { 
+    const modal = document.getElementById(`modal-${juego}`);
+    if (modal) modal.style.display = 'none'; 
+}
 
 async function solicitarCargaCreditos() {
-    const monto = document.getElementById('input-creditos-monto').value;
-    const url = document.getElementById('input-creditos-url').value;
+    const montoEl = document.getElementById('input-creditos-monto');
+    const urlEl = document.getElementById('input-creditos-url');
+    if (!montoEl || !urlEl) return;
+    
+    const monto = montoEl.value;
+    const url = urlEl.value;
     if(!monto || !url) return alert("Por favor, ingresá el monto y la URL del comprobante.");
 
     try {
@@ -338,8 +407,8 @@ async function solicitarCargaCreditos() {
         const data = await res.json();
         if(data.success) {
             cerrarModal('cargar-creditos');
-            document.getElementById('input-creditos-monto').value = '';
-            document.getElementById('input-creditos-url').value = '';
+            montoEl.value = '';
+            urlEl.value = '';
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🟡 Reporté pago de ${monto} Créditos.<br>Comprobante adjuntado.</div><span class="status-text">✓ Enviado</span></div>`;
             msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">✅ ${data.message}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
@@ -350,12 +419,13 @@ async function solicitarCargaCreditos() {
 }
 
 function jugarRuleta() {
-    document.getElementById('btn-spin-ruleta').disabled = true;
+    const btn = document.getElementById('btn-spin-ruleta');
+    if (btn) btn.disabled = true;
     fetch('/api/tirar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
     .then(r => r.json()).then(data => {
         if(!data.exito) { 
             alert(data.mensaje); 
-            document.getElementById('btn-spin-ruleta').disabled = false;
+            if (btn) btn.disabled = false;
             return cerrarModal('ruleta'); 
         }
 
@@ -364,13 +434,15 @@ function jugarRuleta() {
         const wIdx = ruletaConfig.findIndex(i => i.id === data.premio.id); const sl = 360/ruletaConfig.length;
         let needed = (270 - ((wIdx*sl)+(sl/2))) - (currentRotation%360); if(needed<0) needed+=360;
         currentRotation += needed + (360*5);
-        document.getElementById('ruleta-canvas').style.transform = `rotate(${currentRotation}deg)`;
+        const canvas = document.getElementById('ruleta-canvas');
+        if (canvas) canvas.style.transform = `rotate(${currentRotation}deg)`;
 
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎯 Jugué: Ruleta</div><span class="status-text">✓ Enviado</span></div>`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
 
         setTimeout(() => { 
-            document.querySelector('#modal-ruleta .btn-close-modal').classList.remove('hidden'); 
+            const btnClose = document.querySelector('#modal-ruleta .btn-close-modal');
+            if (btnClose) btnClose.classList.remove('hidden'); 
             cerrarModal('ruleta'); 
             abrirModalVictoria(data.mensaje, '🎯'); 
         }, 5300);
@@ -379,7 +451,12 @@ function jugarRuleta() {
 
 function jugarRaspa(idx) {
     if(raspaYaJugada) return; raspaYaJugada = true;
-    const cards = document.querySelectorAll('#client-tablero-raspa .raspa-block-card'); cards[idx].querySelector('.raspa-cover-layer').innerText = "⏳";
+    const cards = document.querySelectorAll('#client-tablero-raspa .raspa-block-card'); 
+    if (cards[idx]) {
+        const cover = cards[idx].querySelector('.raspa-cover-layer');
+        if (cover) cover.innerText = "⏳";
+    }
+
     fetch('/api/tirar-raspa', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
     .then(r => r.json()).then(data => {
         if(!data.exito) { alert(data.mensaje); return cerrarModal('raspa'); }
@@ -387,15 +464,26 @@ function jugarRaspa(idx) {
         descontarCreditoVisual('Raspa');
 
         const pools = raspaConfig.filter(i => i.id !== data.premio.id).sort(() => Math.random() - 0.5);
-        cards[idx].classList.add('scratched'); cards[idx].querySelector('.raspa-cover-layer').style.opacity = '0';
-        cards[idx].innerHTML += `<div class="raspa-prize-text">${data.premio.premio}</div><div class="raspa-value-text">$${data.premio.valor}</div>`;
+        if (cards[idx]) {
+            cards[idx].classList.add('scratched'); 
+            const cover = cards[idx].querySelector('.raspa-cover-layer');
+            if (cover) cover.style.opacity = '0';
+            cards[idx].innerHTML += `<div class="raspa-prize-text">${data.premio.premio}</div><div class="raspa-value-text">$${data.premio.valor}</div>`;
+        }
 
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🎫 Jugué: Raspa y Gana</div><span class="status-text">✓ Enviado</span></div>`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
 
         setTimeout(() => {
-            let rIdx = 0; cards.forEach((c, i) => { if(i!==idx) { c.classList.add('others-revealed'); c.querySelector('.raspa-cover-layer').style.opacity='0'; c.innerHTML += `<div class="raspa-prize-text">${pools[rIdx].premio}</div><div class="raspa-value-text">$${pools[rIdx].valor}</div>`; rIdx++; }});
-            document.querySelector('#modal-raspa .btn-close-modal').classList.remove('hidden'); 
+            let rIdx = 0; cards.forEach((c, i) => { if(i!==idx) { 
+                c.classList.add('others-revealed'); 
+                const cover = c.querySelector('.raspa-cover-layer');
+                if (cover) cover.style.opacity='0'; 
+                c.innerHTML += `<div class="raspa-prize-text">${pools[rIdx].premio}</div><div class="raspa-value-text">$${pools[rIdx].valor}</div>`; 
+                rIdx++; 
+            }});
+            const btnClose = document.querySelector('#modal-raspa .btn-close-modal');
+            if (btnClose) btnClose.classList.remove('hidden'); 
             setTimeout(() => { cerrarModal('raspa'); abrirModalVictoria(data.mensaje, '🎫'); }, 1500); 
         }, 800);
     });
@@ -403,7 +491,9 @@ function jugarRaspa(idx) {
 
 function jugarTragamonedas() {
     if(tragaJugado) return;
-    document.getElementById('btn-spin-traga').disabled = true;
+    const btn = document.getElementById('btn-spin-traga');
+    if (btn) btn.disabled = true;
+
     fetch('/api/tirar-tragamonedas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
     .then(r => r.json()).then(data => {
         if(!data.exito) { alert(data.mensaje); return cerrarModal('traga'); }
@@ -411,17 +501,21 @@ function jugarTragamonedas() {
         descontarCreditoVisual('Tragamonedas');
         tragaJugado = true;
 
-        document.getElementById('client-slot-1').innerText="⏳"; document.getElementById('client-slot-2').innerText="⏳"; document.getElementById('client-slot-3').innerText="⏳";
+        if (document.getElementById('client-slot-1')) document.getElementById('client-slot-1').innerText="⏳"; 
+        if (document.getElementById('client-slot-2')) document.getElementById('client-slot-2').innerText="⏳"; 
+        if (document.getElementById('client-slot-3')) document.getElementById('client-slot-3').innerText="⏳";
 
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🍒 Jugué: Slots</div><span class="status-text">✓ Enviado</span></div>`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
 
         setTimeout(() => {
             let icons = ['🍒','💎','🔔','🍋','❌'];
-            document.getElementById('client-slot-1').innerText = icons[Math.floor(Math.random()*icons.length)];
-            document.getElementById('client-slot-2').innerText = icons[Math.floor(Math.random()*icons.length)];
-            document.getElementById('client-slot-3').innerText = data.premio.premio.substring(0,2) || "🎰";
-            document.querySelector('#modal-traga .btn-close-modal').classList.remove('hidden');
+            if (document.getElementById('client-slot-1')) document.getElementById('client-slot-1').innerText = icons[Math.floor(Math.random()*icons.length)];
+            if (document.getElementById('client-slot-2')) document.getElementById('client-slot-2').innerText = icons[Math.floor(Math.random()*icons.length)];
+            if (document.getElementById('client-slot-3')) document.getElementById('client-slot-3').innerText = data.premio.premio.substring(0,2) || "🎰";
+            
+            const btnClose = document.querySelector('#modal-traga .btn-close-modal');
+            if (btnClose) btnClose.classList.remove('hidden');
             cerrarModal('traga');
             abrirModalVictoria(data.mensaje, '🍒');
         }, 1500);
@@ -437,10 +531,14 @@ function jugarCartas() {
         descontarCreditoVisual('Cartas');
         cartasJugado = true;
 
-        document.getElementById('client-card').classList.add('flipped');
-        document.getElementById('client-card-val').innerText = data.premio.premio.substring(0,2) || "🃏";
-        document.getElementById('client-card-desc').innerText = data.premio.premio;
-        document.querySelector('#modal-cartas .btn-close-modal').classList.remove('hidden');
+        const card = document.getElementById('client-card');
+        if (card) card.classList.add('flipped');
+        
+        if (document.getElementById('client-card-val')) document.getElementById('client-card-val').innerText = data.premio.premio.substring(0,2) || "🃏";
+        if (document.getElementById('client-card-desc')) document.getElementById('client-card-desc').innerText = data.premio.premio;
+        
+        const btnClose = document.querySelector('#modal-cartas .btn-close-modal');
+        if (btnClose) btnClose.classList.remove('hidden');
 
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🃏 Jugué: Carta Suerte</div><span class="status-text">✓ Enviado</span></div>`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
@@ -459,14 +557,15 @@ function jugarMoneda() {
         monedaJugado = true;
 
         const c = document.getElementById('client-coin');
-        c.style.transform = `rotateY(${180 * 5}deg)`;
+        if (c) c.style.transform = `rotateY(${180 * 5}deg)`;
 
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">🪙 Jugué: Cara o Cruz</div><span class="status-text">✓ Enviado</span></div>`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${data.mensaje}</div></div>`;
 
         setTimeout(() => {
-            c.innerText = data.premio.premio.includes('Cara') ? '🟡' : (data.premio.premio.includes('Cruz') ? '⚪' : '💥');
-            document.querySelector('#modal-moneda .btn-close-modal').classList.remove('hidden');
+            if (c) c.innerText = data.premio.premio.includes('Cara') ? '🟡' : (data.premio.premio.includes('Cruz') ? '⚪' : '💥');
+            const btnClose = document.querySelector('#modal-moneda .btn-close-modal');
+            if (btnClose) btnClose.classList.remove('hidden');
             setTimeout(() => { cerrarModal('moneda'); abrirModalVictoria(data.mensaje, '🪙'); }, 1500); 
         }, 1500);
     });
@@ -498,7 +597,8 @@ function abrirSlotPremium() {
 // NUEVO: TIENDA DE BONOS
 // ==========================================
 function abrirTienda() {
-    document.getElementById('modal-tienda').style.display = 'flex';
+    const modal = document.getElementById('modal-tienda');
+    if (modal) modal.style.display = 'flex';
 }
 
 async function canjearProducto(nombre, costo) {
@@ -517,7 +617,7 @@ async function canjearProducto(nombre, costo) {
             cerrarModal('tienda');
             // Actualizar créditos visuales
             misCreditos = data.nuevoSaldo;
-            document.getElementById('txt-creditos').innerText = misCreditos;
+            if (document.getElementById('txt-creditos')) document.getElementById('txt-creditos').innerText = misCreditos;
         } else {
             alert(data.mensaje);
         }
