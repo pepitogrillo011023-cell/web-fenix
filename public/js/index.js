@@ -129,8 +129,18 @@ function cerrarSesion() {
     cambiarVista('login');
 }
 
-document.getElementById('login-pass').addEventListener('keypress', function (e) { if (e.key === 'Enter') validarAccesoManual(); });
-document.getElementById('reg-pass').addEventListener('keypress', function (e) { if (e.key === 'Enter') registrarUsuario(); });
+const loginPassInput = document.getElementById('login-pass');
+if (loginPassInput) {
+    loginPassInput.addEventListener('keypress', function (e) { 
+        if (e.key === 'Enter') validarAccesoManual(); 
+    });
+}
+const regPassInput = document.getElementById('reg-pass');
+if (regPassInput) {
+    regPassInput.addEventListener('keypress', function (e) { 
+        if (e.key === 'Enter') registrarUsuario(); 
+    });
+}
 
 socket.on('resultado_validacion', (respuesta) => {
     if (respuesta.exito) {
