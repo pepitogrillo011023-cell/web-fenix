@@ -442,19 +442,27 @@ async function procesarCierreRetiros() {
         return alert("No hay retiros ingresados en la tabla para guardar.");
     }
 
-    // 1. Armamos el paquete de datos real
+    // Armado seguro del paquete (evita errores si falta algún input)
     const payload = {
         fechaTurno: document.getElementById('global-retiro-fecha').value,
         turnoGlobal: document.getElementById('global-retiro-turno').value,
-        retiros: Array.from(tbody.querySelectorAll('tr')).map(tr => ({
-            cliente: tr.querySelector('.ret-cliente').value,
-            monto: Number(tr.querySelector('.ret-monto').value) || 0,
-            hora: tr.querySelector('.ret-hora').value,
-            verificado: tr.querySelector('.ret-verifi').checked
-        }))
+        retiros: Array.from(tbody.querySelectorAll('tr')).map(tr => {
+            const nodeCliente = tr.querySelector('.ret-cliente');
+            const nodeMonto = tr.querySelector('.ret-monto');
+            const nodeHora = tr.querySelector('.ret-hora');
+            const nodeVerifi = tr.querySelector('.ret-verifi');
+            
+            return {
+                cliente: nodeCliente ? nodeCliente.value : 'S/D',
+                monto: nodeMonto ? (Number(nodeMonto.value) || 0) : 0,
+                hora: nodeHora ? nodeHora.value : '',
+                verificado: nodeVerifi ? nodeVerifi.checked : false
+            };
+        })
     };
 
-    // 2. Lo enviamos de verdad a la base de datos
+    console.log("Enviando paquete blindado:", payload);
+
     try {
         const res = await fetch('/api/guardar-retiros', {
             method: 'POST',
@@ -464,10 +472,9 @@ async function procesarCierreRetiros() {
         
         const data = await res.json();
         
-        // 3. Confirmamos y limpiamos
         if(data.success) {
             alert("✅ ¡Retiros guardados oficialmente en la base de datos!");
-            tbody.innerHTML = ''; // Limpiamos la tabla para el próximo turno
+            tbody.innerHTML = ''; // Limpiar tabla
         } else {
             alert("❌ Error del servidor: " + data.mensaje);
         }
