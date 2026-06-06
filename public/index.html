@@ -1,70 +1,153 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acceso - Casino Fénix</title>
-    <link rel="stylesheet" href="/css/index.css">
-    <script src="/socket.io/socket.io.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso - Casino Fénix</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <style>
+        /* Estilos ajustados para que todo quede unificado */
+        .hero-welcome { 
+            background: #1f2937; 
+            padding: 15px; 
+            border-radius: 10px; 
+            border: 1px solid #374151;
+            margin: 10px auto 20px auto; 
+            text-align: center; 
+            width: 90%; /* Ajustado para que encaje igual que los botones */
+            color: #fff;
+        }
+        .hero-welcome h2 { margin-bottom: 5px; color: #3b82f6; }
+        .hero-welcome p { font-size: 14px; opacity: 0.8; }
+        
+        .tienda-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .producto-card { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; text-align: center; }
+        .producto-precio { color: #f59e0b; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
+        .btn-tienda { background: #7c3aed !important; border: none !important; }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <div class="header">
-            <div class="header-title">
-                <div class="status-dot"></div>
-                <span id="header-title-text">Chat Asistencia</span>
-                <span id="badge-creditos" class="badge-creditos hidden">🟡 <span id="txt-creditos">0</span> CR</span>
-            </div>
-            <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Salir</button>
-        </div>
+    <script src="/socket.io/socket.io.js"></script>
 
-        <div id="vista-login" class="auth-body active">
-            <h3>Acceso de Clientes</h3>
-            <input type="text" id="login-user" class="input-dark" placeholder="Usuario...">
-            <input type="password" id="login-pass" class="input-dark" placeholder="Contraseña...">
-            <button class="btn-primary" id="btn-login" onclick="validarAccesoManual()">Ingresar</button>
-        </div>
+    <div class="app-container">
+        <div class="header">
+            <div class="header-title">
+                <div class="status-dot"></div>
+                <span id="header-title-text">Chat Asistencia</span>
+                <span id="badge-creditos" class="badge-creditos hidden">🟡 <span id="txt-creditos">0</span> CR</span>
+            </div>
+            <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Cerrar sesión</button>
+        </div>
 
-        <div id="vista-chat" class="hidden">
-            <div id="hero-welcome-container" class="hero-welcome hidden">
-                <h2 id="welcome-name">¡Hola!</h2>
-                <p>Bienvenido a Fénix 🦅</p>
-            </div>
-            <div class="chat-messages" id="messages-area"></div>
-            
-            <div id="container-menu-options" class="menu-grid" style="display: none;">
-                <button class="btn-action" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
-                <button class="btn-action" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
-                <button class="btn-action" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
-                <button class="btn-action" onclick="seleccionarOpcion('Referido')">🎁 Referí</button>
-                <button class="btn-action" style="grid-column: span 2;" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos</button>
-                <button class="btn-action btn-tienda" style="grid-column: span 2;" onclick="abrirTienda()">🛒 Tienda</button>
-                <button class="btn-action btn-minijuegos" style="grid-column: span 2;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos</button>
-            </div>
+        <!-- BIENVENIDA DENTRO DEL CONTENEDOR -->
+        <div id="hero-welcome-container" class="hero-welcome hidden">
+            <h2 id="welcome-name">¡Hola!</h2>
+            <p>Bienvenido nuevamente a Fénix 🦅</p>
+        </div>
 
-            <div id="container-games-options" class="menu-grid" style="display: none; grid-template-columns: 1fr 1fr 1fr;">
-                <button class="btn-action" onclick="abrirModal('ruleta')">🎯 Ruleta</button>
-                <button class="btn-action" onclick="abrirModal('raspa')">🎫 Raspa</button>
-                <button class="btn-action" onclick="abrirModal('traga')">🍒 Slots</button>
-                <button class="btn-action" style="grid-column: span 1.5;" onclick="abrirModal('cartas')">🃏 Cartas</button>
-                <button class="btn-action" style="grid-column: span 1.5;" onclick="abrirModal('moneda')">🪙 Cara/Cruz</button>
-                <button class="btn-action btn-premium" style="grid-column: span 3;" onclick="abrirSlotPremium()">💎 JUGAR SLOT PREMIUM 💎</button>
-                <button class="btn-action" style="grid-column: span 3; background:#374151;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
-            </div>
+        <div id="vista-login" class="auth-body active">
+            <h3>Acceso de Clientes</h3>
+            <input type="text" id="login-user" class="input-dark" placeholder="Tu usuario de casino...">
+            <input type="password" id="login-pass" class="input-dark" placeholder="Tu contraseña...">
+            <button class="btn-primary" id="btn-login" onclick="validarAccesoManual()">Ingresar al Chat</button>
+            <button class="btn-text" onclick="cambiarVista('registro')">¿No tenés cuenta? Crear usuario</button>
+        </div>
 
-            <div id="container-deposit-options" class="deposit-grid" style="display: none;">
-                <button class="btn-action" onclick="ejecutarAccionDeposito('Subir Comprobante')">📁 Comprobante</button>
-                <button class="btn-action" onclick="ejecutarAccionDeposito('Reportar Pago')">📄 Reportar</button>
-                <button class="btn-action" style="background:#374151;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
-            </div>
+        <div id="vista-registro" class="auth-body hidden">
+            <h3>Crear Nuevo Usuario</h3>
+            <input type="text" id="reg-user" class="input-dark" placeholder="Elegí tu nombre...">
+            <input type="password" id="reg-pass" class="input-dark" placeholder="Elegí una contraseña...">
+            <button class="btn-primary" id="btn-registro" style="background-color: #10b981;" onclick="registrarUsuario()">Crear Cuenta y Entrar</button>
+            <button class="btn-text" onclick="cambiarVista('login')">Ya tengo cuenta. Ingresar.</button>
+        </div>
 
-            <div id="container-chat-input" class="chat-input-area" style="display: none;">
-                <button class="btn-action" style="background:#ef4444; padding:0 15px; margin:0;" onclick="volverYLimpiarChat()">← Menú</button>
-                <input type="text" id="client-raw-input" class="input-dark" style="margin:0; flex:1;" placeholder="Escribí acá...">
-                <button class="btn-primary" style="margin:0; width:auto; padding:0 15px;" onclick="enviarMensajeLibreCliente()">Enviar</button>
-            </div>
-        </div>
-    </div>
-    <script src="/js/index.js"></script>
+        <div id="vista-chat" class="hidden">
+            <div class="chat-messages" id="messages-area">
+                <div style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">Conectando...</div>
+            </div>
+            
+            <div id="container-menu-options" class="menu-grid-main" style="display: none;">
+                <div class="grid-2-cols">
+                    <button class="btn-action" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
+                    <button class="btn-action" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
+                    <button class="btn-action" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
+                    <button class="btn-action" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
+                </div>
+                
+                <button class="btn-action" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos</button>
+                <button class="btn-action btn-tienda" onclick="abrirTienda()">🛒 TIENDA DE BONOS</button>
+                <button class="btn-action" style="background: linear-gradient(90deg, #6366f1, #a855f7);" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos Diarios</button>
+            </div>
+
+            <div id="container-games-options" class="menu-grid-main" style="display: none;">
+                <div class="grid-3-cols">
+                    <button class="btn-action" onclick="abrirModal('ruleta')">🎯 Ruleta</button>
+                    <button class="btn-action" onclick="abrirModal('raspa')">🎫 Raspa</button>
+                    <button class="btn-action" onclick="abrirModal('traga')">🍒 Slots</button>
+                </div>
+                <div class="grid-2-cols">
+                    <button class="btn-action" onclick="abrirModal('cartas')">🃏 Cartas</button>
+                    <button class="btn-action" onclick="abrirModal('moneda')">🪙 Cara/Cruz</button>
+                </div>
+                <button class="btn-action" onclick="abrirSlotPremium()">💎 JUGAR SLOT PREMIUM 💎</button>
+                <button class="btn-action" onclick="irAlMenuPrincipal()">↩️ Volver</button>
+            </div>
+
+            <div id="container-deposit-options" class="deposit-grid" style="display: none;">
+                <button class="btn-action" onclick="ejecutarAccionDeposito('Subir Comprobante')">📁 Subir Comprobante</button>
+                <button class="btn-action" onclick="ejecutarAccionDeposito('Reportar Pago')">📄 Reportar Pago</button>
+                <button class="btn-action" onclick="irAlMenuPrincipal()">↩️ Volver</button>
+            </div>
+
+            <div id="container-chat-input" class="chat-input-area">
+                <input type="text" id="client-raw-input" class="input-dark" placeholder="Escribí acá...">
+                <button class="btn-primary" onclick="enviarMensajeLibreCliente()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL TIENDA -->
+    <div id="modal-tienda" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="background:#1f2937; border: 2px solid #7c3aed; color:white; padding:20px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
+            <h3>🛒 Tienda de Bonos</h3>
+            <div class="tienda-grid">
+                <div class="producto-card">
+                    <p>Bono 10%</p>
+                    <span class="producto-precio">500 CR</span>
+                    <button class="btn-primary" onclick="canjearProducto('Bono 10%', 500)">Canjear</button>
+                </div>
+                <div class="producto-card">
+                    <p>10 Tiradas</p>
+                    <span class="producto-precio">1000 CR</span>
+                    <button class="btn-primary" onclick="canjearProducto('10 Tiradas', 1000)">Canjear</button>
+                </div>
+            </div>
+            <button class="btn-text" style="margin-top:20px; color:#aaa;" onclick="cerrarModal('tienda')">Cerrar</button>
+        </div>
+    </div>
+
+    <script src="/js/index.js"></script>
+    <script>
+        async function abrirTienda() {
+    try {
+        const res = await fetch('/api/tienda');
+        const productos = await res.json();
+        
+        const grid = document.querySelector('.tienda-grid');
+        grid.innerHTML = ''; // Limpiar
+        
+        productos.forEach(prod => {
+            grid.innerHTML += `
+                <div class="producto-card">
+                    <p>${prod.nombre}</p>
+                    <span class="producto-precio">${prod.costo} CR</span>
+                    <button class="btn-primary" onclick="canjearProducto('${prod.nombre}', ${prod.costo})">Canjear</button>
+                </div>
+            `;
+        });
+        document.getElementById('modal-tienda').style.display = 'flex';
+    } catch(e) { alert("Error cargando la tienda"); }
+}
+    </script>
 </body>
 </html>
