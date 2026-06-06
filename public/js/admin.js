@@ -665,16 +665,31 @@ function calcCierre() {
 }
 
 async function guardarCierreDB() {
-    if(!document.getElementById('cc-fecha-inicio').value) return alert("Ingresá la fecha de inicio.");
+    const fecha = document.getElementById('cc-fecha-inicio').value;
+    const turno = document.getElementById('cc-turno').value;
+    
+    if(!fecha) return alert("Ingresá la fecha de inicio.");
+
+    // 1. PRIMERO VERIFICAMOS SI YA EXISTE
+    const checkRes = await fetch(`/api/verificar-turno/${fecha}/${turno}`);
+    const checkData = await checkRes.json();
+
+    if (checkData.existe) {
+        const confirmar = confirm(`⚠️ ATENCIÓN: Ya existe un CIERRE DE CAJA guardado para el ${fecha} en el turno ${turno}. \n\n¿Estás seguro de que querés SOBREESCRIBIR los datos anteriores?`);
+        if (!confirmar) return; 
+    }
+
+    // 2. ENVIAMOS LOS DATOS (El resto de tu lógica original)
     const gastos = []; document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 }));
     const propinas = []; document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 }));
+    
     const payload = {
-        fecha: document.getElementById('cc-fecha-inicio').value,
-        fechaInicio: document.getElementById('cc-fecha-inicio').value,
+        fecha: fecha,
+        fechaInicio: fecha,
         fechaFin: document.getElementById('cc-fecha-fin').value,
         horaInicio: document.getElementById('cc-hora-inicio').value, 
         horaFin: document.getElementById('cc-hora-fin').value, 
-        turno: document.getElementById('cc-turno').value, 
+        turno: turno, 
         cajero: document.getElementById('cc-cajero').value,
         ingreso: Number(document.getElementById('cc-ingreso').value) || 0, 
         saldoOro: Number(document.getElementById('cc-oro').value) || 0, 
@@ -687,12 +702,25 @@ async function guardarCierreDB() {
         gastos, 
         propinas
     };
-    const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-    if(res.redirected) return window.location.href = '/login.html';
-    if(res.ok) { 
-        alert("✅ Guardado!"); 
-        localStorage.removeItem('borrador_cierre'); // Limpiamos la memoria
-        if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); 
+
+    try {
+        const res = await fetch('/api/cierre-caja', { 
+            method: 'POST', 
+            headers: {'Content-Type': 'application/json'}, 
+            body: JSON.stringify(payload) 
+        });
+        
+        if(res.redirected) return window.location.href = '/login.html';
+        
+        if(res.ok) { 
+            alert("✅ ¡Cierre de caja guardado correctamente!"); 
+            localStorage.removeItem('borrador_cierre'); // Limpiamos la memoria
+            if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); 
+        } else {
+            alert("❌ Error al guardar en el servidor.");
+        }
+    } catch (error) {
+        alert("❌ Error de conexión al guardar.");
     }
 }
 
