@@ -241,7 +241,12 @@ function enviarMensajeLibreCliente() {
     socket.emit('cliente_envia_mensaje_libre', { mensaje: texto }); input.value = '';
 }
 
-document.getElementById('client-raw-input').addEventListener('keypress', function (e) { if (e.key === 'Enter') enviarMensajeLibreCliente(); });
+const regPassInput = document.getElementById('reg-pass');
+if (regPassInput) {
+    regPassInput.addEventListener('keypress', function (e) { 
+        if (e.key === 'Enter') registrarUsuario(); 
+    });
+}
 
 socket.on('recibir_mensaje_admin', (datos) => {
     mostrarChat(); 
