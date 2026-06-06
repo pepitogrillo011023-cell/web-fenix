@@ -1027,9 +1027,33 @@ function renderizarHistorialChat(historial) {
 }
 
 function enviarMensajeManual() {
-    const input = document.getElementById('admin-message-input'); const texto = input.value.trim();
+    const input = document.getElementById('admin-message-input'); 
+    const texto = input.value.trim();
+    
     if (!texto || !usuarioSeleccionadoActivo) return;
-    socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto }); input.value = '';
+
+    // 1. Enviar al servidor
+    socket.emit('admin_envia_mensaje', { paraUsuario: usuarioSeleccionadoActivo, mensaje: texto });
+
+    // 2. Renderizar localmente de inmediato (Optimistic UI)
+    const areaMsg = document.getElementById('active-chat-messages');
+    if (areaMsg) {
+        const wrap = document.createElement('div');
+        wrap.className = 'admin-bubble-wrapper';
+        
+        const b = document.createElement('div');
+        b.className = 'admin-bubble b-admin'; // Clase para que se vea como tu mensaje
+        b.innerHTML = `👨‍💼 <b>Vos:</b><br>${texto}`;
+        
+        wrap.appendChild(b);
+        areaMsg.appendChild(wrap);
+        
+        // 3. Hacer scroll al final para que se vea el nuevo mensaje
+        areaMsg.scrollTop = areaMsg.scrollHeight;
+    }
+
+    // 4. Limpiar input
+    input.value = '';
 }
 
 // ==========================================
