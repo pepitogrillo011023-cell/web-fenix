@@ -182,6 +182,44 @@ app.post('/api/admin/actualizar-tienda', requireLogin, async (req, res) => {
         res.json({ exito: true, mensaje: "Tienda actualizada" });
     } catch (e) { res.status(500).json({ exito: false }); }
 });
+// ==============================================================
+// RUTAS FALTANTES PARA LOS MINIJUEGOS (AGREGÁ ESTO A TU SERVER.JS)
+// ==============================================================
+
+app.get('/api/ruleta-config', async (req, res) => {
+    try {
+        const config = await Ruleta.findOne();
+        res.json({ exito: true, config: config ? config.configuracion : [] });
+    } catch(e) { res.status(500).json({ exito: false }); }
+});
+
+app.get('/api/raspa-config', async (req, res) => {
+    try {
+        const config = await Raspa.findOne();
+        res.json({ exito: true, config: config ? config.configuracion : [] });
+    } catch(e) { res.status(500).json({ exito: false }); }
+});
+
+app.get('/api/tragamonedas-config', async (req, res) => {
+    try {
+        const config = await Tragamonedas.findOne();
+        res.json({ exito: true, config: config ? config.configuracion : [] });
+    } catch(e) { res.status(500).json({ exito: false }); }
+});
+
+app.get('/api/cartas-config', async (req, res) => {
+    try {
+        const config = await Cartas.findOne();
+        res.json({ exito: true, config: config ? config.configuracion : [] });
+    } catch(e) { res.status(500).json({ exito: false }); }
+});
+
+app.get('/api/moneda-config', async (req, res) => {
+    try {
+        const config = await Moneda.findOne();
+        res.json({ exito: true, config: config ? config.configuracion : [] });
+    } catch(e) { res.status(500).json({ exito: false }); }
+});
 
 app.post('/api/canjear-producto', async (req, res) => {
     try {
