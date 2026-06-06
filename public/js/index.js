@@ -129,16 +129,25 @@ function cerrarSesion() {
     cambiarVista('login');
 }
 
+// PROTECCIÓN DE LISTENERS (Evita errores de null en consola)
 const loginPassInput = document.getElementById('login-pass');
 if (loginPassInput) {
     loginPassInput.addEventListener('keypress', function (e) { 
         if (e.key === 'Enter') validarAccesoManual(); 
     });
 }
+
 const regPassInput = document.getElementById('reg-pass');
 if (regPassInput) {
     regPassInput.addEventListener('keypress', function (e) { 
         if (e.key === 'Enter') registrarUsuario(); 
+    });
+}
+
+const chatInput = document.getElementById('client-raw-input');
+if (chatInput) {
+    chatInput.addEventListener('keypress', function (e) { 
+        if (e.key === 'Enter') enviarMensajeLibreCliente(); 
     });
 }
 
@@ -249,13 +258,6 @@ function enviarMensajeLibreCliente() {
     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${texto}</div><span class="status-text">✓ Enviado</span></div>`;
     msgArea.scrollTop = msgArea.scrollHeight;
     socket.emit('cliente_envia_mensaje_libre', { mensaje: texto }); input.value = '';
-}
-
-const regPassInput = document.getElementById('reg-pass');
-if (regPassInput) {
-    regPassInput.addEventListener('keypress', function (e) { 
-        if (e.key === 'Enter') registrarUsuario(); 
-    });
 }
 
 socket.on('recibir_mensaje_admin', (datos) => {
