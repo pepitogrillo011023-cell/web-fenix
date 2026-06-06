@@ -182,44 +182,6 @@ app.post('/api/admin/actualizar-tienda', requireLogin, async (req, res) => {
         res.json({ exito: true, mensaje: "Tienda actualizada" });
     } catch (e) { res.status(500).json({ exito: false }); }
 });
-// ==============================================================
-// RUTAS FALTANTES PARA LOS MINIJUEGOS (AGREGÁ ESTO A TU SERVER.JS)
-// ==============================================================
-
-app.get('/api/ruleta-config', async (req, res) => {
-    try {
-        const config = await Ruleta.findOne();
-        res.json({ exito: true, config: config ? config.configuracion : [] });
-    } catch(e) { res.status(500).json({ exito: false }); }
-});
-
-app.get('/api/raspa-config', async (req, res) => {
-    try {
-        const config = await Raspa.findOne();
-        res.json({ exito: true, config: config ? config.configuracion : [] });
-    } catch(e) { res.status(500).json({ exito: false }); }
-});
-
-app.get('/api/tragamonedas-config', async (req, res) => {
-    try {
-        const config = await Tragamonedas.findOne();
-        res.json({ exito: true, config: config ? config.configuracion : [] });
-    } catch(e) { res.status(500).json({ exito: false }); }
-});
-
-app.get('/api/cartas-config', async (req, res) => {
-    try {
-        const config = await Cartas.findOne();
-        res.json({ exito: true, config: config ? config.configuracion : [] });
-    } catch(e) { res.status(500).json({ exito: false }); }
-});
-
-app.get('/api/moneda-config', async (req, res) => {
-    try {
-        const config = await Moneda.findOne();
-        res.json({ exito: true, config: config ? config.configuracion : [] });
-    } catch(e) { res.status(500).json({ exito: false }); }
-});
 
 app.post('/api/canjear-producto', async (req, res) => {
     try {
@@ -249,7 +211,7 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
     try {
         const { name, nuevoCosto } = req.body;
         const minijuego = await Minigame.findOneAndUpdate({ name: name }, { creditCost: nuevoCosto }, { new: true });
-        
+
         if (!minijuego) {
             return res.status(404).json({ success: false, message: `Minijuego '${name}' no encontrado en la base de datos.` });
         }
@@ -282,7 +244,7 @@ app.post('/api/jugar-slot', async (req, res) => {
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
         if (!esGiroGratis && cliente.creditos < apuestaGasto) return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
-        
+
         cliente.creditos -= apuestaGasto;
         const rodillos = [
             todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
@@ -292,7 +254,7 @@ app.post('/api/jugar-slot', async (req, res) => {
         const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
         const simbolo = rodillos[0];
         let premio = (esIgual && simbolo !== 'bonus' && tablaPremios[simbolo]) ? apuestaCalculoPremio * tablaPremios[simbolo] : 0;
-        
+
         if (!esGiroGratis && premio > 0) cliente.creditos += premio;
         await cliente.save();
         res.json({ exito: true, rodillos, nuevoSaldo: cliente.creditos, premioGanado: premio });
@@ -452,7 +414,7 @@ async function inicializarDatosDePrueba() {
     }
     const countCl = await Cliente.countDocuments();
     if(countCl === 0) { await new Cliente({ usuarioCasino: 'joniz115', saldo: 60000, creditos: 5000, wager: 10000, estado: 'Activo' }).save(); }
-    
+
     if (await Ruleta.countDocuments() === 0) {
         await new Ruleta({ configuracion: [
             { id: 0, premio: '🏆 JACKPOT', valor: 50000, probabilidad: 2 }, { id: 1, premio: '🔥 Premio Mayor', valor: 10000, probabilidad: 8 },
