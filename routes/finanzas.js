@@ -134,11 +134,11 @@ module.exports = function(app, requireLogin, io, sharedState) {
 
             const filtro = { fecha: fechaTurno, turno: turnoGlobal };
             
-            // Usamos findOneAndUpdate para crear o actualizar el registro
+            // LA MAGIA: Le pasamos 'strict: false' directo a la consulta para forzar la escritura
             const docGuardado = await Retiro.findOneAndUpdate(
                 filtro, 
                 { fecha: fechaTurno, turno: turnoGlobal, retiros: retiros || [] }, 
-                { upsert: true, new: true }
+                { upsert: true, new: true, strict: false } 
             );
             
             res.json({ success: true, mensaje: "Retiros guardados" });
