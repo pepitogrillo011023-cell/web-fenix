@@ -6,7 +6,6 @@
     <title>Acceso - Casino Fénix</title>
     <link rel="stylesheet" href="/css/index.css">
     <style>
-        /* Estilos ajustados para que todo quede unificado */
         .hero-welcome { 
             background: #1f2937; 
             padding: 15px; 
@@ -14,7 +13,7 @@
             border: 1px solid #374151;
             margin: 10px auto 20px auto; 
             text-align: center; 
-            width: 90%; /* Ajustado para que encaje igual que los botones */
+            width: 90%; 
             color: #fff;
         }
         .hero-welcome h2 { margin-bottom: 5px; color: #3b82f6; }
@@ -24,6 +23,19 @@
         .producto-card { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; text-align: center; }
         .producto-precio { color: #f59e0b; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
         .btn-tienda { background: #7c3aed !important; border: none !important; }
+        
+        /* Botón de volver para navegación */
+        .btn-volver-menu { 
+            background: #3b82f6; 
+            border: none; 
+            color: white; 
+            padding: 8px 15px; 
+            border-radius: 5px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            margin: 10px; 
+            font-size: 14px;
+        }
     </style>
 </head>
 <body>
@@ -39,7 +51,6 @@
             <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Cerrar sesión</button>
         </div>
 
-        <!-- BIENVENIDA DENTRO DEL CONTENEDOR -->
         <div id="hero-welcome-container" class="hero-welcome hidden">
             <h2 id="welcome-name">¡Hola!</h2>
             <p>Bienvenido nuevamente a Fénix 🦅</p>
@@ -62,6 +73,8 @@
         </div>
 
         <div id="vista-chat" class="hidden">
+            <button class="btn-volver-menu" onclick="irAlMenuPrincipal()">⬅ Volver al Menú</button>
+
             <div class="chat-messages" id="messages-area">
                 <div style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">Conectando...</div>
             </div>
@@ -106,48 +119,48 @@
         </div>
     </div>
 
-    <!-- MODAL TIENDA -->
     <div id="modal-tienda" class="modal-overlay" style="display: none;">
         <div class="modal-content" style="background:#1f2937; border: 2px solid #7c3aed; color:white; padding:20px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
             <h3>🛒 Tienda de Bonos</h3>
             <div class="tienda-grid">
-                <div class="producto-card">
-                    <p>Bono 10%</p>
-                    <span class="producto-precio">500 CR</span>
-                    <button class="btn-primary" onclick="canjearProducto('Bono 10%', 500)">Canjear</button>
                 </div>
-                <div class="producto-card">
-                    <p>10 Tiradas</p>
-                    <span class="producto-precio">1000 CR</span>
-                    <button class="btn-primary" onclick="canjearProducto('10 Tiradas', 1000)">Canjear</button>
-                </div>
-            </div>
             <button class="btn-text" style="margin-top:20px; color:#aaa;" onclick="cerrarModal('tienda')">Cerrar</button>
         </div>
     </div>
 
     <script src="/js/index.js"></script>
     <script>
+        // Esta función asume que irAlMenuPrincipal ya existe en index.js o la definimos aquí
+        function irAlMenuPrincipal() {
+            // Ocultamos las secciones de juegos/depósito
+            document.getElementById('container-games-options').style.display = 'none';
+            document.getElementById('container-deposit-options').style.display = 'none';
+            // Mostramos el menú principal
+            document.getElementById('container-menu-options').style.display = 'block';
+            // Opcional: mostrar mensajes del chat si es necesario
+            document.getElementById('messages-area').style.display = 'block';
+        }
+
         async function abrirTienda() {
-    try {
-        const res = await fetch('/api/tienda');
-        const productos = await res.json();
-        
-        const grid = document.querySelector('.tienda-grid');
-        grid.innerHTML = ''; // Limpiar
-        
-        productos.forEach(prod => {
-            grid.innerHTML += `
-                <div class="producto-card">
-                    <p>${prod.nombre}</p>
-                    <span class="producto-precio">${prod.costo} CR</span>
-                    <button class="btn-primary" onclick="canjearProducto('${prod.nombre}', ${prod.costo})">Canjear</button>
-                </div>
-            `;
-        });
-        document.getElementById('modal-tienda').style.display = 'flex';
-    } catch(e) { alert("Error cargando la tienda"); }
-}
+            try {
+                const res = await fetch('/api/tienda');
+                const productos = await res.json();
+                
+                const grid = document.querySelector('.tienda-grid');
+                grid.innerHTML = ''; 
+                
+                productos.forEach(prod => {
+                    grid.innerHTML += `
+                        <div class="producto-card">
+                            <p>${prod.nombre}</p>
+                            <span class="producto-precio">${prod.costo} CR</span>
+                            <button class="btn-primary" onclick="canjearProducto('${prod.nombre}', ${prod.costo})">Canjear</button>
+                        </div>
+                    `;
+                });
+                document.getElementById('modal-tienda').style.display = 'flex';
+            } catch(e) { alert("Error cargando la tienda"); }
+        }
     </script>
 </body>
 </html>
