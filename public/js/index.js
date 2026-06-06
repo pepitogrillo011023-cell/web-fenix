@@ -57,19 +57,26 @@ async function cargarCostosMinijuegos() {
 // VISTAS Y AUTENTICACIÓN
 // ==========================================
 function cambiarVista(vista) {
-    document.getElementById('vista-login').classList.add('hidden');
-    document.getElementById('vista-registro').classList.add('hidden');
-    document.getElementById('vista-chat').classList.add('hidden');
-    document.getElementById('btn-cerrar-sesion').classList.add('hidden');
+    const vLogin = document.getElementById('vista-login');
+    const vRegistro = document.getElementById('vista-registro');
+    const vChat = document.getElementById('vista-chat');
+    const btnCerrar = document.getElementById('btn-cerrar-sesion');
+    const heroWelcome = document.getElementById('hero-welcome-container');
 
-    if (vista === 'login') document.getElementById('vista-login').classList.remove('hidden');
-    if (vista === 'registro') document.getElementById('vista-registro').classList.remove('hidden');
-    if (vista === 'chat') {
-        document.getElementById('vista-chat').classList.remove('hidden');
-        document.getElementById('vista-chat').style.display = 'flex';
-        document.getElementById('btn-cerrar-sesion').classList.remove('hidden');
-        // Mostrar el banner de bienvenida al loguear
-        document.getElementById('hero-welcome-container').classList.remove('hidden');
+    // Ocultamos todo primero (solo si existen)
+    if (vLogin) vLogin.classList.add('hidden');
+    if (vRegistro) vRegistro.classList.add('hidden');
+    if (vChat) vChat.classList.add('hidden');
+    if (btnCerrar) btnCerrar.classList.add('hidden');
+
+    // Mostramos lo que corresponde
+    if (vista === 'login' && vLogin) vLogin.classList.remove('hidden');
+    if (vista === 'registro' && vRegistro) vRegistro.classList.remove('hidden');
+    if (vista === 'chat' && vChat) {
+        vChat.classList.remove('hidden');
+        vChat.style.display = 'flex';
+        if (btnCerrar) btnCerrar.classList.remove('hidden');
+        if (heroWelcome) heroWelcome.classList.remove('hidden');
     }
 }
 
