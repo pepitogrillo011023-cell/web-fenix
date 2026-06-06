@@ -163,6 +163,18 @@ module.exports = function(app, requireLogin, io, sharedState) {
             res.status(500).json({ error: e.message });
         }
     });
+    // Nueva ruta para verificar existencia
+    app.get('/api/verificar-turno/:fecha/:turno', requireLogin, async (req, res) => {
+        try {
+            const { fecha, turno } = req.params;
+            const existeRetiro = await Retiro.findOne({ fecha: fecha, turno: turno });
+            const existeCierre = await CierreCaja.findOne({ fecha: fecha, turno: turno });
+            
+            res.json({ existe: !!(existeRetiro || existeCierre) });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
+        }
+    });
     // ==============================================================
     // 💳 RUTAS DE GESTIÓN DE CRÉDITOS
     // ==============================================================
