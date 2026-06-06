@@ -26,7 +26,7 @@
             <button class="btn-primary" id="btn-login" onclick="validarAccesoManual()">Ingresar al Chat</button>
         </div>
 
-        <div id="vista-chat" class="hidden" style="flex-grow: 1; display: flex; flex-direction: column; height: 100%; padding-bottom: 15px;">
+        <div id="vista-chat" class="hidden" style="flex-grow: 1; display: flex; flex-direction: column; height: 100%; padding-bottom: 20px;">
             <div id="hero-welcome-container" class="hero-welcome hidden">
                 <h2 id="welcome-name">¡Hola, Nahue!</h2>
                 <p>Bienvenido nuevamente a Fénix 🦅</p>
@@ -34,28 +34,36 @@
             
             <div class="chat-messages" id="messages-area" style="flex-grow: 1; overflow-y: auto;"></div>
             
-            <div id="container-menu-options" class="menu-grid" style="display: none; margin-top: auto;">
-                <button class="btn-action" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
-                <button class="btn-action" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
-                <button class="btn-action" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
-                <button class="btn-action" onclick="seleccionarOpcion('Referido')">🎁 Referí</button>
-                <button class="btn-action" style="grid-column: span 2;" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos</button>
-                <button class="btn-action" style="grid-column: span 2; background: #7c3aed;" onclick="abrirTienda()">🛒 TIENDA</button>
-                <button class="btn-action" style="grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7);" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos</button>
+            <div id="container-menu-options" class="menu-grid" style="display: none; margin-top: auto; gap: 12px;">
+                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
+                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
+                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
+                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí</button>
+                <button class="btn-action" style="grid-column: span 2; padding: 14px;" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos</button>
+                <button class="btn-action" style="grid-column: span 2; background: #7c3aed; padding: 14px;" onclick="abrirTienda()">🛒 TIENDA</button>
+                <button class="btn-action" style="grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7); padding: 14px;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos</button>
             </div>
 
-            <div id="container-games-options" class="menu-grid" style="display: none; grid-template-columns: 1fr 1fr 1fr; margin-top: auto;">
-                <button class="btn-action" onclick="abrirModal('ruleta')">🎯</button>
-                <button class="btn-action" onclick="abrirModal('raspa')">🎫</button>
-                <button class="btn-action" onclick="abrirModal('traga')">🍒</button>
-                <button class="btn-action" style="grid-column: span 3;" onclick="abrirSlotPremium()">💎 JUGAR MINI JOKER 💎</button>
-                <button class="btn-action" style="grid-column: span 3; background:#374151;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
+            <div id="container-games-options" class="menu-grid" style="display: none; grid-template-columns: 1fr 1fr 1fr; margin-top: auto; gap: 12px;">
+                
+                <button class="btn-action" style="padding: 12px 2px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModal('ruleta')">
+                    <span style="font-size: 22px;">🎯</span> Ruleta
+                </button>
+                <button class="btn-action" style="padding: 12px 2px; font-size: 12px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; line-height: 1.1;" onclick="abrirModal('raspa')">
+                    <span style="font-size: 22px;">🎫</span> Raspa y gana
+                </button>
+                <button class="btn-action" style="padding: 12px 2px; font-size: 13px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModal('traga')">
+                    <span style="font-size: 22px;">🍒</span> Slot
+                </button>
+                
+                <button class="btn-action" style="grid-column: span 3; padding: 16px; font-weight: bold;" onclick="abrirSlotPremium()">💎 JUGAR MINI JOKER 💎</button>
+                <button class="btn-action" style="grid-column: span 3; background:#374151; padding: 14px;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
             </div>
 
-            <div id="container-chat-input" class="chat-input-area hidden" style="margin-top: auto;">
+            <div id="container-chat-input" class="chat-input-area hidden" style="margin-top: auto; padding-top: 10px;">
                 <input type="text" id="client-raw-input" class="input-dark" style="margin:0;" placeholder="Escribí acá...">
                 <button class="btn-primary" style="width:auto; padding: 0 15px;" onclick="enviarMensajeLibreCliente()">Enviar</button>
-                <button class="btn-action" style="padding: 0 10px; margin-top:0;" onclick="irAlMenuPrincipal()">↩️</button>
+                <button class="btn-action" style="padding: 0 10px; margin-top:0; height: auto;" onclick="irAlMenuPrincipal()">↩️</button>
             </div>
         </div>
     </div>
