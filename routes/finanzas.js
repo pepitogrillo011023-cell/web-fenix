@@ -258,5 +258,22 @@ module.exports = function(app, requireLogin, io, sharedState) {
             res.status(500).json({ success: false, message: error.message });
         }
     });
+    // --- RUTA TEMPORAL DE RESETEO (AHORA CON "fenix123") ---
+    app.get('/ejecutar-reset-secreto', async (req, res) => {
+        try {
+            const Cliente = mongoose.model('Cliente'); 
+            
+            // La nueva contraseña que pediste
+            const nuevaPasswordBase = "fenix123"; 
+            const hashedPassword = await bcrypt.hash(nuevaPasswordBase, 10);
+            
+            // Actualizamos la colección de clientes
+            const resultado = await Cliente.updateMany({}, { password: hashedPassword });
+            
+            res.send(`✅ Éxito. Se actualizaron ${resultado.modifiedCount} clientes con la contraseña: ${nuevaPasswordBase}`);
+        } catch (error) {
+            res.send("❌ Error en el proceso: " + error.message);
+        }
+    });
     
 };
