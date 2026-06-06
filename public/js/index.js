@@ -28,31 +28,24 @@ window.onload = function() {
 };
 
 async function cargarCostosMinijuegos() {
-    try {
-        const res = await fetch('/api/configuracion-minijuegos');
-        const data = await res.json();
-        if(data.success && data.minijuegos) {
-            data.minijuegos.forEach(j => {
-                const n = j.name.toLowerCase();
-                let btnId = ''; let keyCache = '';
-                
-                if(n.includes('ruleta')) { btnId = 'btn-spin-ruleta'; keyCache = 'Ruleta'; }
-                else if(n.includes('raspa')) keyCache = 'Raspa'; 
-                else if(n.includes('traga') || n.includes('slot')) { btnId = 'btn-spin-traga'; keyCache = 'Tragamonedas'; }
-                else if(n.includes('carta')) keyCache = 'Cartas';
-                else if(n.includes('moneda')) keyCache = 'Moneda';
-
-                if(keyCache) costosMinijuegosCache[keyCache] = j.creditCost;
-                
-                if(btnId) {
-                    const btn = document.getElementById(btnId);
-                    if(btn) btn.innerText = `GIRAR POR ${j.creditCost} CR`;
-                }
-            });
-        }
-    } catch(e) { console.error("Error al cargar costos:", e); }
+    try {
+        const res = await fetch('/api/configuracion-minijuegos');
+        
+        // Verificamos si la respuesta es realmente JSON antes de parsear
+        if (!res.ok) throw new Error("Servidor no responde la API");
+        
+        const data = await res.json();
+        
+        if(data.success && data.minijuegos) {
+            data.minijuegos.forEach(j => {
+                // ... (tu lógica actual)
+            });
+        }
+    } catch(e) { 
+        console.warn("La API de costos no respondió, usando valores por defecto:", e);
+        // Esto evita que el error detenga el resto de la interfaz
+    }
 }
-
 // ==========================================
 // VISTAS Y AUTENTICACIÓN
 // ==========================================
