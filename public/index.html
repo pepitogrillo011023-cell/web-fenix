@@ -12,7 +12,6 @@
         .header-title { display: flex; align-items: center; gap: 8px; }
         .status-dot { width: 8px; height: 8px; background-color: #10b981; border-radius: 50%; box-shadow: 0 0 8px #10b981; }
         
-        /* NUEVO: Badge de créditos en el header */
         .badge-creditos { background-color: #ffaa00; color: #000; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-left: 5px; box-shadow: 0 0 8px rgba(255, 170, 0, 0.4); }
 
         .auth-body { padding: 40px 25px; display: flex; flex-direction: column; align-items: center; }
@@ -36,9 +35,6 @@
         .bubble.cliente { background-color: #2563eb; color: white; align-self: flex-end; border-bottom-right-radius: 2px; }
         .status-text { font-size: 10px; color: #64748b; align-self: flex-end; margin-right: 5px; margin-top: 4px; font-weight: bold; display: block; }
         .status-text.visto { color: #38bdf8; }
-
-        /* MODIFICADO: Ajustes de Flexbox para la barra de chat */
-        .chat-input-area { display: none; gap: 8px; border-top: 1px solid #1f2937; padding: 15px; background-color: #111827; width: 100%; box-sizing: border-box; align-items: center; }
         
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; }
         .deposit-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; }
@@ -78,14 +74,12 @@
         /* Moneda */
         .coin-flip { width: 150px; height: 150px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 6px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1.5s ease-out; cursor: pointer; }
 
-        /* Estilos heredados para tu bienvenida / tienda */
         .hero-welcome { background: #1f2937; padding: 15px; border-radius: 10px; border: 1px solid #374151; margin: 10px auto 20px auto; text-align: center; width: 90%; color: #fff; box-sizing: border-box;}
         .hero-welcome h2 { margin-bottom: 5px; color: #3b82f6; }
         .hero-welcome p { font-size: 14px; opacity: 0.8; }
         .tienda-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
         .producto-card { background: #111; padding: 15px; border-radius: 10px; border: 1px solid #333; text-align: center; }
         .producto-precio { color: #f59e0b; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
-        .btn-tienda { background: #7c3aed !important; border: none !important; }
     </style>
 </head>
 <body>
@@ -134,7 +128,7 @@
                 
                 <button class="btn-action" style="padding: 15px 10px; font-size:14px; grid-column: span 2; border: 1px solid #ffaa00; color: #ffaa00; background: rgba(255, 170, 0, 0.05);" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos (Minijuegos)</button>
 
-                <button class="btn-action btn-tienda" style="padding: 15px 10px; font-size:14px; grid-column: span 2;" onclick="abrirTienda()">🛒 TIENDA DE BONOS</button>
+                <button class="btn-action" style="padding: 15px 10px; font-size:14px; grid-column: span 2; background: #7c3aed; border: none;" onclick="abrirTienda()">🛒 TIENDA DE BONOS</button>
 
                 <button class="btn-action" style="padding: 20px 10px; font-size:15px; grid-column: span 2; background: linear-gradient(90deg, #6366f1, #a855f7); border:none; box-shadow: 0 0 15px rgba(168,85,247,0.3); color: white;" onclick="mostrarSubMenuMinijuegos()">🎮 Minijuegos Diarios</button>
             </div>
@@ -146,6 +140,9 @@
                 <button class="btn-action" style="background: linear-gradient(135deg, #f43f5e, #f97316); border:none; grid-column: span 1.5;" onclick="abrirModal('cartas')">🃏 Carta Suerte</button>
                 <button class="btn-action" style="background: linear-gradient(135deg, #eab308, #84cc16); border:none; grid-column: span 1.5;" onclick="abrirModal('moneda')">🪙 Cara/Cruz</button>
                 
+                <!-- RECUPERAMOS EL BOTÓN SLOT PREMIUM QUE FALTABA -->
+                <button class="btn-action" style="grid-column: span 3; background: linear-gradient(90deg, #1e3a8a, #3b82f6); border:none; font-size:15px; color:white; padding: 15px;" onclick="if(typeof abrirSlotPremium === 'function') { abrirSlotPremium(); } else { window.open('https://api.whatsapp.com/send?phone=TUNUMERO', '_blank'); }">💎 JUGAR SLOT PREMIUM 💎</button>
+
                 <button class="btn-action" style="background-color: #374151; padding: 12px 10px; font-size:14px; grid-column: span 3;" onclick="volverYLimpiarChat()">↩️ Volver al Menú Principal</button>
             </div>
 
@@ -155,14 +152,20 @@
                 <button class="btn-action" style="background-color: #374151;" onclick="volverYLimpiarChat()">↩️ Volver</button>
             </div>
 
-            <div id="container-chat-input" class="chat-input-area">
-                <button class="btn-action" style="background-color: #ef4444; border: none; padding: 0 15px; margin: 0; flex: 0 0 auto; border-radius: 8px;" onclick="volverYLimpiarChat()">↩️</button>
-                <input type="text" id="client-raw-input" class="input-dark" style="margin: 0; flex: 1 1 auto; min-width: 0;" placeholder="Escribí acá...">
-                <button class="btn-primary" style="margin: 0; flex: 0 0 auto; width: auto; padding: 0 20px;" onclick="enviarMensajeLibreCliente()">Enviar</button>
+            <!-- BARRA DE CHAT BLINDADA (FLEXBOX SEGURO) -->
+            <div id="container-chat-input" style="display: none; align-items: center; justify-content: center; gap: 8px; border-top: 1px solid #1f2937; padding: 15px; background-color: #111827; width: 100%; box-sizing: border-box;">
+                
+                <button style="background-color: #ef4444; border: none; color: white; padding: 12px 15px; border-radius: 8px; font-weight: bold; cursor: pointer; flex-shrink: 0; margin: 0; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="volverYLimpiarChat()">⬅ Menú</button>
+                
+                <input type="text" id="client-raw-input" class="input-dark" style="margin: 0; flex-grow: 1; width: 100%; min-width: 50px;" placeholder="Escribí acá...">
+                
+                <button class="btn-primary" style="margin: 0; padding: 12px 20px; flex-shrink: 0; width: auto; box-shadow: 0 4px 6px rgba(0,0,0,0.3);" onclick="enviarMensajeLibreCliente()">Enviar</button>
+                
             </div>
         </div>
     </div>
 
+    <!-- MODALES VARIOS -->
     <div id="modal-cargar-creditos" class="modal-overlay">
         <div class="modal-content" style="border-color: #ffaa00;">
             <h3 style="color:white; margin-top:0; font-size: 20px;">🟡 Comprar Créditos</h3>
@@ -178,7 +181,8 @@
         <div class="modal-content" style="background:#1f2937; border: 2px solid #7c3aed; color:white; padding:20px; border-radius:15px; width:90%; max-width:400px; text-align:center;">
             <h3>🛒 Tienda de Bonos</h3>
             <div class="tienda-grid">
-                </div>
+                <!-- Se inyecta dinámicamente -->
+            </div>
             <button class="btn-text" style="margin-top:20px; color:#aaa;" onclick="cerrarModal('tienda')">Cerrar</button>
         </div>
     </div>
@@ -252,14 +256,10 @@
         const msgArea = document.getElementById('messages-area');
         window.usuarioLogueado = null; 
 
-        // VARIABLES GLOBALES JUEGOS
         let ruletaConfig = []; let raspaConfig = [];
         let currentRotation = 0; let raspaYaJugada = false;
         let tragaJugado = false; let cartasJugado = false; let monedaJugado = false;
 
-        // ==========================================
-        // VISTAS Y NAVEGACIÓN
-        // ==========================================
         function cambiarVista(vista) {
             document.getElementById('vista-login').classList.add('hidden');
             document.getElementById('vista-registro').classList.add('hidden');
@@ -276,9 +276,6 @@
             }
         }
 
-        // ==========================================
-        // AUTENTICACIÓN
-        // ==========================================
         async function registrarUsuario() {
             const u = document.getElementById('reg-user').value.trim(); const p = document.getElementById('reg-pass').value.trim();
             if(!u || !p) return alert("Por favor, completá ambos campos.");
@@ -316,7 +313,7 @@
             window.usuarioLogueado = null;
             document.getElementById('login-user').value = ''; document.getElementById('login-pass').value = '';
             document.getElementById('header-title-text').innerText = "Chat Asistencia (En línea)";
-            document.getElementById('badge-creditos').classList.add('hidden');
+            document.getElementById('badge-creditos').classList.add('hidden'); 
             msgArea.innerHTML = '';
             document.getElementById('hero-welcome-container').style.display = 'none';
             cambiarVista('login');
@@ -328,8 +325,6 @@
         socket.on('resultado_validacion', (respuesta) => {
             if (respuesta.exito) {
                 document.getElementById('header-title-text').innerText = "Hola, " + respuesta.usuario;
-                
-                // Mostrar Bienvenida y Créditos
                 document.getElementById('hero-welcome-container').style.display = 'block';
                 document.getElementById('welcome-name').innerText = "¡Hola, " + respuesta.usuario + "!";
                 
@@ -357,13 +352,10 @@
             }
         });
 
-        // ==========================================
-        // CHAT Y MENÚ
-        // ==========================================
-        
-        // NUEVA FUNCIÓN: Limpia el chat y vuelve al menú
         function volverYLimpiarChat() {
-            msgArea.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">Conectando...</div>';
+            if (msgArea) {
+                msgArea.innerHTML = '<div style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">Conectando con un operador...</div>';
+            }
             irAlMenuPrincipal();
         }
 
@@ -372,10 +364,8 @@
             document.getElementById('container-chat-input').style.display = 'none';
             document.getElementById('container-games-options').style.display = 'none';
             
-            // Ocultar chat y bienvenida si estamos en menú
             msgArea.style.display = 'none';
             document.getElementById('hero-welcome-container').style.display = 'block';
-            
             document.getElementById('container-menu-options').style.display = 'grid';
         }
 
@@ -388,7 +378,7 @@
         function seleccionarOpcion(opcion) {
             document.getElementById('container-menu-options').style.display = 'none';
             document.getElementById('hero-welcome-container').style.display = 'none';
-            msgArea.style.display = 'flex'; // Volver a mostrar el chat
+            msgArea.style.display = 'flex';
 
             if (opcion === 'Depósito') {
                 document.getElementById('container-deposit-options').style.display = 'grid';
@@ -444,8 +434,15 @@
                 return;
             }
 
-            fetch(`/api/${juego === 'traga' ? 'tragamonedas' : juego}-config`).then(res => res.json()).then(data => {
-                if(!data.exito || data.config.length === 0) return alert("Juego en mantenimiento.");
+            const urlEndpoint = `/api/${juego === 'traga' ? 'tragamonedas' : juego}-config`;
+
+            fetch(urlEndpoint)
+            .then(res => res.json())
+            .then(data => {
+                if(!data.exito || !data.config || data.config.length === 0) {
+                    alert("⚠️ Juego en mantenimiento o configuración vacía en el servidor.");
+                    return; 
+                }
                 
                 if(juego === 'ruleta') {
                     ruletaConfig = data.config; currentRotation = 0;
@@ -468,15 +465,22 @@
 
                 document.querySelectorAll('.btn-close-modal').forEach(b => b.classList.add('hidden'));
                 document.getElementById(`modal-${juego}`).style.display = 'block';
+            })
+            .catch(err => {
+                console.error("Error al conectar con la API de minijuegos:", err);
+                alert("❌ Error de red: No se pudo conectar con el casino.");
             });
         }
 
         function cerrarModal(juego) {
             document.getElementById(`modal-${juego}`).style.display = 'none';
+            if(juego !== 'cargar-creditos') {
+                irAlMenuPrincipal();
+            }
         }
 
         function anunciarVictoria(emoji, titulo, msg) {
-            msgArea.style.display = 'flex'; // Asegura que el chat sea visible al ganar
+            msgArea.style.display = 'flex';
             document.getElementById('container-games-options').style.display = 'none';
             document.getElementById('container-chat-input').style.display = 'flex';
             
@@ -486,7 +490,6 @@
             socket.emit('cliente_accion', { estado: 'Menú' }); 
         }
 
-        // --- LÓGICA DE CRÉDITOS ---
         async function solicitarCargaCreditos() {
             const monto = document.getElementById('input-creditos-monto').value;
             const url = document.getElementById('input-creditos-url').value;
@@ -526,7 +529,6 @@
             }
         }
 
-        // --- RUEDAS Y TIRADAS ---
         function jugarRuleta() {
             document.getElementById('btn-spin-ruleta').disabled = true;
             fetch('/api/tirar-ruleta', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ usuario: window.usuarioLogueado }) })
