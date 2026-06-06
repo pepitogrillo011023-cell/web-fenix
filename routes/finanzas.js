@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
+const Retiro = require('../models/Retiro');
 
 module.exports = function(app, requireLogin, io, sharedState) {
     const CierreCaja = mongoose.model('CierreCaja');
