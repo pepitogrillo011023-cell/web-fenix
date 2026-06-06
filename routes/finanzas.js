@@ -105,12 +105,12 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
-    // MODIFICADA: Ahora busca por fecha Y turno
+    // === REEMPLAZAR LA RUTA VIEJA DEL HISTORIAL POR ESTA ===
     app.get('/api/historial-cajas/:fecha/:turno', requireLogin, async (req, res) => {
         try {
             const { fecha, turno } = req.params;
             
-            // Buscamos ambos datos en paralelo
+            // Busca el cierre y los retiros al mismo tiempo
             const cierre = await CierreCaja.findOne({ fecha: fecha, turno: turno });
             const registroRetiros = await Retiro.findOne({ fecha: fecha, turno: turno });
             
