@@ -576,29 +576,31 @@ function addRetiroRow() {
 
 async function procesarCierreRetiros() {
     const tbody = document.getElementById('tbody-retiros');
-    if(!tbody || tbody.children.length === 0) {
-        return alert("No hay retiros ingresados en la tabla para guardar.");
+    if(!tbody || tbody.children.length === 0) return alert("No hay retiros.");
+
+    const fechaTurno = document.getElementById('global-retiro-fecha').value;
+    const turnoGlobal = document.getElementById('global-retiro-turno').value;
+
+    // 1. PRIMERO VERIFICAMOS SI YA EXISTE
+    const checkRes = await fetch(`/api/verificar-turno/${fechaTurno}/${turnoGlobal}`);
+    const checkData = await checkRes.json();
+
+    if (checkData.existe) {
+        const confirmar = confirm(`⚠️ ATENCIÓN: Ya existen datos guardados para el ${fechaTurno} en el turno ${turnoGlobal}. \n\n¿Estás seguro de que querés SOBREESCRIBIR los datos anteriores?`);
+        if (!confirmar) return; // Si dice cancelar, no hacemos nada.
     }
 
+    // 2. SI LLEGÓ ACÁ, ENVIAMOS LOS DATOS (EL RESTO ES IGUAL)
     const payload = {
-        fechaTurno: document.getElementById('global-retiro-fecha').value,
-        turnoGlobal: document.getElementById('global-retiro-turno').value,
-        retiros: Array.from(tbody.querySelectorAll('tr')).map(tr => {
-            const nodeCliente = tr.querySelector('.ret-cliente');
-            const nodeMonto = tr.querySelector('.ret-monto');
-            const nodeHora = tr.querySelector('.ret-hora');
-            const nodeVerifi = tr.querySelector('.ret-verifi');
-            
-            return {
-                cliente: nodeCliente ? nodeCliente.value : 'S/D',
-                monto: nodeMonto ? (Number(nodeMonto.value) || 0) : 0,
-                hora: nodeHora ? nodeHora.value : '',
-                verificado: nodeVerifi ? nodeVerifi.checked : false
-            };
-        })
+        fechaTurno,
+        turnoGlobal,
+        retiros: Array.from(tbody.querySelectorAll('tr')).map(tr => ({
+            cliente: tr.querySelector('.ret-cliente')?.value || 'S/D',
+            monto: Number(tr.querySelector('.ret-monto')?.value) || 0,
+            hora: tr.querySelector('.ret-hora')?.value || '',
+            verificado: tr.querySelector('.ret-verifi')?.checked || false
+        }))
     };
-
-    console.log("Enviando paquete blindado:", payload);
 
     try {
         const res = await fetch('/api/guardar-retiros', {
@@ -606,19 +608,15 @@ async function procesarCierreRetiros() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
         });
-        
         const data = await res.json();
-        
         if(data.success) {
-            alert("✅ ¡Retiros guardados oficialmente en la base de datos!");
+            alert("✅ ¡Retiros guardados oficialmente!");
             tbody.innerHTML = ''; 
-            localStorage.removeItem('borrador_retiros'); // Limpiamos la memoria
+            localStorage.removeItem('borrador_retiros');
         } else {
-            alert("❌ Error del servidor: " + data.mensaje);
+            alert("❌ Error: " + data.mensaje);
         }
-    } catch (error) { 
-        alert("❌ Error de conexión al intentar guardar."); 
-    }
+    } catch (error) { alert("❌ Error de conexión."); }
 }
 // ==========================================
 // CIERRE DE CAJA
