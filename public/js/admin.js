@@ -442,27 +442,38 @@ async function procesarCierreRetiros() {
         return alert("No hay retiros ingresados en la tabla para guardar.");
     }
 
-    const fechaTurno = document.getElementById('global-retiro-fecha').value;
-    const turnoGlobal = document.getElementById('global-retiro-turno').value;
-
-    const retiros = [];
-    tbody.querySelectorAll('tr').forEach(tr => {
-        retiros.push({
-            fecha: tr.querySelector('.ret-fecha').getAttribute('data-val'),
+    // 1. Armamos el paquete de datos real
+    const payload = {
+        fechaTurno: document.getElementById('global-retiro-fecha').value,
+        turnoGlobal: document.getElementById('global-retiro-turno').value,
+        retiros: Array.from(tbody.querySelectorAll('tr')).map(tr => ({
             cliente: tr.querySelector('.ret-cliente').value,
             monto: Number(tr.querySelector('.ret-monto').value) || 0,
             hora: tr.querySelector('.ret-hora').value,
-            verificado: tr.querySelector('.ret-verifi').checked,
-            turno: tr.querySelector('.ret-turno').getAttribute('data-val')
-        });
-    });
+            verificado: tr.querySelector('.ret-verifi').checked
+        }))
+    };
 
-    console.log("Paquete de retiros listo para enviar a la base de datos:", { fechaTurno, turnoGlobal, retiros });
-    
-    // Acá iría tu conexión a la base de datos cuando la armemos:
-    // const res = await fetch('/api/guardar-retiros', { method: 'POST', body: JSON.stringify({ fechaTurno, turnoGlobal, retiros }) });
-    
-    alert(`✅ Turno ${turnoGlobal} cerrado virtualmente.\nSe han empaquetado ${retiros.length} retiros para la base de datos.`);
+    // 2. Lo enviamos de verdad a la base de datos
+    try {
+        const res = await fetch('/api/guardar-retiros', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await res.json();
+        
+        // 3. Confirmamos y limpiamos
+        if(data.success) {
+            alert("✅ ¡Retiros guardados oficialmente en la base de datos!");
+            tbody.innerHTML = ''; // Limpiamos la tabla para el próximo turno
+        } else {
+            alert("❌ Error del servidor: " + data.mensaje);
+        }
+    } catch (error) { 
+        alert("❌ Error de conexión al intentar guardar."); 
+    }
 }
 
 // ==========================================
