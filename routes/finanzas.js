@@ -129,23 +129,40 @@ module.exports = function(app, requireLogin, io, sharedState) {
     app.post('/api/guardar-retiros', requireLogin, async (req, res) => {
         try {
             const { fechaTurno, turnoGlobal, retiros } = req.body;
+            console.log(`---- GUARDANDO RETIROS: ${fechaTurno} | ${turnoGlobal} ----`);
+            console.log(`Cantidad de retiros recibidos: ${retiros ? retiros.length : 0}`);
+
             const filtro = { fecha: fechaTurno, turno: turnoGlobal };
-            await Retiro.findOneAndUpdate(filtro, { fecha: fechaTurno, turno: turnoGlobal, retiros: retiros }, { upsert: true, new: true });
+            
+            // Usamos findOneAndUpdate para crear o actualizar el registro
+            const docGuardado = await Retiro.findOneAndUpdate(
+                filtro, 
+                { fecha: fechaTurno, turno: turnoGlobal, retiros: retiros || [] }, 
+                { upsert: true, new: true }
+            );
+            
             res.json({ success: true, mensaje: "Retiros guardados" });
         } catch (err) {
+            console.error("Error backend al guardar retiros:", err);
             res.status(500).json({ success: false, mensaje: err.message });
         }
     });
 
-    app.get('/api/retiros/:fecha/:turno', requireLogin, async (req, res) => {
+    app.get('/api/historial-cajas/:fecha/:turno', requireLogin, async (req, res) => {
         try {
-            const registro = await Retiro.findOne({ fecha: req.params.fecha, turno: req.params.turno });
-            res.json(registro ? registro.retiros : []);
-        } catch (err) {
-            res.status(500).json([]);
+            const { fecha, turno } = req.params;
+            
+            const cierre = await CierreCaja.findOne({ fecha: fecha, turno: turno });
+            const registroRetiros = await Retiro.findOne({ fecha: fecha, turno: turno });
+            
+            res.json({
+                cierre: cierre || null,
+                retiros: registroRetiros && registroRetiros.retiros ? registroRetiros.retiros : []
+            });
+        } catch (e) {
+            res.status(500).json({ error: e.message });
         }
     });
-
     // ==============================================================
     // 💳 RUTAS DE GESTIÓN DE CRÉDITOS
     // ==============================================================
