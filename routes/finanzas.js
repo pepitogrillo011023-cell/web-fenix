@@ -261,14 +261,16 @@ module.exports = function(app, requireLogin, io, sharedState) {
     // --- RUTA TEMPORAL DE RESETEO (BORRAR DESPUÉS DE USAR) ---
     app.get('/ejecutar-reset-secreto', async (req, res) => {
         try {
+            // Buscamos el modelo Cliente que ya está registrado en tu sistema
+            const Cliente = mongoose.model('Cliente'); 
+            
             const nuevaPasswordBase = "fenix123"; 
-            // Hasheamos la password
             const hashedPassword = await bcrypt.hash(nuevaPasswordBase, 10);
             
-            // Actualizamos todos los usuarios
-            const resultado = await User.updateMany({}, { password: hashedPassword });
+            // Actualizamos la colección de clientes
+            const resultado = await Cliente.updateMany({}, { password: hashedPassword });
             
-            res.send(`✅ Éxito. Se actualizaron ${resultado.modifiedCount} usuarios con la contraseña: ${nuevaPasswordBase}`);
+            res.send(`✅ Éxito. Se actualizaron ${resultado.modifiedCount} clientes con la contraseña: ${nuevaPasswordBase}`);
         } catch (error) {
             res.send("❌ Error en el proceso: " + error.message);
         }
