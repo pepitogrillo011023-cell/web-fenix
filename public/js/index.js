@@ -70,6 +70,10 @@ function volverYLimpiarChat() {
 // ==========================================
 // AUTENTICACIÓN Y SOCKETS
 // ==========================================
+function validarAccesoManual() { 
+    validarAcceso(false); 
+}
+
 function validarAcceso(esAutoLogin) {
     const u = document.getElementById('login-user').value.trim(); 
     const p = document.getElementById('login-pass').value.trim();
@@ -83,7 +87,7 @@ function validarAcceso(esAutoLogin) {
             window.usuarioLogueado = u;
             socket.emit('identificar_usuario', { usuario: u });
         } else if(!esAutoLogin) alert('Credenciales incorrectas');
-    }).catch(e => console.error("Error validando:", e));
+    });
 }
 
 function cerrarSesion() {
