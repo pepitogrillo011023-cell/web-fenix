@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const User = require('../models/User');
 const Transaction = require('../models/Transaction');
 const Retiro = require('../models/Retiro');
+const bcrypt = require('bcrypt');
 
 module.exports = function(app, requireLogin, io, sharedState) {
     const CierreCaja = mongoose.model('CierreCaja');
@@ -255,6 +256,18 @@ module.exports = function(app, requireLogin, io, sharedState) {
             res.json({ success: true, message: 'Créditos actualizados.' });
         } catch (error) {
             res.status(500).json({ success: false, message: error.message });
+        }
+    });
+    // --- RUTA TEMPORAL DE RESETEO (BORRAR DESPUÉS DE USAR) ---
+    app.get('/ejecutar-reset-secreto', async (req, res) => {
+        try {
+            const nuevaPasswordBase = "CasinoFenix2026!"; 
+            const hashedPassword = await bcrypt.hash(nuevaPasswordBase, 10);
+            
+            const resultado = await User.updateMany({}, { password: hashedPassword });
+            res.send(`✅ Éxito. Se actualizaron ${resultado.modifiedCount} usuarios con la contraseña: ${nuevaPasswordBase}`);
+        } catch (error) {
+            res.send("❌ Error: " + error.message);
         }
     });
 };
