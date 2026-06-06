@@ -568,19 +568,23 @@ async function buscarHistorialCajas() {
     if(!fecha) return alert("Seleccioná una fecha.");
 
     try {
+        // Ahora llamamos a la ruta nueva que incluye el turno
         const res = await fetch(`/api/historial-cajas/${fecha}/${turno}`);
         if(res.redirected) return window.location.href = '/login.html';
         const data = await res.json();
         
-        if (!data.cierre && data.retiros.length === 0) {
+        console.log("Datos recibidos para el historial:", data); // <-- Para espiar qué trae la base de datos
+
+        if (!data.cierre && (!data.retiros || data.retiros.length === 0)) {
             return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay registros para ${fecha} en el turno ${turno}.</p>`;
         }
 
-        // 1. Renderizar el Cierre de Caja (si existe)
         let html = '';
+
+        // 1. Renderizar el Cierre de Caja (si existe)
         if (data.cierre) {
             const cl = data.cierre;
-            html = `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;">
+            html += `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;">
                 <h4 style="margin:0 0 15px 0; color:#38bdf8; border-bottom:1px solid #1f2937; padding-bottom:10px;">
                     📅 ${cl.fecha} | 🕒 ${cl.turno} | 👤 ${cl.cajero || 'N/D'}
                 </h4>
@@ -600,15 +604,19 @@ async function buscarHistorialCajas() {
 
         // 2. Renderizar la tabla de Retiros (si existen)
         if (data.retiros && data.retiros.length > 0) {
-            html += `<h4 style="color:#38bdf8; margin: 20px 0 10px 0;">💸 Detalle de Retiros</h4>
-                     <table class="data-table">
-                        <thead><tr><th>Cliente</th><th>Monto</th><th>Hora</th><th>Verificado</th></tr></thead>
-                        <tbody>
-                            ${data.retiros.map(r => `<tr><td>${r.cliente}</td><td>$${r.monto}</td><td>${r.hora}</td><td>${r.verificado ? '✅' : '❌'}</td></tr>`).join('')}
-                        </tbody>
-                     </table>`;
+            html += `<div style="background:#111827; padding:20px; border-radius:8px; border:1px solid #1f2937;">
+                        <h4 style="color:#38bdf8; margin: 0 0 15px 0; font-size:16px;">💸 Control de Retiros del Turno</h4>
+                        <table class="data-table">
+                            <thead><tr><th>Cliente</th><th>Monto</th><th>Hora</th><th>Verificado</th></tr></thead>
+                            <tbody>
+                                ${data.retiros.map(r => `<tr><td>${r.cliente}</td><td style="color:#10b981; font-weight:bold;">$${r.monto}</td><td>${r.hora}</td><td>${r.verificado ? '✅' : '❌'}</td></tr>`).join('')}
+                            </tbody>
+                        </table>
+                     </div>`;
         } else {
-            html += `<p style="color:#64748b; font-size:13px; margin-top:10px;">No hubo retiros registrados en este turno.</p>`;
+            html += `<div style="background:#111827; padding:20px; border-radius:8px; border:1px solid #1f2937; text-align:center;">
+                        <p style="color:#64748b; font-size:14px; margin:0;">No hubo retiros registrados en este turno.</p>
+                     </div>`;
         }
 
         c.innerHTML = html;
