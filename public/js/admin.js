@@ -353,6 +353,147 @@ async function actualizarCostoMinijuego(nombre, inputId) {
 }
 
 // ==========================================
+// 🛡️ SISTEMA DE AUTOGUARDADO (BORRADORES)
+// ==========================================
+const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
+
+function guardarBorradoresLocales() {
+    // 1. Guardar Borrador de Retiros
+    const tbodyRetiros = document.getElementById('tbody-retiros');
+    if (tbodyRetiros) {
+        const retiros = Array.from(tbodyRetiros.querySelectorAll('tr')).map(tr => ({
+            cliente: tr.querySelector('.ret-cliente')?.value || '',
+            monto: tr.querySelector('.ret-monto')?.value || '',
+            hora: tr.querySelector('.ret-hora')?.value || '',
+            verificado: tr.querySelector('.ret-verifi')?.checked || false,
+            turno: tr.querySelector('.ret-turno')?.getAttribute('data-val') || '',
+            fecha: tr.querySelector('.ret-fecha')?.getAttribute('data-val') || ''
+        }));
+        
+        if (retiros.length > 0) {
+            const globalFecha = document.getElementById('global-retiro-fecha')?.value || '';
+            const globalTurno = document.getElementById('global-retiro-turno')?.value || '';
+            localStorage.setItem('borrador_retiros', JSON.stringify({ globalFecha, globalTurno, retiros }));
+        } else {
+            localStorage.removeItem('borrador_retiros');
+        }
+    }
+
+    // 2. Guardar Borrador de Cierre de Caja
+    const gastos = Array.from(document.querySelectorAll('#tabla-gastos tbody tr')).map(tr => ({
+        tipo: tr.querySelector('.gt')?.value || '',
+        usuario: tr.querySelector('.gu')?.value || '',
+        monto: tr.querySelector('.gm')?.value || ''
+    }));
+    const propinas = Array.from(document.querySelectorAll('#tabla-propinas tbody tr')).map(tr => ({
+        usuario: tr.querySelector('.pu')?.value || '',
+        monto: tr.querySelector('.pm')?.value || ''
+    }));
+    
+    const ingreso = document.getElementById('cc-ingreso')?.value;
+    if (ingreso || gastos.length > 0 || propinas.length > 0) {
+        const inputs = {
+            fechaInicio: document.getElementById('cc-fecha-inicio')?.value || '',
+            fechaFin: document.getElementById('cc-fecha-fin')?.value || '',
+            horaInicio: document.getElementById('cc-hora-inicio')?.value || '',
+            horaFin: document.getElementById('cc-hora-fin')?.value || '',
+            cajero: document.getElementById('cc-cajero')?.value || '',
+            turno: document.getElementById('cc-turno')?.value || 'Mañana',
+            ingreso: ingreso || '',
+            oro: document.getElementById('cc-oro')?.value || '',
+            ganamos: document.getElementById('cc-ganamos')?.value || '',
+            real: document.getElementById('cc-real')?.value || '',
+            reserva: document.getElementById('cc-reserva')?.value || ''
+        };
+        localStorage.setItem('borrador_cierre', JSON.stringify({ inputs, gastos, propinas }));
+    }
+}
+
+function restaurarBorradoresLocales() {
+    let borradorRecuperado = false;
+
+    // 1. Restaurar Retiros
+    const dataRetiros = JSON.parse(localStorage.getItem('borrador_retiros'));
+    if (dataRetiros && dataRetiros.retiros && dataRetiros.retiros.length > 0) {
+        document.getElementById('global-retiro-fecha').value = dataRetiros.globalFecha;
+        document.getElementById('global-retiro-turno').value = dataRetiros.globalTurno;
+        
+        const tbody = document.getElementById('tbody-retiros');
+        if(tbody) {
+            tbody.innerHTML = ''; 
+            const inputStyle = "margin:0; width:90%; border:1px solid #64748b; color:black; background:white; padding: 5px; border-radius: 4px;";
+
+            dataRetiros.retiros.forEach(r => {
+                let bgColor = r.turno === "Mañana" ? "#fef08a" : (r.turno === "Tarde" ? "#fed7aa" : "#93c5fd");
+                const tr = document.createElement('tr');
+                tr.style.backgroundColor = bgColor;
+                tr.style.color = "#000000";
+                tr.innerHTML = `
+                    <td class="ret-fecha" data-val="${r.fecha}" style="font-weight:bold; text-align:center;">${r.fecha.split('-').reverse().join('/')}</td>
+                    <td style="text-align:center;"><input type="text" class="input-text-adv ret-cliente" value="${r.cliente}" placeholder="Usuario" style="${inputStyle}"></td>
+                    <td style="text-align:center;"><input type="number" class="input-text-adv ret-monto" value="${r.monto}" placeholder="Monto" style="${inputStyle}"></td>
+                    <td style="text-align:center;"><input type="time" class="input-text-adv ret-hora" value="${r.hora}" style="${inputStyle}"></td>
+                    <td style="text-align:center;"><input type="checkbox" class="ret-verifi" style="width:20px; height:20px; cursor:pointer;" ${r.verificado ? 'checked' : ''}></td>
+                    <td class="ret-turno" data-val="${r.turno}" style="font-weight:bold; text-align:center;">${r.turno}</td>
+                    <td style="text-align:center;"><button onclick="this.closest('tr').remove()" style="background:#ef4444; border:none; color:white; padding:5px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">X</button></td>
+                `;
+                tbody.appendChild(tr);
+            });
+            borradorRecuperado = true;
+        }
+    }
+
+    // 2. Restaurar Cierre de Caja
+    const dataCierre = JSON.parse(localStorage.getItem('borrador_cierre'));
+    if (dataCierre) {
+        if(dataCierre.inputs) {
+            if(document.getElementById('cc-fecha-inicio')) document.getElementById('cc-fecha-inicio').value = dataCierre.inputs.fechaInicio;
+            if(document.getElementById('cc-fecha-fin')) document.getElementById('cc-fecha-fin').value = dataCierre.inputs.fechaFin;
+            if(document.getElementById('cc-hora-inicio')) document.getElementById('cc-hora-inicio').value = dataCierre.inputs.horaInicio;
+            if(document.getElementById('cc-hora-fin')) document.getElementById('cc-hora-fin').value = dataCierre.inputs.horaFin;
+            if(document.getElementById('cc-cajero')) document.getElementById('cc-cajero').value = dataCierre.inputs.cajero;
+            if(document.getElementById('cc-turno')) document.getElementById('cc-turno').value = dataCierre.inputs.turno;
+            if(document.getElementById('cc-ingreso')) document.getElementById('cc-ingreso').value = dataCierre.inputs.ingreso;
+            if(document.getElementById('cc-oro')) document.getElementById('cc-oro').value = dataCierre.inputs.oro;
+            if(document.getElementById('cc-ganamos')) document.getElementById('cc-ganamos').value = dataCierre.inputs.ganamos;
+            if(document.getElementById('cc-real')) document.getElementById('cc-real').value = dataCierre.inputs.real;
+            if(document.getElementById('cc-reserva')) document.getElementById('cc-reserva').value = dataCierre.inputs.reserva;
+        }
+
+        if(dataCierre.gastos && dataCierre.gastos.length > 0) {
+            const tbodyG = document.querySelector('#tabla-gastos tbody');
+            if(tbodyG) {
+                tbodyG.innerHTML = '';
+                dataCierre.gastos.forEach(g => {
+                    const tr = document.createElement('tr');
+                    let options = opcionesGasto.map(o => `<option value="${o}" ${o === g.tipo ? 'selected' : ''}>${o}</option>`).join('');
+                    tr.innerHTML = `<td><select class="input-text-adv gt" onchange="calcCierre()" style="margin-bottom:0;">${options}</select></td><td><input type="text" class="input-text-adv gu" value="${g.usuario}" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num gm" value="${g.monto}" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
+                    tbodyG.appendChild(tr);
+                });
+            }
+        }
+
+        if(dataCierre.propinas && dataCierre.propinas.length > 0) {
+            const tbodyP = document.querySelector('#tabla-propinas tbody');
+            if(tbodyP) {
+                tbodyP.innerHTML = '';
+                dataCierre.propinas.forEach(p => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td><input type="text" class="input-text-adv pu" value="${p.usuario}" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num pm" value="${p.monto}" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
+                    tbodyP.appendChild(tr);
+                });
+            }
+        }
+        calcCierre(); // Recalcular totales
+    }
+
+    // Activamos el loop de guardado cada 3 segundos
+    setInterval(guardarBorradoresLocales, 3000);
+    
+    return borradorRecuperado;
+}
+
+// ==========================================
 // RETIROS (NUEVO CONTROL DE CAJAS)
 // ==========================================
 
@@ -365,14 +506,12 @@ function inicializarTurnoLogico() {
     let fechaSelect = new Date(ahora);
     let turnoSelect = "Noche";
 
-    // Lógica de horarios 
     if (tiempoDecimal >= 5.75 && tiempoDecimal < 13.75) {
         turnoSelect = "Mañana";
     } else if (tiempoDecimal >= 13.75 && tiempoDecimal < 21.75) {
         turnoSelect = "Tarde";
     } else {
         turnoSelect = "Noche";
-        // Si estamos pasada la medianoche pero antes del corte de las 5:45 AM, sigue siendo el día anterior administrativamente
         if (tiempoDecimal < 5.75) {
             fechaSelect.setDate(fechaSelect.getDate() - 1);
         }
@@ -406,13 +545,12 @@ function addRetiroRow() {
         return;
     }
 
-    // Definir colores según tu Excel
     let bgColor = "";
     let textColor = "#000000"; 
     
-    if (turnoGlobal === "Mañana") bgColor = "#fef08a"; // Amarillo
-    if (turnoGlobal === "Tarde") bgColor = "#fed7aa";  // Naranja
-    if (turnoGlobal === "Noche") bgColor = "#93c5fd";  // Azul claro
+    if (turnoGlobal === "Mañana") bgColor = "#fef08a"; 
+    if (turnoGlobal === "Tarde") bgColor = "#fed7aa";  
+    if (turnoGlobal === "Noche") bgColor = "#93c5fd";  
 
     const ahora = new Date();
     const horaActual = ahora.getHours().toString().padStart(2, '0') + ':' + ahora.getMinutes().toString().padStart(2, '0');
@@ -442,7 +580,6 @@ async function procesarCierreRetiros() {
         return alert("No hay retiros ingresados en la tabla para guardar.");
     }
 
-    // Armado seguro del paquete (evita errores si falta algún input)
     const payload = {
         fechaTurno: document.getElementById('global-retiro-fecha').value,
         turnoGlobal: document.getElementById('global-retiro-turno').value,
@@ -474,7 +611,8 @@ async function procesarCierreRetiros() {
         
         if(data.success) {
             alert("✅ ¡Retiros guardados oficialmente en la base de datos!");
-            tbody.innerHTML = ''; // Limpiar tabla
+            tbody.innerHTML = ''; 
+            localStorage.removeItem('borrador_retiros'); // Limpiamos la memoria
         } else {
             alert("❌ Error del servidor: " + data.mensaje);
         }
@@ -482,11 +620,9 @@ async function procesarCierreRetiros() {
         alert("❌ Error de conexión al intentar guardar."); 
     }
 }
-
 // ==========================================
 // CIERRE DE CAJA
 // ==========================================
-const opcionesGasto = ["Salida Lean", "Salida Nahue", "Salida Brai", "Salida Tati", "Inyeccion", "Fichas Mega", "Fichas Ganamos", "Bonos", "Sueldo", "Devolucion Reserva", "BB", "BR", "Fichas Oro"];
 function addGastoRow() {
     const tbody = document.querySelector('#tabla-gastos tbody');
     if(!tbody) return;
@@ -495,6 +631,7 @@ function addGastoRow() {
     tr.innerHTML = `<td><select class="input-text-adv gt" onchange="calcCierre()" style="margin-bottom:0;">${options}</select></td><td><input type="text" class="input-text-adv gu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num gm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
     tbody.appendChild(tr);
 }
+
 function addPropinaRow() {
     const tbody = document.querySelector('#tabla-propinas tbody');
     if(!tbody) return;
@@ -502,6 +639,7 @@ function addPropinaRow() {
     tr.innerHTML = `<td><input type="text" class="input-text-adv pu" style="margin-bottom:0;"></td><td><input type="number" class="input-text-adv val-num pm" oninput="calcCierre()" style="margin-bottom:0;"></td><td><button class="btn-remove" onclick="this.parentElement.parentElement.remove(); calcCierre()">X</button></td>`;
     tbody.appendChild(tr);
 }
+
 function calcCierre() {
     let totG = 0; document.querySelectorAll('.gm').forEach(i => totG += Number(i.value) || 0); 
     if(document.getElementById('tot-gastos')) document.getElementById('tot-gastos').innerText = totG.toFixed(2); 
@@ -527,6 +665,7 @@ function calcCierre() {
         document.getElementById('cc-dif').style.color = dif < 0 ? '#ef4444' : '#10b981';
     }
 }
+
 async function guardarCierreDB() {
     if(!document.getElementById('cc-fecha-inicio').value) return alert("Ingresá la fecha de inicio.");
     const gastos = []; document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 }));
@@ -552,17 +691,28 @@ async function guardarCierreDB() {
     };
     const res = await fetch('/api/cierre-caja', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
     if(res.redirected) return window.location.href = '/login.html';
-    if(res.ok) { alert("✅ Guardado!"); if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); }
+    if(res.ok) { 
+        alert("✅ Guardado!"); 
+        localStorage.removeItem('borrador_cierre'); // Limpiamos la memoria
+        if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); 
+    }
 }
 
-addGastoRow(); addPropinaRow(); 
-if(document.getElementById('cc-fecha-inicio')) document.getElementById('cc-fecha-inicio').valueAsDate = new Date();
-if(document.getElementById('cc-fecha-fin')) document.getElementById('cc-fecha-fin').valueAsDate = new Date();
+// Inicialización UI de Cierre
+setTimeout(() => {
+    // Si no recuperó datos del borrador, le damos inicialización base
+    if(document.querySelectorAll('#tabla-gastos tbody tr').length === 0) {
+        addGastoRow(); addPropinaRow(); 
+        if(document.getElementById('cc-fecha-inicio')) document.getElementById('cc-fecha-inicio').valueAsDate = new Date();
+        if(document.getElementById('cc-fecha-fin')) document.getElementById('cc-fecha-fin').valueAsDate = new Date();
+    }
+}, 500);
 
 // ==========================================
 // RESUMEN E HISTORIAL
 // ==========================================
 const f = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' });
+
 async function buscarResumen() {
     const fecha = document.getElementById('res-fecha').value; if(!fecha) return;
     const res = await fetch('/api/resumen-cajas/' + fecha); if(res.redirected) return window.location.href = '/login.html';
@@ -578,6 +728,7 @@ async function buscarResumen() {
     document.getElementById('res-mensual-fichas').innerHTML = `<tr><td class="header-row">MEGAFARAON</td><td>${f.format(m.fichas.mega)}</td></tr><tr><td class="header-row">GANAMOS</td><td>${f.format(m.fichas.ganamos)}</td></tr><tr><td class="header-row">ORO</td><td>${f.format(m.fichas.oro)}</td></tr>`;
     document.getElementById('res-mensual-bonos').innerHTML = `<tr><td class="header-row">CANTIDAD</td><td>${m.bonos.bb.cant}</td><td>${m.bonos.br.cant}</td></tr><tr><td class="header-row">MONTO</td><td>${f.format(m.bonos.bb.monto)}</td><td>${f.format(m.bonos.br.monto)}</td></tr>`;
 }
+
 async function buscarHistorialCajas() {
     const fecha = document.getElementById('hist-fecha').value;
     const turno = document.getElementById('hist-turno').value;
@@ -586,12 +737,9 @@ async function buscarHistorialCajas() {
     if(!fecha) return alert("Seleccioná una fecha.");
 
     try {
-        // Ahora llamamos a la ruta nueva que incluye el turno
         const res = await fetch(`/api/historial-cajas/${fecha}/${turno}`);
         if(res.redirected) return window.location.href = '/login.html';
         const data = await res.json();
-        
-        console.log("Datos recibidos para el historial:", data); // <-- Para espiar qué trae la base de datos
 
         if (!data.cierre && (!data.retiros || data.retiros.length === 0)) {
             return c.innerHTML = `<p style="color:#94a3b8; text-align:center; margin-top:40px;">No hay registros para ${fecha} en el turno ${turno}.</p>`;
@@ -599,7 +747,6 @@ async function buscarHistorialCajas() {
 
         let html = '';
 
-        // 1. Renderizar el Cierre de Caja (si existe)
         if (data.cierre) {
             const cl = data.cierre;
             html += `<div class="excel-card" style="border-color: #38bdf8; margin-bottom: 30px;">
@@ -620,7 +767,6 @@ async function buscarHistorialCajas() {
             </div>`;
         }
 
-        // 2. Renderizar la tabla de Retiros (si existen)
         if (data.retiros && data.retiros.length > 0) {
             html += `<div style="background:#111827; padding:20px; border-radius:8px; border:1px solid #1f2937;">
                         <h4 style="color:#38bdf8; margin: 0 0 15px 0; font-size:16px;">💸 Control de Retiros del Turno</h4>
@@ -770,7 +916,7 @@ function dibujarRuletaAdmin() {
 socket.on('cargar_datos_tablas', (datos) => {
     if (datos.clientes) {
         clientesGlobal = datos.clientes;
-        buscarCliente(); // Actualiza y aplica la búsqueda si había alguna
+        buscarCliente(); 
     }
     if (datos.retiros) {
         const tbody = document.querySelector('#section-retiros .data-table tbody'); 
@@ -923,11 +1069,9 @@ async function procesarDatos() {
 // CONFIGURACIÓN DE LA TIENDA
 // ==========================================
 function mostrarTiendaAdmin() {
-    // Escondemos las otras secciones
     document.querySelectorAll('.view-section').forEach(s => s.classList.remove('active-view'));
     document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active-nav'));
     
-    // Mostramos la tienda
     const secTienda = document.getElementById('section-tienda');
     if(secTienda) secTienda.classList.add('active-view');
     
@@ -981,5 +1125,11 @@ async function guardarTiendaAdmin() {
 
 // INICIALIZADOR GLOBAL DE LA PÁGINA
 document.addEventListener('DOMContentLoaded', () => {
-    inicializarTurnoLogico();
+    // Intentamos recuperar si se cerró por error
+    const recuperoAlgo = restaurarBorradoresLocales();
+    
+    // Si la tabla estaba vacía y no recuperó retiros, iniciamos el turno lógico normal
+    if (!recuperoAlgo) {
+        inicializarTurnoLogico();
+    }
 });
