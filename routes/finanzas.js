@@ -6,7 +6,6 @@ const Retiro = require('../models/Retiro');
 module.exports = function(app, requireLogin, io, sharedState) {
     const CierreCaja = mongoose.model('CierreCaja');
     const Cliente = mongoose.model('Cliente');
-    const Retiro = mongoose.model('Retiro'); // Modelo de Retiros importado
 
     // Función auxiliar para notificar al panel administrativo
     const notificarPanelAdmin = async () => {
