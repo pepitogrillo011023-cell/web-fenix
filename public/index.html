@@ -24,17 +24,19 @@
         .producto-precio { color: #f59e0b; font-weight: bold; margin-bottom: 10px; display: block; font-size: 16px; }
         .btn-tienda { background: #7c3aed !important; border: none !important; }
         
-        /* Botón de volver para navegación */
+        /* Estilos del botón de volver dinámico */
         .btn-volver-menu { 
-            background: #3b82f6; 
+            background: #ef4444; /* Rojo para destacar la salida */
             border: none; 
             color: white; 
-            padding: 8px 15px; 
-            border-radius: 5px; 
+            padding: 10px 15px; 
+            border-radius: 8px; 
             cursor: pointer; 
             font-weight: bold; 
-            margin: 10px; 
+            margin: 10px auto; 
             font-size: 14px;
+            width: 90%;
+            display: block;
         }
     </style>
 </head>
@@ -73,18 +75,19 @@
         </div>
 
         <div id="vista-chat" class="hidden">
-            <button class="btn-volver-menu" onclick="irAlMenuPrincipal()">⬅ Volver al Menú</button>
+            
+            <button id="btn-volver-chat-top" class="btn-volver-menu" style="display: none;" onclick="irAlMenuPrincipal()">⬅ Volver al Menú</button>
 
-            <div class="chat-messages" id="messages-area">
+            <div class="chat-messages" id="messages-area" style="display: none;">
                 <div style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">Conectando...</div>
             </div>
             
             <div id="container-menu-options" class="menu-grid-main" style="display: none;">
                 <div class="grid-2-cols">
-                    <button class="btn-action" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
-                    <button class="btn-action" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
-                    <button class="btn-action" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
-                    <button class="btn-action" onclick="seleccionarOpcion('Referido')">🎁 Referí y GANÁ</button>
+                    <button class="btn-action" onclick="abrirOpcionChat('Depósito')">💰 Cargar</button>
+                    <button class="btn-action" onclick="abrirOpcionChat('Retiro')">💸 Retirar</button>
+                    <button class="btn-action" onclick="abrirOpcionChat('Soporte')">🛠️ Soporte</button>
+                    <button class="btn-action" onclick="abrirOpcionChat('Referido')">🎁 Referí y GANÁ</button>
                 </div>
                 
                 <button class="btn-action" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos</button>
@@ -112,7 +115,7 @@
                 <button class="btn-action" onclick="irAlMenuPrincipal()">↩️ Volver</button>
             </div>
 
-            <div id="container-chat-input" class="chat-input-area">
+            <div id="container-chat-input" class="chat-input-area" style="display: none;">
                 <input type="text" id="client-raw-input" class="input-dark" placeholder="Escribí acá...">
                 <button class="btn-primary" onclick="enviarMensajeLibreCliente()">Enviar</button>
             </div>
@@ -130,17 +133,41 @@
 
     <script src="/js/index.js"></script>
     <script>
-        // Esta función asume que irAlMenuPrincipal ya existe en index.js o la definimos aquí
-        function irAlMenuPrincipal() {
-            // Ocultamos las secciones de juegos/depósito
-            document.getElementById('container-games-options').style.display = 'none';
-            document.getElementById('container-deposit-options').style.display = 'none';
-            // Mostramos el menú principal
-            document.getElementById('container-menu-options').style.display = 'block';
-            // Opcional: mostrar mensajes del chat si es necesario
+        // 1. FUNCIÓN PARA ENTRAR A UNA OPCIÓN DEL CHAT
+        function abrirOpcionChat(opcion) {
+            // Mostramos la interfaz de chat
             document.getElementById('messages-area').style.display = 'block';
+            document.getElementById('container-chat-input').style.display = 'flex';
+            document.getElementById('btn-volver-chat-top').style.display = 'block';
+            
+            // Ocultamos el menú principal
+            document.getElementById('container-menu-options').style.display = 'none';
+
+            // Ejecutamos tu función original del bot
+            if (typeof seleccionarOpcion === 'function') {
+                seleccionarOpcion(opcion);
+            }
         }
 
+        // 2. FUNCIÓN MAESTRA PARA VOLVER AL MENÚ LIMPIO
+        function irAlMenuPrincipal() {
+            // Ocultamos absolutamente todo lo secundario
+            const btnVolver = document.getElementById('btn-volver-chat-top');
+            if(btnVolver) btnVolver.style.display = 'none';
+
+            document.getElementById('messages-area').style.display = 'none';
+            document.getElementById('container-chat-input').style.display = 'none';
+            document.getElementById('container-games-options').style.display = 'none';
+            document.getElementById('container-deposit-options').style.display = 'none';
+
+            // LIMPIAMOS EL HISTORIAL DEL CHAT
+            document.getElementById('messages-area').innerHTML = '<div style="text-align: center; color: #64748b; font-size: 12px; margin-top: 20px;">Conectando...</div>';
+
+            // Mostramos el menú principal limpio
+            document.getElementById('container-menu-options').style.display = 'block';
+        }
+
+        // 3. TIENDA
         async function abrirTienda() {
             try {
                 const res = await fetch('/api/tienda');
