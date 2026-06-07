@@ -268,16 +268,25 @@ function seleccionarOpcion(opcion) {
         let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><br>Enviá el comprobante 📄`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
         socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
+
     } else if (opcion === 'Soporte') {
         mostrarChat();
         let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
         socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+
     } else if (opcion === 'Retiro') {
         mostrarChat();
         let msgBot = `💸 <b>Retiro:</b> ¿Qué monto querés retirar? Escribilo aquí.`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
         socket.emit('cliente_accion', { estado: 'Retiro', mensajeCliente: opcion, mensajeBot: msgBot });
+
+    } else if (opcion === 'Referido') {
+        // --- AQUÍ ESTÁ LA NUEVA LÓGICA ---
+        abrirModalReferidos();
+        // Volvemos a mostrar el menú para que no desaparezca si el usuario cierra el modal
+        if (menu) menu.style.display = 'grid'; 
+
     } else {
         mostrarChat();
         let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
@@ -285,9 +294,9 @@ function seleccionarOpcion(opcion) {
         socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
         setTimeout(irAlMenuPrincipal, 4000); 
     }
+    
     msgArea.scrollTop = msgArea.scrollHeight;
 }
-
 function ejecutarAccionDeposito(accion) {
     let msg = accion === 'Subir Comprobante' ? "📁 Archivo recibido." : "✅ Pago reportado.";
     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msg}</div></div>`;
