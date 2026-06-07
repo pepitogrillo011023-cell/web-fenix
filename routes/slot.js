@@ -39,6 +39,8 @@ function tirarRodillo() {
 // 3. LA RUTA DEL JUEGO
 // Nota que usamos router.post en lugar de app.post
 router.post('/api/jugar-slot', (req, res) => {
+    console.log("Cuerpo de la petición recibido:", req.body);
+    
     const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
 
     // Validación de usuario
