@@ -108,7 +108,16 @@ module.exports = function(app, requireLogin, io, sharedState) {
                     if (!cliente.password) {
                         await Cliente.updateOne({ usuarioCasino: usuario }, { $set: { password: '1234' } });
                     }
-                    res.json({ exito: true });
+                    
+                    // --- AQUÍ ESTÁ EL CAMBIO ---
+                    // 1. Guardamos al usuario en la sesión para que el servidor lo recuerde
+                    req.session.usuario = usuario; 
+                    
+                    // 2. Guardamos la sesión explícitamente y luego respondemos
+                    req.session.save(() => {
+                        res.json({ exito: true });
+                    });
+                    // ---------------------------
                 } else {
                     res.json({ exito: false }); 
                 }
