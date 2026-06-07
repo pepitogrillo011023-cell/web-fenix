@@ -9,11 +9,17 @@ const premiosConfig = [
     { id: 'esfera', nombre: 'Esfera', tipo: 'multiplicador', valor: 1 },
     { id: 'bonus', nombre: 'Bonus', tipo: 'fijo', valor: '10 Tiradas Gratis' }
 ];
+
 function actualizarTablaPremios() {
-    const apuesta = parseInt(document.getElementById('input-apuesta').value) || 0;
-    const contenedorTabla = document.getElementById('contenedor-premios'); // Asegúrate de tener este ID
+    // IMPORTANTE: Asegúrate de que este ID coincida con tu HTML
+    const input = document.getElementById('input-apuesta');
+    if (!input) return; // Si no existe, salimos para evitar errores
+
+    const apuesta = parseInt(input.value) || 0;
+    const contenedorTabla = document.getElementById('contenedor-premios');
     
-    // Limpiamos la tabla antes de redibujarla
+    if (!contenedorTabla) return;
+
     contenedorTabla.innerHTML = '';
 
     premiosConfig.forEach(premio => {
@@ -23,11 +29,9 @@ function actualizarTablaPremios() {
             const calculo = apuesta * premio.valor;
             textoPremio = `${calculo} CR`;
         } else {
-            // Si es fijo, mostramos el valor directamente (10 Tiradas Gratis)
             textoPremio = premio.valor;
         }
 
-        // Creamos la fila dinámicamente
         contenedorTabla.innerHTML += `
             <div class="prize-row">
                 <span>3x ${premio.nombre}:</span> 
@@ -35,7 +39,9 @@ function actualizarTablaPremios() {
             </div>
         `;
     });
+} // <--- ¡ESTA LLAVE FALTABA! Cierra la función de la tabla
 
+// --- LÓGICA DE LA MÁQUINA ---
 function SlotMachine(container, reels, callback, options) {
     const self = this;
     
@@ -103,4 +109,8 @@ function SlotMachine(container, reels, callback, options) {
     return self;
 }
 
+// Exportamos para usarlo en otros archivos
 window.slotMachine = (c, r, cb, o) => new SlotMachine(c, r, cb, o);
+
+// Inicializar tabla apenas cargue el archivo
+window.addEventListener('DOMContentLoaded', actualizarTablaPremios);
