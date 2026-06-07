@@ -52,6 +52,8 @@ router.post('/api/jugar-slot', (req, res) => {
     // Generamos los rodillos
     const rodillos = [tirarRodillo(), tirarRodillo(), tirarRodillo()];
 
+    console.log("🎲 Resultado generado por el backend:", rodillos);
+
     // Calculamos el premio
     let premio = 0;
     const esGanador = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
