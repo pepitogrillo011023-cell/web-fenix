@@ -204,7 +204,7 @@
                 slot.startSpinAnimation();
 
                 // === COMUNICACIÓN CON EL BACKEND ===
-                try {
+               try {
                     const respuesta = await fetch('/api/jugar-slot', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -216,16 +216,12 @@
                             esGiroGratis: enModoBonus
                         })
                     });
-
                     if (!respuesta.ok) throw new Error("El backend aún no tiene esta ruta configurada.");
-
-                    const data = await respuesta.json();
-
+                   const data = await respuesta.json();
                     if (data.exito) {
-                        // Sincronizamos los créditos EXACTOS que diga la base de datos
+                     // Sincronizamos los créditos EXACTOS que diga la base de datos
                         creditosActuales = data.nuevoSaldo;
                         actualizarPantallaCreditos();
-                        
                         // Detenemos la máquina con las frutas que eligió el servidor
                         slot.stopSpinAndShowResult(data.rodillos);
                     } else {
@@ -233,7 +229,8 @@
                         isSpinning = false;
                         btnGirar.disabled = false;
                         inputApuesta.disabled = false;
-                    } 
+                    }
+                } catch (error) {
                     // === SALVACAÍDAS TEMPORAL (Mantiene el juego andando hasta que programes el backend) ===
                     setTimeout(() => {
                         if(!enModoBonus) creditosActuales -= apuestaActual; // Gasto visual
