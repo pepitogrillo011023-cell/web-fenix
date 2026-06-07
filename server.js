@@ -93,6 +93,20 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
     mongoose.connect(process.env.MONGO_URI, { family: 4 })
         .then(async () => {
             console.log('🟢 CONECTADO A MONGODB');
+            try {
+                const sinCodigo = await Cliente.find({ referralCode: { $exists: false } });
+                for (const user of sinCodigo) {
+                    const prefijo = user.usuarioCasino.substring(0, 3).toUpperCase();
+                    const aleatorio = Math.floor(1000 + Math.random() * 9000);
+                    user.referralCode = `${prefijo}${aleatorio}`;
+                    await user.save();
+                }
+                if(sinCodigo.length > 0) {
+                    console.log(`✅ ${sinCodigo.length} usuarios actualizados con código de referido.`);
+                }
+            } catch (err) {
+                console.error("❌ Error en la migración de referidos:", err);
+            }
             await inicializarDatosDePrueba();
         })
         .catch(err => console.log('🔴 ERROR DE MONGODB:', err));
