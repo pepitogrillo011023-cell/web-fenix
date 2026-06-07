@@ -4,21 +4,27 @@ module.exports = function(app, requireLogin, io, sharedState) {
     const Cliente = mongoose.model('Cliente');
     const PanelConfig = mongoose.model('PanelConfig');
 
+    // Función auxiliar para generar códigos únicos
+    function generarCodigoReferido(usuario) {
+        const cleanUser = usuario ? usuario.toString() : "USR";
+        const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+        return `${cleanUser.substring(0, 3).toUpperCase()}${random}`;
+    }
+
     // ==============================================================
     // 👤 NUEVA RUTA: REGISTRO DE CLIENTES (SIGN UP)
     // ==============================================================
     app.post('/api/registrar-cliente', async (req, res) => {
         try {
-            // 1. Capturamos los datos, incluyendo el codigoReferido
             const { usuario, password, codigoReferido } = req.body;
             
-            // 2. Verificamos si el usuario ya existe
+            // 1. Verificamos si el usuario ya existe
             const existe = await Cliente.findOne({ usuarioCasino: usuario });
             if (existe) {
                 return res.json({ exito: false, mensaje: 'Ese usuario ya existe. Por favor, elegí otro nombre.' });
             }
 
-            // 3. BUSCAMOS AL PADRINO (Si hay un código)
+            // 2. BUSCAMOS AL PADRINO (Si hay un código)
             let referidoPor = null;
             if (codigoReferido) {
                 const padrino = await Cliente.findOne({ referralCode: codigoReferido });
@@ -27,21 +33,24 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 }
             }
 
-            // 4. Creamos el nuevo cliente con el campo referredBy
+            // 3. GENERAMOS EL CÓDIGO PROPIO DEL NUEVO USUARIO
+            const miCodigo = generarCodigoReferido(usuario);
+
+            // 4. Creamos el nuevo cliente
             const nuevoCliente = new Cliente({
                 usuarioCasino: usuario,
                 password: password,
                 saldo: 0,
                 estado: 'Activo',
-                referredBy: referidoPor, // Se guarda el usuario del padrino (o null)
+                referralCode: miCodigo, // <--- CÓDIGO ÚNICO DEL USUARIO
+                referredBy: referidoPor,
                 historialChat: [{ 
                     emisor: 'bot', 
-                    mensaje: `¡Bienvenido a Casino Fénix, ${usuario}! Ya podés jugar y comunicarte con el soporte.`, 
+                    mensaje: `¡Bienvenido a Casino Fénix, ${usuario}! Ya podés invitar amigos con tu código: ${miCodigo}`, 
                     leido: true 
                 }]
             });
-            // Agregá esto antes del await nuevoCliente.save();
-console.log("Datos de registro recibidos:", { usuario, codigoReferido, referidoPor });
+            
             await nuevoCliente.save();
 
             // 5. Avisamos al panel de Admin
@@ -123,11 +132,12 @@ console.log("Datos de registro recibidos:", { usuario, codigoReferido, referidoP
                     if (usuario && saldoString) {
                         const saldoNumerico = parseFloat(saldoString.replace(/\./g, '').replace(',', '.'));
                         if (!isNaN(saldoNumerico)) {
+                            // Al importar, también generamos código si no existe
                             await Cliente.updateOne(
                                 { usuarioCasino: usuario }, 
                                 { 
                                     $set: { saldo: saldoNumerico, estado: 'Activo' },
-                                    $setOnInsert: { password: '1234' }
+                                    $setOnInsert: { password: '1234', referralCode: generarCodigoReferido(usuario) }
                                 }, 
                                 { upsert: true }
                             );
