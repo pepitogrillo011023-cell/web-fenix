@@ -233,18 +233,7 @@
                         isSpinning = false;
                         btnGirar.disabled = false;
                         inputApuesta.disabled = false;
-                    } catch (error) {
-    // 1. SIEMPRE registra el error en la consola para saber qué pasó
-    console.error("Error capturado en el frontend:", error);
-    
-    // 2. Si es necesario, informa al usuario
-    alert("Hubo un problema de conexión. Inténtalo de nuevo.");
-    
-    // 3. Devuelve los botones a su estado normal para que el usuario pueda reintentar
-    isSpinning = false;
-    btnGirar.disabled = false;
-} // <--- ¡Esta llave es la que cierra el bloque catch!
-
+                    } 
                     // === SALVACAÍDAS TEMPORAL (Mantiene el juego andando hasta que programes el backend) ===
                     setTimeout(() => {
                         if(!enModoBonus) creditosActuales -= apuestaActual; // Gasto visual
