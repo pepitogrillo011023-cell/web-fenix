@@ -1,5 +1,9 @@
 const express = require('express');
 const router = express.Router();
+router.get('/api/test', (req, res) => {
+    console.log("¡El servidor está vivo y recibiendo peticiones!");
+    res.json({ mensaje: "Conexión exitosa con el servidor" });
+});
 
 // 1. CONFIGURACIÓN DEL JUEGO
 const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
