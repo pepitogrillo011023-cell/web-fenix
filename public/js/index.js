@@ -632,4 +632,46 @@ async function abrirTienda() {
         console.error("Error al cargar la tienda:", e);
         alert("No se pudo conectar con la tienda.");
     }
+    
+    window.canjearProducto = async function(nombre, costo) {
+    console.log(`Intentando canjear: ${nombre} por ${costo} CR`);
+
+    // 1. Verificación básica de seguridad
+    const usuario = localStorage.getItem('casino_fenix_user');
+    if (!usuario) {
+        alert('Debes iniciar sesión para realizar un canje.');
+        return;
+    }
+
+    // 2. Confirmación opcional
+    if (!confirm(`¿Confirmás el canje de "${nombre}" por ${costo} CR?`)) {
+        return;
+    }
+
+    try {
+        // 3. Enviamos la petición al servidor
+        const response = await fetch('/api/canjear', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                usuario: usuario, 
+                nombre: nombre, 
+                costo: costo 
+            })
+        });
+
+        const data = await response.json();
+
+        // 4. Procesamos la respuesta
+        if (data.exito) {
+            alert("¡Canje realizado con éxito! " + (data.mensaje || ""));
+            // Opcional: recargar la tienda o actualizar el saldo visualmente aquí
+        } else {
+            alert("Error al canjear: " + (data.mensaje || "Error desconocido"));
+        }
+    } catch (error) {
+        console.error("Error al canjear:", error);
+        alert("Hubo un error de conexión con el servidor.");
+    }
+};
 }
