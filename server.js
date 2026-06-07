@@ -154,7 +154,6 @@ app.get('/logout', (req, res) => {
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
-const session = require('express-session');
 
 // Configuración robusta para Render
 app.set('trust proxy', 1); // Necesario para que Render (proxy) pase la cookie
