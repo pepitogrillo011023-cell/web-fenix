@@ -1,5 +1,6 @@
 const express = require('express');
 const router = express.Router();
+console.log("RUTA DE SLOT CARGADA");
 // Importamos tu modelo (ajusta la ruta si el archivo User.js está en otra carpeta)
 const User = require('../models/User'); 
 
