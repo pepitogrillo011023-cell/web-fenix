@@ -633,4 +633,3 @@ async function abrirTienda() {
         alert("No se pudo conectar con la tienda.");
     }
 }
-}
