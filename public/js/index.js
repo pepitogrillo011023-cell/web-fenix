@@ -601,30 +601,33 @@ function abrirSlotPremium() {
 // ==========================================
 // NUEVO: TIENDA DE BONOS
 // ==========================================
-function abrirTienda() {
+async function abrirTienda() {
     const modal = document.getElementById('modal-tienda');
-    if (modal) modal.style.display = 'flex';
-}
+    const contenedor = document.getElementById('contenedor-productos-tienda');
 
-async function canjearProducto(nombre, costo) {
-    if (misCreditos < costo) return alert("Créditos insuficientes.");
-    if (!confirm(`¿Confirmar canje de ${nombre} por ${costo} CR?`)) return;
+    if (!modal || !contenedor) return;
 
     try {
-        const res = await fetch('/api/canjear-producto', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ usuario: window.usuarioLogueado, nombre, costo })
+        // 1. Pedimos los productos actuales al servidor
+        const respuesta = await fetch('/api/tienda');
+        const productos = await respuesta.json();
+
+        // 2. Limpiamos y redibujamos
+        contenedor.innerHTML = '';
+        productos.forEach(prod => {
+            contenedor.innerHTML += `
+                <div class="producto-card">
+                    <p>${prod.nombre}</p>
+                    <span class="producto-precio">${prod.costo} CR</span>
+                    <button class="btn-primary" onclick="canjearProducto('${prod.nombre}', ${prod.costo})">Canjear</button>
+                </div>
+            `;
         });
-        const data = await res.json();
-        if (data.exito) {
-            alert("¡Canje exitoso!");
-            cerrarModal('tienda');
-            // Actualizar créditos visuales
-            misCreditos = data.nuevoSaldo;
-            if (document.getElementById('txt-creditos')) document.getElementById('txt-creditos').innerText = misCreditos;
-        } else {
-            alert(data.mensaje);
-        }
-    } catch (e) { alert("Error de conexión al canjear producto."); }
+
+        // 3. Mostramos el modal
+        modal.style.display = 'flex';
+    } catch (e) {
+        console.error("Error al cargar la tienda:", e);
+        alert("No se pudo conectar con la tienda.");
+    }
 }
