@@ -123,6 +123,99 @@ app.get('/logout', (req, res) => {
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+// ==========================================
+// CONFIGURACIÓN DEL MOTOR MATEMÁTICO DEL SLOT
+// ==========================================
+const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
+const pesosSimbolos = [
+    { nombre: 'esfera', peso: 40 },
+    { nombre: 'zapatos', peso: 30 },
+    { nombre: 'clavas', peso: 15 },
+    { nombre: 'laud', peso: 7 },
+    { nombre: 'bufon', peso: 2 },
+    { nombre: 'bonus', peso: 6 }
+];
+
+function tirarRodillo() {
+    let totalPeso = pesosSimbolos.reduce((acc, simbolo) => acc + simbolo.peso, 0);
+    let random = Math.floor(Math.random() * totalPeso);
+    
+    for (let s of pesosSimbolos) {
+        if (random < s.peso) return s.nombre;
+        random -= s.peso;
+    }
+}
+
+// ==========================================
+// RUTA DEL SLOT CON MODELO USER
+// ==========================================
+app.post('/api/jugar-slot', async (req, res) => {
+    console.log("¡RUTA SLOT ACTIVADA CON MODELO USER REAL!");
+    const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
+
+    try {
+        // 1. BUSCAR AL USUARIO (Usamos 'User' y el campo 'username')
+        const user = await User.findOne({ username: usuario });
+        
+        if (!user) {
+            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        }
+
+        // 2. VALIDAR SI TIENE SALDO SUFICIENTE (Usamos 'credits')
+        if (!esGiroGratis && user.credits < apuestaGasto) {
+            return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
+        }
+
+        // 3. COBRAR LA APUESTA
+        if (!esGiroGratis) {
+            user.credits -= apuestaGasto;
+        }
+
+        // 4. GENERAR EL GIRO CON PROBABILIDADES
+        const rodillos = [tirarRodillo(), tirarRodillo(), tirarRodillo()];
+        let premio = 0;
+        
+        const esGanador = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
+        const simboloGanador = rodillos[0];
+
+        // 5. CALCULAR PREMIO
+        if (esGanador && tablaPremios[simboloGanador]) {
+            premio = apuestaCalculoPremio * tablaPremios[simboloGanador];
+            user.credits += premio;
+        }
+
+        // 6. GUARDAR LOS NUEVOS CRÉDITOS EN LA BASE DE DATOS
+        await user.save();
+
+        // 7. RESPUESTA COMPLETA AL FRONTEND
+        res.json({
+            exito: true,
+            rodillos: rodillos,
+            premioGanado: premio,
+            nuevoSaldo: user.credits,
+            esBonus: esGanador && simboloGanador === 'bonus'
+        });
+
+    } catch (error) {
+        console.error("Error en la jugada del slot:", error);
+        res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" });
+    }
+});
+
+// ==============================================================
+// 5. MOTOR DEL SLOT PREMIUM (FÉNIX SLOTS)
+// ==============================================================
+const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
+
+app.get('/api/obtener-saldo', async (req, res) => {
+    try {
+        const { usuario } = req.query;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario }); 
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        res.json({ exito: true, saldo: cliente.creditos });
+    } catch (error) { res.status(500).json({ exito: false, mensaje: "Error del servidor" }); }
+});
+
 
 /*app.use('/api', slotRoutes); // ESTO MONTA TODO LO QUE SEA /api/jugar-slot*/
 
@@ -236,98 +329,6 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
     }
-});
-// ==========================================
-// CONFIGURACIÓN DEL MOTOR MATEMÁTICO DEL SLOT
-// ==========================================
-const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
-const pesosSimbolos = [
-    { nombre: 'esfera', peso: 40 },
-    { nombre: 'zapatos', peso: 30 },
-    { nombre: 'clavas', peso: 15 },
-    { nombre: 'laud', peso: 7 },
-    { nombre: 'bufon', peso: 2 },
-    { nombre: 'bonus', peso: 6 }
-];
-
-function tirarRodillo() {
-    let totalPeso = pesosSimbolos.reduce((acc, simbolo) => acc + simbolo.peso, 0);
-    let random = Math.floor(Math.random() * totalPeso);
-    
-    for (let s of pesosSimbolos) {
-        if (random < s.peso) return s.nombre;
-        random -= s.peso;
-    }
-}
-
-// ==========================================
-// RUTA DEL SLOT CON MODELO USER
-// ==========================================
-app.post('/api/jugar-slot', async (req, res) => {
-    console.log("¡RUTA SLOT ACTIVADA CON MODELO USER REAL!");
-    const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
-
-    try {
-        // 1. BUSCAR AL USUARIO (Usamos 'User' y el campo 'username')
-        const user = await User.findOne({ username: usuario });
-        
-        if (!user) {
-            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
-        }
-
-        // 2. VALIDAR SI TIENE SALDO SUFICIENTE (Usamos 'credits')
-        if (!esGiroGratis && user.credits < apuestaGasto) {
-            return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
-        }
-
-        // 3. COBRAR LA APUESTA
-        if (!esGiroGratis) {
-            user.credits -= apuestaGasto;
-        }
-
-        // 4. GENERAR EL GIRO CON PROBABILIDADES
-        const rodillos = [tirarRodillo(), tirarRodillo(), tirarRodillo()];
-        let premio = 0;
-        
-        const esGanador = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
-        const simboloGanador = rodillos[0];
-
-        // 5. CALCULAR PREMIO
-        if (esGanador && tablaPremios[simboloGanador]) {
-            premio = apuestaCalculoPremio * tablaPremios[simboloGanador];
-            user.credits += premio;
-        }
-
-        // 6. GUARDAR LOS NUEVOS CRÉDITOS EN LA BASE DE DATOS
-        await user.save();
-
-        // 7. RESPUESTA COMPLETA AL FRONTEND
-        res.json({
-            exito: true,
-            rodillos: rodillos,
-            premioGanado: premio,
-            nuevoSaldo: user.credits,
-            esBonus: esGanador && simboloGanador === 'bonus'
-        });
-
-    } catch (error) {
-        console.error("Error en la jugada del slot:", error);
-        res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" });
-    }
-});
-
-// ==============================================================
-// 5. MOTOR DEL SLOT PREMIUM (FÉNIX SLOTS)
-// ==============================================================
-const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
-
-app.get('/api/obtener-saldo', async (req, res) => {
-    try {
-        const { usuario } = req.query;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario }); 
-        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
-        res.json({ exito: true, saldo: cliente.creditos });
-    } catch (error) { res.status(500).json({ exito: false, mensaje: "Error del servidor" }); }
 });
 
 /*app.post('/api/jugar-slot', async (req, res) => {
