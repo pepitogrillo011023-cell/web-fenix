@@ -1,5 +1,15 @@
 'use strict';
 
+// --- CONFIGURACIÓN DE PREMIOS ---
+const premiosConfig = [
+    { id: 'bufon', nombre: 'Bufón', tipo: 'multiplicador', valor: 10 },
+    { id: 'laud', nombre: 'Laúd', tipo: 'multiplicador', valor: 8 },
+    { id: 'clavas', nombre: 'Clavas', tipo: 'multiplicador', valor: 6 },
+    { id: 'zapatos', nombre: 'Zapatos', tipo: 'multiplicador', valor: 3 },
+    { id: 'esfera', nombre: 'Esfera', tipo: 'multiplicador', valor: 1 },
+    { id: 'bonus', nombre: 'Bonus', tipo: 'fijo', valor: '10 Tiradas Gratis' }
+];
+
 function SlotMachine(container, reels, callback, options) {
     const self = this;
     
