@@ -125,8 +125,9 @@ app.get('/admin.html', requireLogin, (req, res) => {
 });
 
 /*app.use('/api', slotRoutes); // ESTO MONTA TODO LO QUE SEA /api/jugar-slot*/
-app.use('/api/prueba', (req, res) => {
-    res.send("¡LA RUTA FUNCIONA!");
+app.post('/api/jugar-slot', (req, res) => {
+    console.log("¡LOG DESDE SERVER.JS DIRECTO!");
+    res.json({ mensaje: "¡Esto sí funciona!" });
 });
 app.use(express.static(path.join(__dirname, 'public')));
 
