@@ -27,7 +27,7 @@ function tirarRodillo() {
     }
 }
 
- LA RUTA AHORA ES ASÍNCRONA
+// LA RUTA AHORA ES ASÍNCRONA
 router.post('/jugar-slot', async (req, res) => {
     console.log("¡RUTA SLOT ACTIVADA!");
     const { usuario, apuestaGasto, apuestaCalculoPremio } = req.body;
