@@ -128,12 +128,12 @@ app.get('/admin.html', requireLogin, (req, res) => {
 // ==========================================
 const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
 const pesosSimbolos = [
-    { nombre: 'esfera', peso: 1 },
-    { nombre: 'zapatos', peso: 1 },
-    { nombre: 'clavas', peso: 1 },
-    { nombre: 'laud', peso: 1 },
-    { nombre: 'bufon', peso: 95 },
-    { nombre: 'bonus', peso: 1 }
+    { nombre: 'esfera', peso: 35 },
+    { nombre: 'zapatos', peso: 25 },
+    { nombre: 'clavas', peso: 20 },
+    { nombre: 'laud', peso: 12 },
+    { nombre: 'bufon', peso: 3 },
+    { nombre: 'bonus', peso: 5 }
 ];
 
 function tirarRodillo() {
