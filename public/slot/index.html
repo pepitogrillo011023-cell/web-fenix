@@ -7,6 +7,7 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body { background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
+        
 
         /* Panel de Créditos */
         .saldo-container { display: flex; align-items: center; justify-content: center; background: #064e3b; padding: 10px 30px; border-radius: 10px; border: 2px solid #10b981; margin-bottom: 15px; font-size: 20px; font-weight: bold; box-shadow: 0 0 15px rgba(16, 185, 129, 0.4); text-transform: uppercase;}
@@ -48,6 +49,21 @@
 <body>
 
     <h1 style="color:#ffaa00; margin-bottom: 10px;">FÉNIX SLOTS</h1>
+    
+    <div class="controles-apuesta">
+        <label for="apuesta-input">Apuesta:</label>
+        <input type="number" id="apuesta-input" value="100" min="10" step="10" oninput="actualizarTablaPremios()">
+    </div>
+
+    <div class="pay-table">
+        <h3>Tabla de Premios</h3>
+        <div id="contenedor-premios">
+            </div>
+    </div>
+
+    <div id="mensaje-premio">¡Gira para ganar!</div>
+    
+    <div id="slot-machine-container" class="slot-machine"></div>
 
     <div class="saldo-container">
         CRÉDITOS: <span id="saldo-actual">Cargando...</span>
