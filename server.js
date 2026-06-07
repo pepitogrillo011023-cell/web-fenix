@@ -147,52 +147,50 @@ function tirarRodillo() {
 }
 
 // ==========================================
-// RUTA DEL SLOT CON MODELO USER
+// RUTA DEL SLOT CORREGIDA (Usando Cliente)
 // ==========================================
 app.post('/api/jugar-slot', async (req, res) => {
-    
     const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
 
     try {
-        // 1. BUSCAR AL USUARIO (Usamos 'User' y el campo 'username')
+        // 1. BUSCAR AL USUARIO en la colección 'Cliente' (donde guardas todo lo demás)
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         
         if (!cliente) {
-            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+            return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado en Cliente" });
         }
 
-        // 2. VALIDAR SI TIENE SALDO SUFICIENTE (Usamos 'credits')
-        if (!esGiroGratis && user.credits < apuestaGasto) {
+        // 2. VALIDAR SALDO (usando cliente.creditos)
+        if (!esGiroGratis && cliente.creditos < apuestaGasto) {
             return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
         }
 
-        // 3. COBRAR LA APUESTA
+        // 3. COBRAR
         if (!esGiroGratis) {
-            cliente.credits -= apuestaGasto;
+            cliente.creditos -= apuestaGasto;
         }
 
-        // 4. GENERAR EL GIRO CON PROBABILIDADES
+        // 4. GENERAR GIRO
         const rodillos = [tirarRodillo(), tirarRodillo(), tirarRodillo()];
         let premio = 0;
-        
         const esGanador = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
         const simboloGanador = rodillos[0];
 
         // 5. CALCULAR PREMIO
         if (esGanador && tablaPremios[simboloGanador]) {
             premio = apuestaCalculoPremio * tablaPremios[simboloGanador];
-            cliente.credits += premio;
+            cliente.creditos += premio;
         }
 
-        // 6. GUARDAR LOS NUEVOS CRÉDITOS EN LA BASE DE DATOS
+        // 6. GUARDAR
         await cliente.save();
 
-        // 7. RESPUESTA COMPLETA AL FRONTEND
+        // 7. RESPUESTA
         res.json({
             exito: true,
             rodillos: rodillos,
             premioGanado: premio,
-            nuevoSaldo: cliente.credits,
+            nuevoSaldo: cliente.creditos,
             esBonus: esGanador && simboloGanador === 'bonus'
         });
 
