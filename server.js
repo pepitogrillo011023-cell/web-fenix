@@ -9,6 +9,7 @@ const path = require('path');
 // Importar modelos
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
+app.use('/api', slotRoutes);
 const slotRoutes = require('./routes/slot');
 
 const app = express();
@@ -120,7 +121,6 @@ app.get('/admin.html', requireLogin, (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api', slotRoutes);
 
 // ==============================================================
 // 4. MEMORIA COMPARTIDA Y WEBHOOKS
