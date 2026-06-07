@@ -40,7 +40,8 @@ module.exports = function(app, requireLogin, io, sharedState) {
                     leido: true 
                 }]
             });
-            
+            // Agregá esto antes del await nuevoCliente.save();
+console.log("Datos de registro recibidos:", { usuario, codigoReferido, referidoPor });
             await nuevoCliente.save();
 
             // 5. Avisamos al panel de Admin
