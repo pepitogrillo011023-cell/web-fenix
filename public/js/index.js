@@ -612,14 +612,16 @@ async function abrirTienda() {
         const respuesta = await fetch('/api/tienda');
         const productos = await respuesta.json();
 
-        // 2. Limpiamos y redibujamos
+        // 2. Limpiamos y redibujamos con el nuevo diseño
         contenedor.innerHTML = '';
         productos.forEach(prod => {
             contenedor.innerHTML += `
                 <div class="producto-card">
-                    <p>${prod.nombre}</p>
-                    <span class="producto-precio">${prod.costo} CR</span>
-                    <button class="btn-primary" onclick="canjearProducto('${prod.nombre}', ${prod.costo})">Canjear</button>
+                    <span class="nombre-prod">${prod.nombre}</span>
+                    <span class="precio-prod">${prod.costo} CR</span>
+                    <button class="btn-canjear-card" onclick="canjearProducto('${prod.nombre}', ${prod.costo})">
+                        Canjear
+                    </button>
                 </div>
             `;
         });
@@ -630,4 +632,5 @@ async function abrirTienda() {
         console.error("Error al cargar la tienda:", e);
         alert("No se pudo conectar con la tienda.");
     }
+}
 }
