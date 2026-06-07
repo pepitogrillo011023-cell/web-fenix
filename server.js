@@ -33,6 +33,7 @@ const clienteSchema = new mongoose.Schema({
     ultimaTragamonedas: { type: Date, default: null },
     ultimaCarta: { type: Date, default: null },
     ultimaMoneda: { type: Date, default: null },
+    lastWithdrawal: { type: Date, default: null },
     
     // --- CAMPOS NUEVOS ---
     referralCode: { type: String, unique: true, index: true }, 
@@ -386,6 +387,50 @@ app.post('/api/sumar-premio-bonus', async (req, res) => {
         await cliente.save();
         res.json({ exito: true, nuevoSaldo: cliente.creditos });
     } catch (error) { res.status(500).json({ exito: false, mensaje: "Error sumando bonus" }); }
+});
+// --- NUEVA RUTA: SOLICITAR RETIRO ---
+app.post('/api/solicitar-retiro', async (req, res) => {
+    try {
+        const { usuario, monto, cbuAlias, titular } = req.body;
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+
+        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+
+        // 1. Lógica de las 24hs
+        if (cliente.lastWithdrawal) {
+            const hace24Horas = new Date(Date.now() - (24 * 60 * 60 * 1000));
+            if (cliente.lastWithdrawal > hace24Horas) {
+                // Calculamos cuánto tiempo falta para el próximo retiro
+                const tiempoRestante = Math.ceil((cliente.lastWithdrawal.getTime() + (24 * 60 * 60 * 1000) - Date.now()) / (1000 * 60));
+                const horas = Math.floor(tiempoRestante / 60);
+                const minutos = tiempoRestante % 60;
+                
+                return res.status(400).json({ 
+                    exito: false, 
+                    mensaje: `⚠️ Recordá que es un retiro cada 24hs. Podrás retirar en ${horas}h ${minutos}m.` 
+                });
+            }
+        }
+
+        // 2. Si pasa la validación, creamos el retiro
+        const nuevoRetiro = new Retiro({
+            cliente: usuario,
+            monto: monto,
+            cbuAlias: cbuAlias,
+            titular: titular
+        });
+        await nuevoRetiro.save();
+
+        // 3. Actualizamos la fecha del último retiro del cliente
+        cliente.lastWithdrawal = new Date();
+        await cliente.save();
+
+        res.json({ exito: true, mensaje: "Retiro solicitado exitosamente. El cajero lo procesará pronto." });
+
+    } catch (error) {
+        console.error("Error al solicitar retiro:", error);
+        res.status(500).json({ exito: false, mensaje: "Error interno en el servidor" });
+    }
 });
 
 // ==============================================================
