@@ -120,7 +120,7 @@ app.get('/admin.html', requireLogin, (req, res) => {
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/', slotRoutes);
+app.use('/api', slotRoutes);
 
 // ==============================================================
 // 4. MEMORIA COMPARTIDA Y WEBHOOKS
