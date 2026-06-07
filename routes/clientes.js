@@ -68,8 +68,12 @@ module.exports = function(app, requireLogin, io, sharedState) {
     // ==============================================================
     // 👤 RUTA: OBTENER PERFIL PARA REFERIDOS
     // ==============================================================
-    app.get('/api/mi-perfil', requireLogin, async (req, res) => {
+    app.get('/api/mi-perfil', async (req, res) => {
         try {
+            // 2. Verificamos manualmente la sesión aquí adentro
+        if (!req.session || !req.session.usuario) {
+            return res.status(401).json({ exito: false, mensaje: "No has iniciado sesión" });
+        }
             // Asegúrate de usar la variable donde guardas el usuario al loguearse
             const usuarioLogueado = req.session.usuario; 
             
