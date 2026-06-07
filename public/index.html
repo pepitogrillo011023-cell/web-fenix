@@ -60,13 +60,21 @@
                 <button class="btn-action" style="grid-column: span 3; background:#374151; padding: 14px;" onclick="irAlMenuPrincipal()">↩️ Volver</button>
             </div>
 
-            <div id="container-chat-input" class="chat-input-area hidden" style="margin-top: auto; padding-top: 10px;">
-                <input type="text" id="client-raw-input" class="input-dark" style="margin:0;" placeholder="Escribí acá...">
-                <button class="btn-primary" style="width:auto; padding: 0 15px;" onclick="enviarMensajeLibreCliente()">Enviar</button>
-                <button class="btn-action" style="padding: 0 10px; margin-top:0; height: auto;" onclick="irAlMenuPrincipal()">↩️</button>
+            <div id="container-chat-input" class="chat-input-area hidden" style="margin-top: auto; padding: 14px; background-color: #1f2937; border-top: 1px solid #374151; border-radius: 0 0 12px 12px;">
+                <div style="display: flex; gap: 8px; align-items: center; width: 100%;">
+                    
+                    <button class="btn-action" style="padding: 0; width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; border-radius: 8px; flex-shrink: 0; margin: 0; background: #374151;" onclick="irAlMenuPrincipal()">
+                        <span style="font-size: 18px; line-height: 1;">⬅️</span>
+                    </button>
+
+                    <input type="text" id="client-raw-input" class="input-dark" style="margin: 0; flex-grow: 1; height: 44px; padding: 0 12px; border-radius: 8px;" placeholder="Escribí acá...">
+                    
+                    <button class="btn-primary" style="margin: 0; height: 44px; padding: 0 16px; border-radius: 8px; display: flex; align-items: center; justify-content: center;" onclick="enviarMensajeLibreCliente()">
+                        Enviar
+                    </button>
+                    
+                </div>
             </div>
-        </div>
-    </div>
 
     <div id="modal-cargar-creditos" class="modal-overlay" style="display:none;">
         <div class="modal-content" style="border-color: #ffaa00;">
