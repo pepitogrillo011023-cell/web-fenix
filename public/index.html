@@ -20,11 +20,17 @@
         </div>
 
         <div id="vista-login" class="auth-body">
-            <h3>Acceso de Clientes</h3>
-            <input type="text" id="login-user" class="input-dark" placeholder="Usuario...">
-            <input type="password" id="login-pass" class="input-dark" placeholder="Contraseña...">
-            <button class="btn-primary" id="btn-login" onclick="validarAccesoManual()">Ingresar al Chat</button>
-        </div>
+    <h3>Acceso de Clientes</h3>
+    <input type="text" id="login-user" class="input-dark" placeholder="Usuario...">
+    <input type="password" id="login-pass" class="input-dark" placeholder="Contraseña...">
+    <button class="btn-primary" id="btn-login" onclick="validarAccesoManual()">Ingresar al Chat</button>
+    
+    <!-- Aquí agregamos el enlace -->
+    <div style="margin-top: 15px; text-align: center;">
+        <span style="color: #64748b; font-size: 13px;">¿No tenés cuenta?</span>
+        <a href="registro.html" style="color: #6366f1; text-decoration: none; font-size: 13px; font-weight: bold; margin-left: 5px;">Registrate aquí</a>
+    </div>
+</div>
 
         <div id="vista-chat" class="hidden" style="flex-grow: 1; display: flex; flex-direction: column; height: 100%; padding-bottom: 20px;">
             <div id="hero-welcome-container" class="hero-welcome hidden">
