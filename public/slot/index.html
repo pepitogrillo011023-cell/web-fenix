@@ -204,6 +204,26 @@
                 slot.startSpinAnimation();
 
                 // === COMUNICACIÓN CON EL BACKEND ===
+                window.ejecutarGiro = async function() {
+    // 1. Validamos que la máquina no esté girando ya
+    if (isSpinning) return;
+
+    // 2. Apuesta actual
+    apuestaActual = parseFloat(inputApuesta.value) || 0;
+
+    // 3. Si no hay saldo y no es tiro gratis, frenamos
+    if (!enModoBonus && creditosActuales < apuestaActual) {
+        alert("No tienes suficientes créditos para esta apuesta.");
+        return;
+    }
+
+    // 4. Encendemos la animación visual y bloqueamos los botones
+    isSpinning = true;
+    btnGirar.disabled = true;
+    inputApuesta.disabled = true;
+    mensajePremio.innerText = "GIRANDO...";
+    
+    slot.startSpinAnimation();
                try {
                     const respuesta = await fetch('/api/jugar-slot', { 
                         method: 'POST',
