@@ -323,9 +323,6 @@ app.post('/api/jugar-slot', async (req, res) => {
 // 5. MOTOR DEL SLOT PREMIUM (FÉNIX SLOTS)
 // ==============================================================
 const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
-const tablaPremios = {
-    'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1
-};
 
 app.get('/api/obtener-saldo', async (req, res) => {
     try {
