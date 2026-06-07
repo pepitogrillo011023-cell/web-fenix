@@ -79,6 +79,22 @@
                 </button>
                 
             </div>
+            <div id="modal-referidos" class="modal-overlay" style="display:none;">
+    <div class="modal-content" style="border-color: #8b5cf6;">
+        <h3 style="color:white; margin-top:0; font-size: 22px;">🎁 Invitá y Ganá</h3>
+        <p style="color: #cbd5e1; font-size:14px; margin:5px 0 15px 0;">
+            Compartí este link con tus amigos y ganá <b>5.000 créditos</b> por cada uno que se registre:
+        </p>
+        
+        <input type="text" id="input-link-referido" class="input-dark" readonly style="margin-bottom:15px; text-align:center; color: #a78bfa;">
+        
+        <button class="btn-spin" style="background: #8b5cf6; width:100%; border:none; margin-bottom: 10px;" onclick="copiarLinkReferido()">
+            🗐 COPIAR LINK 🗐
+        </button>
+        
+        <button class="btn-action btn-close-modal" style="width:100%; background-color:#374151;" onclick="cerrarModal('referidos')">Cerrar</button>
+    </div>
+</div>
 
     <div id="modal-cargar-creditos" class="modal-overlay" style="display:none;">
         <div class="modal-content" style="border-color: #ffaa00;">
