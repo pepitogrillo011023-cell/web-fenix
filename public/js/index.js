@@ -650,7 +650,7 @@ async function abrirTienda() {
 
     try {
         // 3. Enviamos la petición al servidor
-        const response = await fetch('/api/canjear', {
+        const response = await fetch('/api/canjear-producto', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
