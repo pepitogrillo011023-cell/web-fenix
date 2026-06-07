@@ -7,7 +7,6 @@ router.get('/api/test', (req, res) => {
     res.json({ mensaje: "Conexión exitosa" });
 });
 
-module.exports = router;
 
 // 1. CONFIGURACIÓN DEL JUEGO
 const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
