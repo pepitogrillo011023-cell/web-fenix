@@ -664,13 +664,37 @@ function calcCierre() {
     }
 }
 
+// --- NUEVA FUNCIÓN AUXILIAR PARA LIMPIAR ---
+function limpiarFormularioCierre() {
+    // 1. Limpiar filas de las tablas
+    document.querySelector('#tabla-gastos tbody').innerHTML = '';
+    document.querySelector('#tabla-propinas tbody').innerHTML = '';
+
+    // 2. Resetear inputs numéricos principales a 0
+    ['cc-ingreso', 'cc-oro', 'cc-ganamos', 'cc-real', 'cc-reserva', 'cc-egreso', 'cc-esperado', 'cc-dif'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.value = 0;
+    });
+
+    // 3. Resetear textos de totales
+    if(document.getElementById('tot-gastos')) document.getElementById('tot-gastos').innerText = '0.00';
+    if(document.getElementById('tot-propinas')) document.getElementById('tot-propinas').innerText = '0.00';
+
+    // 4. Volver a agregar las filas base para que no quede vacío
+    addGastoRow();
+    addPropinaRow();
+    
+    // 5. Recalcular todo
+    calcCierre();
+}
+
 async function guardarCierreDB() {
     const fecha = document.getElementById('cc-fecha-inicio').value;
     const turno = document.getElementById('cc-turno').value;
     
     if(!fecha) return alert("Ingresá la fecha de inicio.");
 
-    // 1. PRIMERO VERIFICAMOS SI YA EXISTE
+    // 1. VERIFICACIÓN
     const checkRes = await fetch(`/api/verificar-turno/${fecha}/${turno}`);
     const checkData = await checkRes.json();
 
@@ -679,7 +703,7 @@ async function guardarCierreDB() {
         if (!confirmar) return; 
     }
 
-    // 2. ENVIAMOS LOS DATOS (El resto de tu lógica original)
+    // 2. PREPARACIÓN DE DATOS
     const gastos = []; document.querySelectorAll('#tabla-gastos tbody tr').forEach(tr => gastos.push({ tipo: tr.querySelector('.gt').value, usuario: tr.querySelector('.gu').value, monto: Number(tr.querySelector('.gm').value) || 0 }));
     const propinas = []; document.querySelectorAll('#tabla-propinas tbody tr').forEach(tr => propinas.push({ usuario: tr.querySelector('.pu').value, monto: Number(tr.querySelector('.pm').value) || 0 }));
     
@@ -703,6 +727,7 @@ async function guardarCierreDB() {
         propinas
     };
 
+    // 3. ENVÍO
     try {
         const res = await fetch('/api/cierre-caja', { 
             method: 'POST', 
@@ -714,7 +739,11 @@ async function guardarCierreDB() {
         
         if(res.ok) { 
             alert("✅ ¡Cierre de caja guardado correctamente!"); 
-            localStorage.removeItem('borrador_cierre'); // Limpiamos la memoria
+            localStorage.removeItem('borrador_cierre'); 
+            
+            // --- AQUÍ LLAMAMOS A LA LIMPIEZA ---
+            limpiarFormularioCierre(); 
+
             if(document.getElementById('res-fecha').value === payload.fecha) buscarResumen(); 
         } else {
             alert("❌ Error al guardar en el servidor.");
