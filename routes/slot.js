@@ -28,7 +28,7 @@ function tirarRodillo() {
 
 
 // LA RUTA AHORA ES ASÍNCRONA
-router.post('/api/jugar-slot', async (req, res) => {
+router.post('/jugar-slot', async (req, res) => {
     console.log("¡Ruta alcanzada!");
     const { usuario, apuestaGasto, apuestaCalculoPremio } = req.body;
 
