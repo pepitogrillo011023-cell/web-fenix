@@ -8,6 +8,7 @@ const path = require('path');
 
 // Importar modelos
 const slotRoutes = require('./routes/slot');
+console.log("CONTENIDO DE SLOTROUTES:", slotRoutes); // <--- AGREGA ESTO
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
 
