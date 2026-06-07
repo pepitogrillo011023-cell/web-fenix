@@ -26,9 +26,19 @@ function tirarRodillo() {
         random -= s.peso;
     }
 }
+router.use((req, res, next) => {
+    console.log(`RUTA SLOT RECIBIÓ: ${req.method} ${req.path}`);
+    next();
+});
 
+router.post('/jugar-slot', async (req, res) => {
+    console.log("¡ÉXITO! Entró en la lógica del juego.");
+    res.json({ success: true, message: "Funciona" });
+});
 
-// LA RUTA AHORA ES ASÍNCRONA
+module.exports = router;
+
+/* LA RUTA AHORA ES ASÍNCRONA
 router.post('/jugar-slot', async (req, res) => {
     console.log("¡RUTA SLOT ACTIVADA!");
     const { usuario, apuestaGasto, apuestaCalculoPremio } = req.body;
@@ -78,4 +88,4 @@ router.post('/jugar-slot', async (req, res) => {
     }
 });
 
-module.exports = router;
+module.exports = router;  */
