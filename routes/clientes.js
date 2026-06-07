@@ -65,6 +65,30 @@ module.exports = function(app, requireLogin, io, sharedState) {
             res.status(500).json({ exito: false, mensaje: 'Error al registrar el usuario.' });
         }
     });
+    // ==============================================================
+    // 👤 RUTA: OBTENER PERFIL PARA REFERIDOS
+    // ==============================================================
+    app.get('/api/mi-perfil', requireLogin, async (req, res) => {
+        try {
+            // Asegúrate de usar la variable donde guardas el usuario al loguearse
+            const usuarioLogueado = req.session.usuario; 
+            
+            const cliente = await Cliente.findOne({ usuarioCasino: usuarioLogueado });
+            
+            if (cliente) {
+                res.json({ 
+                    exito: true, 
+                    referralCode: cliente.referralCode,
+                    usuario: cliente.usuarioCasino
+                });
+            } else {
+                res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+            }
+        } catch (error) {
+            console.error("Error al obtener perfil:", error);
+            res.status(500).json({ exito: false, mensaje: "Error interno" });
+        }
+    });
 
     // ==============================================================
     // 🔐 RUTAS EXISTENTES
