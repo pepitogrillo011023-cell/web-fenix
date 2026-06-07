@@ -85,7 +85,11 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 // 3. MIDDLEWARES, SESIÓN Y SEGURIDAD
 // ==============================================================
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json()); 
+app.use(express.json());
+app.use((req, res, next) => {
+    console.log(`Petición recibida: ${req.method} ${req.path}`);
+    next();
+});
 app.use(session({
     secret: 'CasinoFenix2026_Seguro',
     resave: false,
