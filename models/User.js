@@ -7,6 +7,10 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
+    lastWithdrawal: { 
+    type: Date, 
+    default: null 
+},
     email: {
         type: String,
         required: true,
@@ -39,10 +43,6 @@ const userSchema = new mongoose.Schema({
         type: Date,
         default: Date.now
     }
-    lastWithdrawal: { 
-    type: Date, 
-    default: null 
-}
 });
 
 module.exports = mongoose.model('User', userSchema);
