@@ -155,9 +155,9 @@ app.post('/api/jugar-slot', async (req, res) => {
 
     try {
         // 1. BUSCAR AL USUARIO (Usamos 'User' y el campo 'username')
-        const Cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
         
-        if (!user) {
+        if (!cliente) {
             return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
         }
 
@@ -168,7 +168,7 @@ app.post('/api/jugar-slot', async (req, res) => {
 
         // 3. COBRAR LA APUESTA
         if (!esGiroGratis) {
-            user.credits -= apuestaGasto;
+            cliente.credits -= apuestaGasto;
         }
 
         // 4. GENERAR EL GIRO CON PROBABILIDADES
@@ -181,18 +181,18 @@ app.post('/api/jugar-slot', async (req, res) => {
         // 5. CALCULAR PREMIO
         if (esGanador && tablaPremios[simboloGanador]) {
             premio = apuestaCalculoPremio * tablaPremios[simboloGanador];
-            user.credits += premio;
+            cliente.credits += premio;
         }
 
         // 6. GUARDAR LOS NUEVOS CRÉDITOS EN LA BASE DE DATOS
-        await user.save();
+        await cliente.save();
 
         // 7. RESPUESTA COMPLETA AL FRONTEND
         res.json({
             exito: true,
             rodillos: rodillos,
             premioGanado: premio,
-            nuevoSaldo: user.credits,
+            nuevoSaldo: cliente.credits,
             esBonus: esGanador && simboloGanador === 'bonus'
         });
 
