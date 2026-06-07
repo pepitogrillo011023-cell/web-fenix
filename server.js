@@ -249,7 +249,7 @@ app.get('/api/obtener-saldo', async (req, res) => {
     } catch (error) { res.status(500).json({ exito: false, mensaje: "Error del servidor" }); }
 });
 
-app.post('/api/jugar-slot', async (req, res) => {
+/*app.post('/api/jugar-slot', async (req, res) => {
     try {
         const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
@@ -270,7 +270,7 @@ app.post('/api/jugar-slot', async (req, res) => {
         await cliente.save();
         res.json({ exito: true, rodillos, nuevoSaldo: cliente.creditos, premioGanado: premio });
     } catch (error) { res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" }); }
-});
+});*/
 
 app.post('/api/sumar-premio-bonus', async (req, res) => {
     try {
