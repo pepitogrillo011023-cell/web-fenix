@@ -7,9 +7,9 @@ const session = require('express-session');
 const path = require('path');
 
 // Importar modelos
+const slotRoutes = require('./routes/slot');
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
-const slotRoutes = require('./routes/slot');
 
 const app = express();
 const server = http.createServer(app);
@@ -119,8 +119,8 @@ app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+app.use('/api', slotRoutes); // ESTO MONTA TODO LO QUE SEA /api/jugar-slot
 app.use(express.static(path.join(__dirname, 'public')));
-app.use('/api', slotRoutes);
 
 // ==============================================================
 // 4. MEMORIA COMPARTIDA Y WEBHOOKS
