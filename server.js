@@ -5,6 +5,7 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
+const slotRoutes = require('./routes/slot');
 
 // Importar modelos
 const Minigame = require('./models/Minigame');
