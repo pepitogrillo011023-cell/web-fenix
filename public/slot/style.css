@@ -1,6 +1,20 @@
 * { box-sizing: border-box; margin: 0; padding: 0; }
 body { background: #0b0f19; height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: sans-serif; }
 
+.pay-table {
+    background: #1f2937;
+    border: 2px solid #ffaa00;
+    border-radius: 10px;
+    padding: 15px;
+    margin: 20px 0;
+    width: 300px; /* Ajustalo según tu diseño */
+    color: #fff;
+    text-align: left;
+}
+.pay-table h3 { text-align: center; color: #ffaa00; margin-bottom: 10px; }
+.prize-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #374151; }
+.highlight { color: #a3e635; font-weight: bold; }
+
 /* Controles de Apuesta */
 .controles-apuesta { display: flex; align-items: center; gap: 15px; margin-bottom: 20px; background: #1f2937; padding: 10px 20px; border-radius: 10px; border: 2px solid #374151; }
 .controles-apuesta label { font-size: 18px; color: #ffaa00; font-weight: bold; }
