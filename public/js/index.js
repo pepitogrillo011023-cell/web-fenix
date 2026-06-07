@@ -325,6 +325,46 @@ socket.on('recibir_mensaje_admin', (datos) => {
 socket.on('tus_mensajes_fueron_leidos', () => {
     document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
 });
+async function abrirModalReferidos() {
+    console.log("Intentando abrir modal referidos...");
+    try {
+        const res = await fetch('/api/mi-perfil');
+        const data = await res.json();
+
+        if (data.exito) {
+            const link = "https://casino-fenix.onrender.com/registro.html?ref=" + data.referralCode;
+            const input = document.getElementById('input-link-referido');
+            if (input) {
+                input.value = link;
+                document.getElementById('modal-referidos').style.display = 'flex';
+            } else {
+                alert("Error: No se encontró el campo del link.");
+            }
+        } else {
+            alert("No pudimos cargar tu código.");
+        }
+    } catch (error) {
+        console.error("Error al abrir referido:", error);
+    }
+}
+
+// Función para copiar (también global)
+function copiarLinkReferido() {
+    const input = document.getElementById('input-link-referido');
+    input.select();
+    document.execCommand('copy');
+    
+    // Feedback visual
+    const btn = document.querySelector('#modal-referidos .btn-spin');
+    const textoOriginal = btn.innerText;
+    btn.innerText = "¡COPIADO!";
+    btn.style.background = "#10b981"; 
+    
+    setTimeout(() => {
+        btn.innerText = textoOriginal;
+        btn.style.background = "#8b5cf6";
+    }, 2000);
+}
 
 // ==========================================
 // JUEGOS Y MODALES
@@ -584,46 +624,7 @@ function jugarMoneda() {
         }, 1500);
     });
 }
-async function abrirModalReferidos() {
-    console.log("Intentando abrir modal referidos...");
-    try {
-        const res = await fetch('/api/mi-perfil');
-        const data = await res.json();
 
-        if (data.exito) {
-            const link = "https://casino-fenix.onrender.com/registro.html?ref=" + data.referralCode;
-            const input = document.getElementById('input-link-referido');
-            if (input) {
-                input.value = link;
-                document.getElementById('modal-referidos').style.display = 'flex';
-            } else {
-                alert("Error: No se encontró el campo del link.");
-            }
-        } else {
-            alert("No pudimos cargar tu código.");
-        }
-    } catch (error) {
-        console.error("Error al abrir referido:", error);
-    }
-}
-
-// Función para copiar (también global)
-function copiarLinkReferido() {
-    const input = document.getElementById('input-link-referido');
-    input.select();
-    document.execCommand('copy');
-    
-    // Feedback visual
-    const btn = document.querySelector('#modal-referidos .btn-spin');
-    const textoOriginal = btn.innerText;
-    btn.innerText = "¡COPIADO!";
-    btn.style.background = "#10b981"; 
-    
-    setTimeout(() => {
-        btn.innerText = textoOriginal;
-        btn.style.background = "#8b5cf6";
-    }, 2000);
-}
 
 // ==========================================
 // NUEVO: SLOT PREMIUM (NAVEGACIÓN NATIVA)
