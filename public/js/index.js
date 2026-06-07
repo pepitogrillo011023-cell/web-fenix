@@ -228,6 +228,11 @@ function irAlMenuPrincipal() {
     if (chatIn) chatIn.style.display = 'none';
     if (games) games.style.display = 'none';
     if (msgArea) msgArea.style.display = 'none';
+    // --- ESTE ES EL CAMBIO: Ocultamos y vaciamos el chat ---
+    if (msgArea) {
+        msgArea.style.display = 'none';
+        msgArea.innerHTML = ''; // Esto borra todos los mensajes acumulados
+    }
     if (menu) menu.style.display = 'grid'; // <-- Usamos grid para que se vea ordenado
 }
 
