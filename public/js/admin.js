@@ -120,6 +120,11 @@ function renderizarTablaClientes() {
         tbody.innerHTML += `
         <tr>
             <td>${c.usuarioCasino}</td>
+            
+            <td style="color:#94a3b8; font-weight:bold; font-size:12px;">
+                ${c.referredBy ? c.referredBy : 'Directo'}
+            </td>
+
             <td style="color:#10b981;font-weight:bold;">$${c.saldo}</td>
             <td style="color:#ffaa00;font-weight:bold;">${c.creditos || 0}</td>
             <td>$${c.wager || 0}</td>
@@ -127,7 +132,6 @@ function renderizarTablaClientes() {
             <td style="display:flex; gap:5px; flex-wrap:wrap;">
                 <button class="btn-action-small" onclick="abrirModalGestionFondos('${c._id}', '${c.usuarioCasino}', 'saldo')">💰 Saldo</button>
                 <button class="btn-action-small warning" onclick="abrirModalGestionFondos('${c._id}', '${c.usuarioCasino}', 'creditos')">🟡 Créditos</button>
-                
                 <button class="btn-action-small info" onclick="abrirModalEditarCliente('${c._id}', '${c.usuarioCasino}')">✏️ Editar</button>
             </td>
         </tr>`;
