@@ -19,7 +19,7 @@ const io = new Server(server);
 // ==============================================================
 // 1. MODELOS DE DATOS
 // ==============================================================
-const Cliente = mongoose.model('Cliente', new mongoose.Schema({
+const clienteSchema = new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
     password: { type: String, default: '1234' },
     saldo: { type: Number, default: 0 },
@@ -32,8 +32,25 @@ const Cliente = mongoose.model('Cliente', new mongoose.Schema({
     ultimaRaspa: { type: Date, default: null },
     ultimaTragamonedas: { type: Date, default: null },
     ultimaCarta: { type: Date, default: null },
-    ultimaMoneda: { type: Date, default: null }
-}));
+    ultimaMoneda: { type: Date, default: null },
+    
+    // --- CAMPOS NUEVOS ---
+    referralCode: { type: String, unique: true, index: true }, 
+    referredBy: { type: String, default: null }
+});
+
+// Middleware automático: Crea el código al guardar
+clienteSchema.pre('save', function(next) {
+    if (!this.referralCode) {
+        const prefijo = this.usuarioCasino.substring(0, 3).toUpperCase();
+        const aleatorio = Math.floor(1000 + Math.random() * 9000);
+        this.referralCode = `${prefijo}${aleatorio}`;
+    }
+    next();
+});
+
+const Cliente = mongoose.model('Cliente', clienteSchema);
+
 
 const Ruleta = mongoose.model('Ruleta', new mongoose.Schema({ configuracion: Array }));
 const Raspa = mongoose.model('Raspa', new mongoose.Schema({ configuracion: Array }));
@@ -328,29 +345,6 @@ app.post('/api/actualizar-costo-minijuego-nombre', requireLogin, async (req, res
         res.status(500).json({ success: false, message: 'Error interno al actualizar el costo.', error: error.message });
     }
 });
-
-/*app.post('/api/jugar-slot', async (req, res) => {
-    try {
-        const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
-        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
-        if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
-        if (!esGiroGratis && cliente.creditos < apuestaGasto) return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
-
-        cliente.creditos -= apuestaGasto;
-        const rodillos = [
-            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
-            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
-            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
-        ];
-        const esIgual = (rodillos[0] === rodillos[1] && rodillos[1] === rodillos[2]);
-        const simbolo = rodillos[0];
-        let premio = (esIgual && simbolo !== 'bonus' && tablaPremios[simbolo]) ? apuestaCalculoPremio * tablaPremios[simbolo] : 0;
-
-        if (!esGiroGratis && premio > 0) cliente.creditos += premio;
-        await cliente.save();
-        res.json({ exito: true, rodillos, nuevoSaldo: cliente.creditos, premioGanado: premio });
-    } catch (error) { res.status(500).json({ exito: false, mensaje: "Error procesando la jugada" }); }
-});*/
 
 app.post('/api/sumar-premio-bonus', async (req, res) => {
     try {
