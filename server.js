@@ -154,6 +154,23 @@ app.get('/logout', (req, res) => {
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+const session = require('express-session');
+
+// Configuración robusta para Render
+app.set('trust proxy', 1); // Necesario para que Render (proxy) pase la cookie
+
+app.use(session({
+    secret: 'tu_secreto_muy_seguro', // Cambia esto por algo único
+    name: 'sessionId',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        secure: true,      // OBLIGATORIO: Porque estás en HTTPS
+        sameSite: 'none',  // OBLIGATORIO: Permite la comunicación cross-site en Render
+        maxAge: 24 * 60 * 60 * 1000 // 24 horas
+    }
+}));
 // ==========================================
 // CONFIGURACIÓN DEL MOTOR MATEMÁTICO DEL SLOT
 // ==========================================
