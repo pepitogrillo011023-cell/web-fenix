@@ -9,6 +9,32 @@ const premiosConfig = [
     { id: 'esfera', nombre: 'Esfera', tipo: 'multiplicador', valor: 1 },
     { id: 'bonus', nombre: 'Bonus', tipo: 'fijo', valor: '10 Tiradas Gratis' }
 ];
+function actualizarTablaPremios() {
+    const apuesta = parseInt(document.getElementById('input-apuesta').value) || 0;
+    const contenedorTabla = document.getElementById('contenedor-premios'); // Asegúrate de tener este ID
+    
+    // Limpiamos la tabla antes de redibujarla
+    contenedorTabla.innerHTML = '';
+
+    premiosConfig.forEach(premio => {
+        let textoPremio = '';
+
+        if (premio.tipo === 'multiplicador') {
+            const calculo = apuesta * premio.valor;
+            textoPremio = `${calculo} CR`;
+        } else {
+            // Si es fijo, mostramos el valor directamente (10 Tiradas Gratis)
+            textoPremio = premio.valor;
+        }
+
+        // Creamos la fila dinámicamente
+        contenedorTabla.innerHTML += `
+            <div class="prize-row">
+                <span>3x ${premio.nombre}:</span> 
+                <span class="highlight">${textoPremio}</span>
+            </div>
+        `;
+    });
 
 function SlotMachine(container, reels, callback, options) {
     const self = this;
