@@ -119,7 +119,10 @@ app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
-app.use('/api', slotRoutes); // ESTO MONTA TODO LO QUE SEA /api/jugar-slot
+/*app.use('/api', slotRoutes); // ESTO MONTA TODO LO QUE SEA /api/jugar-slot*/
+app.use('/api/prueba', (req, res) => {
+    res.send("¡LA RUTA FUNCIONA!");
+});
 app.use(express.static(path.join(__dirname, 'public')));
 
 // ==============================================================
