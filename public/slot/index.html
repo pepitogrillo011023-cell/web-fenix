@@ -205,72 +205,63 @@
 
                 // === COMUNICACIÓN CON EL BACKEND ===
                 window.ejecutarGiro = async function() {
-    // 1. Validamos que la máquina no esté girando ya
+    // 1. Validaciones iniciales
     if (isSpinning) return;
-
-    // 2. Apuesta actual
     apuestaActual = parseFloat(inputApuesta.value) || 0;
 
-    // 3. Si no hay saldo y no es tiro gratis, frenamos
     if (!enModoBonus && creditosActuales < apuestaActual) {
         alert("No tienes suficientes créditos para esta apuesta.");
         return;
     }
 
-    // 4. Encendemos la animación visual y bloqueamos los botones
     isSpinning = true;
     btnGirar.disabled = true;
     inputApuesta.disabled = true;
     mensajePremio.innerText = "GIRANDO...";
-    
     slot.startSpinAnimation();
-               try {
-                    const respuesta = await fetch('/api/jugar-slot', { 
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            usuario: usuarioActual,
-                            // Si estamos en bonus, la apuesta que se descuenta en BD debe ser 0
-                            apuestaGasto: enModoBonus ? 0 : apuestaActual, 
-                            apuestaCalculoPremio: apuestaActual, // Para calcular X10, X8, etc.
-                            esGiroGratis: enModoBonus
-                        })
-                    });
-                    if (!respuesta.ok) throw new Error("El backend aún no tiene esta ruta configurada.");
-                   const data = await respuesta.json();
-                    if (data.exito) {
-                     // Sincronizamos los créditos EXACTOS que diga la base de datos
-                        creditosActuales = data.nuevoSaldo;
-                        actualizarPantallaCreditos();
-                        // Detenemos la máquina con las frutas que eligió el servidor
-                        slot.stopSpinAndShowResult(data.rodillos);
-                    } else {
-                        alert(data.mensaje || "Error al procesar la apuesta en el servidor.");
-                        isSpinning = false;
-                        btnGirar.disabled = false;
-                        inputApuesta.disabled = false;
-                    }
-                } catch (error) {
-                    // === SALVACAÍDAS TEMPORAL (Mantiene el juego andando hasta que programes el backend) ===
-                    setTimeout(() => {
-                        if(!enModoBonus) creditosActuales -= apuestaActual; // Gasto visual
-                        actualizarPantallaCreditos();
 
-                        const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
-                        let rodillosFinales = [
-                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
-                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
-                            todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
-                        ];
-                        
-                        if (Math.random() > 0.85) { 
-                            const forzado = todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)];
-                            rodillosFinales = [forzado, forzado, forzado];
-                        }
-                        slot.stopSpinAndShowResult(rodillosFinales);
-                    }, 1000); 
-                }
-            };
+    try {
+        const respuesta = await fetch('/api/jugar-slot', { 
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                usuario: usuarioActual,
+                apuestaGasto: enModoBonus ? 0 : apuestaActual, 
+                apuestaCalculoPremio: apuestaActual, 
+                esGiroGratis: enModoBonus
+            })
+        });
+        
+        if (!respuesta.ok) throw new Error("Error en el servidor.");
+        const data = await respuesta.json();
+        
+        if (data.exito) {
+            creditosActuales = data.nuevoSaldo;
+            actualizarPantallaCreditos();
+            slot.stopSpinAndShowResult(data.rodillos);
+        } else {
+            alert(data.mensaje || "Error al procesar la apuesta.");
+            isSpinning = false;
+            btnGirar.disabled = false;
+            inputApuesta.disabled = false;
+        }
+    } catch (error) {
+        // --- SALVACAÍDAS (Solo se ejecuta si el servidor falla o hay error de red) ---
+        setTimeout(() => {
+            if(!enModoBonus) creditosActuales -= apuestaActual; 
+            actualizarPantallaCreditos();
+
+            const todosLosSimbolos = ['laud', 'bufon', 'zapatos', 'bonus', 'clavas', 'esfera'];
+            let rodillosFinales = [
+                todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+                todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)],
+                todosLosSimbolos[Math.floor(Math.random() * todosLosSimbolos.length)]
+            ];
+            
+            slot.stopSpinAndShowResult(rodillosFinales);
+        }, 1000); 
+    } // <-- Cierra el catch
+}; // <-- ESTA LLAVE ES CLAVE: Cierra la función 'ejecutarGiro''
 
             function evaluarPremio(rodillos) {
                 let apuestaActual = parseFloat(inputApuesta.value);
