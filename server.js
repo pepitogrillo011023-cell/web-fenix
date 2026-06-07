@@ -150,12 +150,12 @@ function tirarRodillo() {
 // RUTA DEL SLOT CON MODELO USER
 // ==========================================
 app.post('/api/jugar-slot', async (req, res) => {
-    console.log("¡RUTA SLOT ACTIVADA CON MODELO USER REAL!");
+    
     const { usuario, apuestaGasto, apuestaCalculoPremio, esGiroGratis } = req.body;
 
     try {
         // 1. BUSCAR AL USUARIO (Usamos 'User' y el campo 'username')
-        const user = await User.findOne({ username: usuario });
+        const Cliente = await Cliente.findOne({ usuarioCasino: usuario });
         
         if (!user) {
             return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
