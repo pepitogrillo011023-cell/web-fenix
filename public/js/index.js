@@ -328,7 +328,12 @@ socket.on('tus_mensajes_fueron_leidos', () => {
 async function abrirModalReferidos() {
     console.log("Intentando abrir modal referidos...");
     try {
-        const res = await fetch('/api/mi-perfil');
+        // AGREGAMOS { credentials: 'include' } AQUÍ
+        const res = await fetch('/api/mi-perfil', {
+            method: 'GET',
+            credentials: 'include' 
+        });
+        
         const data = await res.json();
 
         if (data.exito) {
@@ -337,14 +342,14 @@ async function abrirModalReferidos() {
             if (input) {
                 input.value = link;
                 document.getElementById('modal-referidos').style.display = 'flex';
-            } else {
-                alert("Error: No se encontró el campo del link.");
             }
         } else {
-            alert("No pudimos cargar tu código.");
+            // Esto se mostrará si realmente no hay sesión o hay otro error
+            console.error("Error del servidor:", data.mensaje);
+            alert("Error: " + data.mensaje);
         }
     } catch (error) {
-        console.error("Error al abrir referido:", error);
+        console.error("Error de conexión:", error);
     }
 }
 
