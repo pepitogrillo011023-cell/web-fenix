@@ -138,3 +138,37 @@ body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI'
 /* Moneda */
 .coin-flip { width: 150px; height: 150px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 6px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1.5s ease-out; cursor: pointer; }
 .coin-flip { width: 150px; height: 150px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 6px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 60px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1.5s ease-out; cursor: pointer; }
+.contenedor-alianzas {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-externo {
+    flex: 1;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 13px;
+    color: white;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.btn-externo:hover {
+    transform: scale(1.03);
+}
+
+/* Estilo Ganamos (Púrpura) */
+.btn-ganamos {
+    background: linear-gradient(135deg, #4a148c, #7b1fa2);
+}
+
+/* Estilo Oropuro (Dorado) */
+.btn-oropuro {
+    background: linear-gradient(135deg, #b8860b, #d4af37);
+    color: #000; /* Negro para que el texto resalte sobre el dorado */
+}
