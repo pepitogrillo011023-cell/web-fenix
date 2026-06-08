@@ -817,7 +817,6 @@ async function abrirTienda() {
     }
 };
 }
-JavaScript
 // ==============================================================
 // MENÚ DESPLEGABLE DE TRES PUNTOS (PEGADO AL FINAL)
 // ==============================================================
