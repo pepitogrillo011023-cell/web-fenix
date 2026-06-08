@@ -68,7 +68,7 @@ function cambiarSubJuego(juego) {
 // ==========================================
 // POPUP DE PLATAFORMAS EXTERNAS (ENCASTRE PERFECTO)
 // ==========================================
-function abrirGanamosPopup() {
+function abrirEnPopup(url, nombreVentana) {
     const sidebar = document.querySelector('.sidebar');
     const sidebarWidth = sidebar ? sidebar.offsetWidth : 250; 
     const popupWidth = window.innerWidth - sidebarWidth;
@@ -79,24 +79,8 @@ function abrirGanamosPopup() {
     const popupTop = window.screenY + headerHeight;
 
     window.open(
-        'https://agents.ganamosnet.club/users/all', 
-        'GanamosPanel', 
-        `width=${popupWidth},height=${popupHeight},top=${popupTop},left=${popupLeft},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
-    );
-}
-function abrirOropuroPopup() {
-    const sidebar = document.querySelector('.sidebar');
-    const sidebarWidth = sidebar ? sidebar.offsetWidth : 250; 
-    const popupWidth = window.innerWidth - sidebarWidth;
-    const popupHeight = window.innerHeight;
-    const borderX = (window.outerWidth - window.innerWidth) / 2;
-    const headerHeight = window.outerHeight - window.innerHeight - borderX;
-    const popupLeft = window.screenX + borderX + sidebarWidth;
-    const popupTop = window.screenY + headerHeight;
-
-    window.open(
-        'https://admin.oropuro.org/', // <--- CAMBIA ESTO POR LA URL REAL
-        'OropuroPanel', 
+        url, 
+        nombreVentana, 
         `width=${popupWidth},height=${popupHeight},top=${popupTop},left=${popupLeft},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
     );
 }
