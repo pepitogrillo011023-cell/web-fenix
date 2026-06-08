@@ -170,41 +170,34 @@ const requireLogin = (req, res, next) => {
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
-
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
+    
+    console.log(`Intentando login para: ${username} con pass: ${password}`);
 
     try {
-        // Buscamos al usuario en MongoDB usando tu modelo 'User'
-        // Asegurate que los campos 'user' y 'pass' coincidan con los de tu esquema
+        // AJUSTE CRÍTICO: Verifica si en tu BD el campo se llama 'user' o 'username'
+        // y si el password se llama 'pass' o 'password'
         const user = await User.findOne({ user: username, pass: password });
 
         if (user) {
-            // Guardamos la sesión
+            console.log("¡Usuario encontrado en la BD!");
             req.session.loggedIn = true;
-            req.session.userId = user._id; // 🔥 ESTO ES LO QUE FALTABA
+            req.session.userId = user._id;
             
-            // Forzamos el guardado de la sesión antes de redirigir
-            req.session.save((err) => {
-                if (err) {
-                    return res.status(500).send("Error al guardar sesión.");
-                }
-                
-                // Redirigimos según el rol (si tu modelo tiene campo 'role' o 'isAdmin')
-                if (username === 'admin') {
-                    res.redirect('/admin.html');
-                } else {
-                    res.redirect('/index.html');
-                }
+            req.session.save(() => {
+                res.redirect(username === 'admin' ? '/admin.html' : '/index.html');
             });
         } else {
+            console.log("⚠️ Usuario NO encontrado en la BD con esos datos.");
             res.send('Usuario o contraseña incorrectos. <a href="/login.html">Volver</a>');
         }
     } catch (error) {
-        console.error("Error en login:", error);
-        res.status(500).send("Error interno del servidor.");
+        console.error("Error crítico en la base de datos:", error);
+        res.status(500).send("Error de servidor.");
     }
 });
+
 
 // MODIFICADO: Logout seguro con función Callback
 app.get('/logout', (req, res) => {
