@@ -207,27 +207,28 @@ body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI'
 .app-wrapper {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* Empuja todo hacia arriba, eliminando el vacío */
-    gap: 12px; /* Espaciado parejo y controlado entre bloques */
-    padding: 15px;
-    height: 100vh;
+    justify-content: flex-start; 
+    gap: 8px; /* Bajamos un toque el espacio entre bloques para compactar */
+    padding: 12px; /* Un pelín más de aire en los bordes */
+    height: 100dvh; /* 🔥 CLAVE: Evita que las barras del celular corten el diseño abajo */
     box-sizing: border-box;
-    overflow-y: auto; /* Por si en pantallas muy chicas se necesita un toque de scroll */
+    background-color: #0b0f19; /* Tu color de fondo de Fénix */
+    overflow: hidden; /* Fuerza a que todo se adapte como una App fija sin scroll de más */
 }
 
-/* NUEVO: Estilo del contenedor del Banner */
+/* Ajuste opcional: Si ves que todavía queda muy justo, le bajás 5px al banner */
 .banner-promocional {
     width: 100%;
-    height: 95px; /* Altura ideal en celular para que no tape el resto del menú */
-    background-color: #111827; /* Fondo oscuro integrado */
-    border: 1px dashed #374151; /* Borde punteado provisional */
+    height: 90px; /* De 95px lo bajamos a 90px */
+    background-color: #111827;
+    border: 1px dashed #374151;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #4b5563;
     font-size: 11px;
-    margin: 5px 0; /* Margen pequeño para respirar */
+    margin: 2px 0;
 }
 
 /* OPTIMIZADO: Cuadrícula de 4 botones un poco más altos */
