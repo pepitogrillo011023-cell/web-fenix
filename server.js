@@ -13,7 +13,7 @@ const slotRoutes = require('./routes/slot');
 console.log("CONTENIDO DE SLOTROUTES:", slotRoutes); // <--- AGREGA ESTO
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
-const eventosRouter = require('./routes/eventos');
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -402,14 +402,14 @@ app.post('/api/webhook/billetera', async (req, res) => {
     } catch (error) { console.error("🔴 Error procesando Webhook:", error); }
 });
 // --- RUTA PARA CONFIGURACIÓN DE MINIJUEGOS ---
-app.get('/api/configuracion-minijuegos', async (req, res) => {
+/*app.get('/api/configuracion-minijuegos', async (req, res) => {
     try {
         const minijuegos = await Minigame.find({});
         res.json({ success: true, minijuegos: minijuegos });
     } catch (e) {
         res.status(500).json({ success: false, message: "Error al cargar costos" });
     }
-});
+});*/
 
 // --- RUTA PARA OBTENER TIENDA ---
 app.get('/api/tienda', async (req, res) => {
