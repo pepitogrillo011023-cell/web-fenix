@@ -143,7 +143,7 @@ app.use(session({
     cookie: {
         httpOnly: true,
         secure: true,      // OBLIGATORIO: Para HTTPS en Render
-        sameSite: 'none',  // OBLIGATORIO: Permite comunicación cross-site en Render
+        sameSite: 'lax',  // OBLIGATORIO: Permite comunicación cross-site en Render
         maxAge: 1000 * 60 * 60 * 24 // 24 horas de duración máxima
     }
 }));
