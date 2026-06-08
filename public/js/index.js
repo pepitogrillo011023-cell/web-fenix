@@ -1,6 +1,11 @@
-const socket = io();
-const msgArea = document.getElementById('messages-area');
-window.usuarioLogueado = null; 
+// MODIFICADO: Forzamos la conexión directa por WebSocket para evitar errores 400 en Render
+const socket = io({
+    transports: ['websocket'],
+    upgrade: false
+});
+
+const msgArea = document.getElementById('messages-area'); //
+window.usuarioLogueado = null; //
 
 // VARIABLES GLOBALES JUEGOS
 let ruletaConfig = []; let raspaConfig = [];
