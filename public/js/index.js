@@ -223,6 +223,7 @@ function irAlMenuPrincipal() {
     const chatIn = document.getElementById('container-chat-input');
     const games = document.getElementById('container-games-options');
     const menu = document.getElementById('container-menu-options');
+    const formRetiro = document.getElementById('container-retiro-form');
 
     if (dep) dep.style.display = 'none';
     if (chatIn) chatIn.style.display = 'none';
@@ -231,7 +232,8 @@ function irAlMenuPrincipal() {
     // --- ESTE ES EL CAMBIO: Ocultamos y vaciamos el chat ---
     if (msgArea) {
         msgArea.style.display = 'none';
-        msgArea.innerHTML = ''; // Esto borra todos los mensajes acumulados
+        msgArea.innerHTML = '';
+        if (formRetiro) formRetiro.style.display = 'none';// Esto borra todos los mensajes acumulados
     }
     if (menu) menu.style.display = 'grid'; // <-- Usamos grid para que se vea ordenado
 }
@@ -396,6 +398,7 @@ async function enviarRetiro() {
             document.getElementById('input-monto-retiro').value = '';
             document.getElementById('input-cbu-alias').value = '';
             document.getElementById('input-titular').value = '';
+            irAlMenuPrincipal();
         } else {
             // Aquí mostrará el mensaje de "Faltan XX horas" que configuramos en el server
             alert(data.mensaje);
