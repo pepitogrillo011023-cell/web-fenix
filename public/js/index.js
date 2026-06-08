@@ -276,10 +276,25 @@ function seleccionarOpcion(opcion) {
         socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
 
     } else if (opcion === 'Retiro') {
-        mostrarChat();
-        let msgBot = `💸 <b>Retiro:</b> ¿Qué monto querés retirar? Escribilo aquí.`;
-        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
-        socket.emit('cliente_accion', { estado: 'Retiro', mensajeCliente: opcion, mensajeBot: msgBot });
+        // 1. Ocultamos el menú principal
+        const menu = document.getElementById('container-menu-options');
+        if (menu) menu.style.display = 'none';
+
+        // 2. Ocultamos el chat si estaba abierto
+        const msgArea = document.getElementById('messages-area');
+        const chatInput = document.getElementById('container-chat-input');
+        if (msgArea) msgArea.style.display = 'none';
+        if (chatInput) chatInput.style.display = 'none';
+
+        // 3. MOSTRAMOS EL FORMULARIO DE RETIRO
+        const formRetiro = document.getElementById('container-retiro-form');
+        if (formRetiro) {
+            formRetiro.style.display = 'flex'; 
+        } else {
+            console.error("No se encontró el contenedor del formulario de retiro");
+        
+        
+    } else if (opcion === 'Referido') {
 
     } else if (opcion === 'Referido') {
         // --- AQUÍ ESTÁ LA NUEVA LÓGICA ---
