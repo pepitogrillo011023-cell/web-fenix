@@ -812,3 +812,31 @@ async function abrirTienda() {
     }
 };
 }
+// ==============================================================
+// MENÚ DESPLEGABLE DE TRES PUNTOS (PEGADO AL FINAL)
+// ==============================================================
+document.addEventListener('DOMContentLoaded', () => {
+    const btnMenu = document.getElementById('btn-user-menu');
+    const dropdownContent = document.getElementById('dropdown-menu-content');
+
+    if (btnMenu && dropdownContent) {
+        btnMenu.addEventListener('click', (e) => {
+            e.stopPropagation(); 
+            dropdownContent.classList.toggle('show');
+        });
+
+        window.addEventListener('click', () => {
+            if (dropdownContent.classList.contains('show')) {
+                dropdownContent.classList.remove('show');
+            }
+        });
+    }
+
+    const btnChangePass = document.getElementById('btn-change-password');
+    if (btnChangePass) {
+        btnChangePass.addEventListener('click', (e) => {
+            e.preventDefault();
+            alert("Función para cambiar contraseña.");
+        });
+    }
+});
