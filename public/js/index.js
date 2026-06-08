@@ -837,6 +837,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // 🔥 NUEVO: Escucha el botón de cerrar sesión y borra las credenciales guardadas
+    const btnLogout = document.getElementById('btn-user-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            // Borramos los datos para que el auto-login del window.onload no se reactive
+            localStorage.removeItem('casino_fenix_user');
+            localStorage.removeItem('casino_fenix_pass');
+        });
+    }
+
     const btnChangePass = document.getElementById('btn-change-password');
     if (btnChangePass) {
         btnChangePass.addEventListener('click', (e) => {
