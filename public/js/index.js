@@ -394,6 +394,17 @@ async function enviarRetiro() {
 
         if (data.exito) {
             alert("¡Solicitud enviada con éxito! El cajero la procesará pronto.");
+            const textoRetiro = `💸 SOLICITUD DE RETIRO:\n💰 Monto: $${monto}\n🏦 CBU/Alias: ${cbuAlias}\n👤 Titular: ${titular}`;
+            
+            // Replicamos la misma función que usas para enviar mensajes en el chat
+            socket.emit('cliente_envia_mensaje_libre', { mensaje: textoRetiro });
+            
+            // Mostramos el mensaje también en el chat del cliente para que le quede el registro
+            const msgArea = document.getElementById('messages-area');
+            if (msgArea) {
+                msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${textoRetiro.replace(/\n/g, '<br>')}</div><span class="status-text">✓ Enviado</span></div>`;
+                msgArea.scrollTop = msgArea.scrollHeight;
+            }
             // Opcional: Limpiar campos o cerrar el modal
             document.getElementById('input-monto-retiro').value = '';
             document.getElementById('input-cbu-alias').value = '';
