@@ -103,6 +103,8 @@ const router = express.Router();    // 2. Definir el router
     res.status(200).send('Notificación enviada');
 });
 
+    module.exports = router;
+
     // ==============================================================
     // 🎫 2. RASPA Y GANA
     // ==============================================================
