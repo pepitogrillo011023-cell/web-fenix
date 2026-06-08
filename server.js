@@ -135,7 +135,6 @@ app.use((req, res, next) => {
     console.log(`Petición recibida: ${req.method} ${req.path}`);
     next();
 });
-app.use('/eventos', eventosRouter);
 app._router.stack.forEach(function(r){
   if (r.route && r.route.path){
     console.log("Ruta definida: " + r.route.path);
