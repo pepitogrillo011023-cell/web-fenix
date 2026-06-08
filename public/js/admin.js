@@ -1070,16 +1070,38 @@ socket.on('lista_usuarios_actualizada', (usuarios) => {
 });
 
 function renderizarHistorialChat(historial) {
-    const areaMsg = document.getElementById('active-chat-messages'); if (!areaMsg) return;
+    const areaMsg = document.getElementById('active-chat-messages'); 
+    if (!areaMsg) return;
     areaMsg.innerHTML = ''; 
+    
     historial.forEach(h => {
-        const wrap = document.createElement('div'); wrap.className = 'admin-bubble-wrapper'; const b = document.createElement('div');
-        if (h.emisor === 'bot') { b.className = 'admin-bubble b-bot'; b.innerHTML = `🤖 <b>Bot:</b><br>${h.mensaje}`; wrap.appendChild(b); }
-        if (h.emisor === 'admin') { b.className = 'admin-bubble b-admin'; b.innerHTML = `👨‍💼 <b>Vos:</b><br>${h.mensaje}`; wrap.appendChild(b); }
+        const wrap = document.createElement('div'); 
+        wrap.className = 'admin-bubble-wrapper'; 
+        const b = document.createElement('div');
+        
+        // Si el mensaje viene con hora la usa, si no, queda vacío (para mensajes viejos)
+        const horaFormateada = h.hora ? `<span class="hora-admin-chat">${h.hora}</span>` : '';
+
+        if (h.emisor === 'bot') { 
+            b.className = 'admin-bubble b-bot'; 
+            b.innerHTML = `🤖 <b>Bot:</b><br>${h.mensaje}${horaFormateada}`; 
+            wrap.appendChild(b); 
+        }
+        
+        if (h.emisor === 'admin') { 
+            b.className = 'admin-bubble b-admin'; 
+            b.innerHTML = `👨‍💼 <b>Vos:</b><br>${h.mensaje}${horaFormateada}`; 
+            wrap.appendChild(b); 
+        }
+        
         if (h.emisor === 'cliente') { 
             let check = h.leido ? '<span class="read-receipt seen">✓ Visto</span>' : '<span class="read-receipt">✓ Enviado</span>';
-            b.className = 'admin-bubble b-cliente'; b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}`; wrap.appendChild(b); wrap.innerHTML += check;
+            b.className = 'admin-bubble b-cliente'; 
+            b.innerHTML = `👤 <b>Cliente:</b><br>${h.mensaje}${horaFormateada}`; 
+            wrap.appendChild(b); 
+            wrap.innerHTML += check;
         }
+        
         areaMsg.appendChild(wrap);
     });
     areaMsg.scrollTop = areaMsg.scrollHeight;
