@@ -16,7 +16,15 @@
                 <span id="header-title-text">Casino Fénix</span>
                 <span id="badge-creditos" class="badge-creditos hidden">🟡 <span id="txt-creditos">0</span> CR</span>
             </div>
-            <button id="btn-cerrar-sesion" class="btn-logout hidden" onclick="cerrarSesion()">Salir</button>
+            <div class="user-menu-dropdown">
+    <button id="btn-user-menu" class="btn-dots" aria-label="Menú de usuario">
+        ⋮
+    </button>
+    <div id="dropdown-menu-content" class="dropdown-content">
+        <a href="#" id="btn-change-password">🔐 Cambiar contraseña</a>
+        <a href="/logout" id="btn-user-logout">🚪 Cerrar sesión</a>
+    </div>
+</div>
         </div>
 
         <div id="vista-login" class="auth-body">
