@@ -1315,3 +1315,40 @@ window.onmousemove = resetearTimerInactividad; // Mover el mouse
 window.onmousedown = resetearTimerInactividad; // Hacer clics
 window.onkeypress = resetearTimerInactividad;  // Tocar el teclado
 window.onscroll = resetearTimerInactividad;    // Hacer scroll
+
+// ---------------------------------------------------------
+// NOTIFICACIONES Y PUSH MASIVO
+// ---------------------------------------------------------
+
+async function enviarPushMasivo() {
+    // 1. Obtener los valores de los inputs
+    const titulo = document.getElementById('push-titulo').value;
+    const mensaje = document.getElementById('push-mensaje').value;
+
+    // 2. Validación básica
+    if (!titulo || !mensaje) {
+        alert("Por favor, completá título y mensaje");
+        return;
+    }
+
+    try {
+        // 3. Enviar al servidor
+        const response = await fetch('/eventos/enviar-push', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ titulo, mensaje })
+        });
+
+        // 4. Feedback
+        if (response.ok) {
+            alert('¡Push enviado correctamente!');
+        } else {
+            alert('Hubo un error al enviar el push.');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error de conexión con el servidor.');
+    }
+}
