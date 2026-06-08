@@ -89,7 +89,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
 
 const router = express.Router();    // 2. Definir el router
     
-    router.post('/enviar-push', (req, res) => {
+  /*  router.post('/enviar-push', (req, res) => {
     const { titulo, mensaje } = req.body;
     const io = req.app.get('io'); // Obtenemos la instancia que definimos en server.js
 
@@ -101,6 +101,29 @@ const router = express.Router();    // 2. Definir el router
     });
 
     res.status(200).send('Notificación enviada');
+});*/
+    router.post('/enviar-push', (req, res) => {
+    // 1. Ver qué datos llegaron
+    console.log("Datos recibidos en el servidor:", req.body);
+    
+    const { titulo, mensaje } = req.body;
+    const io = req.app.get('io'); 
+
+    // 2. Verificar que io exista
+    if (!io) {
+        console.error("Error: io no encontrado en el servidor");
+        return res.status(500).send('Error interno: Socket.io no disponible');
+    }
+
+    // 3. Emitir el evento
+    console.log("Emitiendo evento 'nueva_notificacion'...");
+    io.emit('nueva_notificacion', {
+        titulo: titulo,
+        mensaje: mensaje,
+        fecha: new Date()
+    });
+
+    res.status(200).send('Notificación enviada correctamente');
 });
 
     module.exports = router;
