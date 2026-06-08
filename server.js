@@ -6,6 +6,7 @@ const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const eventosRouter = require('./routes/eventos');
 
 // Importar modelos
 const slotRoutes = require('./routes/slot'); 
@@ -134,7 +135,7 @@ app.use((req, res, next) => {
     console.log(`Petición recibida: ${req.method} ${req.path}`);
     next();
 });
-
+app.use('/eventos', eventosRouter);
 // UNA SOLA CONFIGURACIÓN DE SESIÓN (Producción / Render lista)
 app.use(session({
     secret: 'CasinoFenix2026_Seguro', // Tu secreto definitivo
