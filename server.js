@@ -568,12 +568,17 @@ io.on('connection', (socket) => {
         }
     });
 
-    socket.on('disconnect', () => {
+   socket.on('disconnect', () => {
         if (socket.username) {
-            let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
-            if (usuario) { usuario.id = null; }
+            // NUEVO: Lo eliminamos por completo del array de conectados
+            sharedState.usuariosConectados = sharedState.usuariosConectados.filter(u => u.nombre !== socket.username);
+            
             if (sharedState.usuarioSeleccionadoActivoAdmin === socket.username) sharedState.usuarioSeleccionadoActivoAdmin = null;
-            if (sharedState.adminSocketId) io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+            
+            // Le avisamos al admin para que su pantalla lo borre al instante sin F5
+            if (sharedState.adminSocketId) {
+                io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+            }
         }
     });
 });
