@@ -48,10 +48,39 @@ body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI'
 .live-chat-monitor { flex: 1; display: flex; flex-direction: column; background-color: #0b1329; }
 .monitor-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
 .admin-bubble-wrapper { display: flex; flex-direction: column; margin-bottom: 15px; width: 100%; }
-.admin-bubble { max-width: 75%; padding: 10px 14px; border-radius: 10px; font-size: 13px; }
+
+/* MODIFICADO: Agregamos flex, flex-direction y position para ordenar la hora abajo */
+.admin-bubble { 
+    max-width: 75%; 
+    padding: 10px 14px; 
+    border-radius: 10px; 
+    font-size: 13px; 
+    display: flex; 
+    flex-direction: column; 
+    position: relative; 
+}
+
 .admin-bubble.b-bot { background-color: #1f2937; color: #94a3b8; align-self: flex-start; }
 .admin-bubble.b-admin { background-color: #1e3a8a; color: white; align-self: flex-end; }
 .admin-bubble.b-cliente { background-color: #2563eb; color: white; align-self: flex-start; font-weight: 600; }
+
+/* ============================================================== */
+/* NUEVO: Estilo para la hora dentro del panel de administración  */
+/* ============================================================== */
+.hora-admin-chat {
+    font-size: 10px;
+    align-self: flex-end; /* La tira abajo a la derecha del globo */
+    margin-top: 5px;
+    font-weight: normal;
+    color: rgba(255, 255, 255, 0.5); /* Blanco sutil semitransparente */
+}
+
+/* Ajuste fino para el globo del bot (opcional, para que combine con su texto gris) */
+.admin-bubble.b-bot .hora-admin-chat {
+    color: rgba(148, 163, 184, 0.6); 
+}
+/* ============================================================== */
+
 .read-receipt { font-size: 10px; color: #64748b; align-self: flex-start; margin-left: 5px; margin-top: 4px; font-weight: bold; }
 .read-receipt.seen { color: #38bdf8; }
 .monitor-input-area { padding: 15px; background-color: #111827; border-top: 1px solid #1f2937; display: flex; gap: 10px; }
