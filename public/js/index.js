@@ -855,6 +855,8 @@ async function abrirTienda() {
 // MENÚ DESPLEGABLE DE TRES PUNTOS (PEGADO AL FINAL)
 // ==============================================================
 document.addEventListener('DOMContentLoaded', () => {
+    
+    // --- 1. Lógica de tu menú existente ---
     const btnMenu = document.getElementById('btn-user-menu');
     const dropdownContent = document.getElementById('dropdown-menu-content');
 
@@ -870,6 +872,24 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
+
+    // --- 2. NUEVA Lógica de notificaciones ---
+    const badge = document.getElementById('badge-contador');
+
+    // Nos aseguramos de que el badge exista antes de intentar usarlo
+    if (badge) {
+        socket.on('nueva_notificacion', (data) => {
+            console.log("Notificación recibida:", data);
+
+            // 1. Hacemos visible el badge
+            badge.style.display = 'block';
+
+            // 2. Incrementamos el contador
+            let count = parseInt(badge.innerText) || 0;
+            badge.innerText = count + 1;
+        });
+    }
+});
 
     // Escucha el botón de cerrar sesión
     const btnLogout = document.getElementById('btn-user-logout');
