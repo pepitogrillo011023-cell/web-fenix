@@ -87,7 +87,6 @@ module.exports = function(app, requireLogin, io, sharedState) {
     // 🎫 1.5 NOTIFICACIONES Y PUSH
     // ==============================================================
 
-const router = express.Router();    // 2. Definir el router
     
   /*  router.post('/enviar-push', (req, res) => {
     const { titulo, mensaje } = req.body;
@@ -102,7 +101,7 @@ const router = express.Router();    // 2. Definir el router
 
     res.status(200).send('Notificación enviada');
 });*/
-    router.post('/enviar-push', (req, res) => {
+    app.post('/enviar-push', (req, res) => {
     // 1. Ver qué datos llegaron
     console.log("Datos recibidos en el servidor:", req.body);
     
@@ -126,7 +125,7 @@ const router = express.Router();    // 2. Definir el router
     res.status(200).send('Notificación enviada correctamente');
 });
 
-    module.exports = router;
+   
 
     // ==============================================================
     // 🎫 2. RASPA Y GANA
