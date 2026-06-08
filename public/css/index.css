@@ -203,34 +203,3 @@ body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI'
     background: linear-gradient(135deg, #b8860b, #d4af37);
     color: #000; /* Negro para que el texto resalte sobre el dorado */
 }
-/* Contenedor del botón de salida */
-.logout-section {
-    padding: 15px;
-    margin-top: auto; /* Si el sidebar es flex, esto lo empuja abajo del todo automáticamente */
-}
-
-/* Estilo del botón */
-.btn-sidebar-logout {
-    width: 100%;
-    background-color: #311b1b; /* Un rojo oscuro sutil que combina con tu fondo */
-    color: #f87171; /* Texto rojo claro para que resalte */
-    border: 1px solid #7f1d1d;
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
-}
-
-/* Efecto Hover al pasar el mouse */
-.btn-sidebar-logout:hover {
-    background-color: #991b1b; /* Se vuelve un rojo más vivo */
-    color: white;
-    border-color: #ef4444;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
-}
