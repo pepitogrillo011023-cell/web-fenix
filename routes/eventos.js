@@ -326,4 +326,4 @@ const router = express.Router();    // 2. Definir el router
         }
     });
 };
-module.exports = router;
+
