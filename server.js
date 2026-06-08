@@ -231,18 +231,18 @@ app.get('/admin.html', requireLogin, (req, res) => {
 app.post('/api/cambiar-contrasena', requireLogin, async (req, res) => {
     try {
         const { nuevaPassword } = req.body;
-        
-        // Verificamos que el usuario esté logueado (sesión activa)
         const userId = req.session.userId;
 
-        // Actualizamos en la base de datos
-        // Asegurate de que tu modelo 'User' tenga esta funcionalidad
-        await User.findByIdAndUpdate(req.session.userId, { password: nuevaPassword });
+        // 1. Encriptamos la nueva contraseña antes de guardarla
+        const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
+
+        // 2. Actualizamos en la base de datos con el hash
+        await User.findByIdAndUpdate(userId, { password: hashedPassword });
         
-        res.json({ success: true });
+        res.json({ success: true, message: "Contraseña actualizada" });
     } catch (error) {
         console.error("Error al cambiar contraseña:", error);
-        res.status(500).json({ message: "Error al actualizar en la base de datos" });
+        res.status(500).json({ message: "Error al actualizar la contraseña" });
     }
 });
 // ==========================================
