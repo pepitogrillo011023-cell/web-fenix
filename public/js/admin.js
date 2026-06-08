@@ -1264,3 +1264,32 @@ document.addEventListener('DOMContentLoaded', () => {
         inicializarTurnoLogico();
     }
 });
+// ==============================================================
+// CONTROL DE INACTIVIDAD DEL ADMINISTRADOR
+// ==============================================================
+let timerInactividad;
+
+function resetearTimerInactividad() {
+    // Limpiamos el contador anterior cada vez que el usuario hace algo
+    clearTimeout(timerInactividad);
+    
+    // Configurar el tiempo: 1 hora = 60 minutos * 60 segundos * 1000 milisegundos
+    const tiempoLimite = 60 * 60 * 1000; 
+    
+    // Si pasa ese tiempo sin que se resetee, se ejecuta la función de cierre
+    timerInactividad = setTimeout(cerrarSesionAutomatica, tiempoLimite);
+}
+
+function cerrarSesionAutomatica() {
+    alert("Tu sesión ha expirado por inactividad por seguridad. Volvé a ingresar.");
+    
+    // Redirigís a tu ruta de cierre de sesión (la que borre las cookies o el sessionStorage)
+    window.location.href = '/logout'; 
+}
+
+// Escuchamos cualquier interacción lógica del administrador para saber que sigue ahí
+window.onload = resetearTimerInactividad;
+window.onmousemove = resetearTimerInactividad; // Mover el mouse
+window.onmousedown = resetearTimerInactividad; // Hacer clics
+window.onkeypress = resetearTimerInactividad;  // Tocar el teclado
+window.onscroll = resetearTimerInactividad;    // Hacer scroll
