@@ -150,9 +150,14 @@ app.use(session({
 
 // Middleware de protección de rutas
 const requireLogin = (req, res, next) => {
-    if (req.session.loggedIn) { 
+    if (req.session && req.session.loggedIn) { 
         next(); 
     } else { 
+        // Si es una petición de API (empieza con /api/), devolvemos 401
+        if (req.path.startsWith('/api/')) {
+            return res.status(401).json({ message: "No autorizado" });
+        }
+        // Si es una página normal, redireccionamos
         res.redirect('/login.html'); 
     }
 };
