@@ -206,6 +206,25 @@ app.get('/logout-cliente', (req, res) => {
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
+app.post('/api/cambiar-contrasena', async (req, res) => {
+    try {
+        const { nuevaPassword } = req.body;
+        
+        // Verificamos que el usuario esté logueado (sesión activa)
+        if (!req.session.userId) {
+            return res.status(401).json({ message: "No autorizado" });
+        }
+
+        // Actualizamos en la base de datos
+        // Asegurate de que tu modelo 'User' tenga esta funcionalidad
+        await User.findByIdAndUpdate(req.session.userId, { password: nuevaPassword });
+        
+        res.json({ success: true });
+    } catch (error) {
+        console.error("Error al cambiar contraseña:", error);
+        res.status(500).json({ message: "Error al actualizar en la base de datos" });
+    }
+});
 // ==========================================
 // CONFIGURACIÓN DEL MOTOR MATEMÁTICO DEL SLOT
 // ==========================================
