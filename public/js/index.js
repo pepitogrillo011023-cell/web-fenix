@@ -230,6 +230,7 @@ const badge = document.getElementById('badge-contador');
 const lista = document.getElementById('lista-notificaciones');
 
 // Lógica de apertura/cierre de la campanita
+if (bell) {
 bell.addEventListener('click', () => {
     popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
     badge.style.display = 'none'; // Ocultamos el badge al abrir
@@ -244,12 +245,14 @@ socket.on('nueva_notificacion', (data) => {
     badge.innerText = count + 1;
 
     // 2. Agregar a la lista
+    }
+    if (lista) {
     const li = document.createElement('li');
     li.style.marginBottom = '10px';
     li.style.borderBottom = '1px solid #4b5563';
     li.innerHTML = `<strong>${data.titulo}</strong><br><small>${data.mensaje}</small>`;
     lista.prepend(li); // Agrega arriba
-    
+    }
     // 3. (Opcional) Un pequeño aviso sonoro o visual
     console.log("Nueva notificación recibida:", data);
 });
@@ -274,7 +277,6 @@ function irAlMenuPrincipal() {
     // --- ESTE ES EL CAMBIO: Ocultamos y vaciamos el chat ---
     if (msgArea) {
         msgArea.style.display = 'none';
-        msgArea.innerHTML = '';
         if (formRetiro) formRetiro.style.display = 'none';// Esto borra todos los mensajes acumulados
     }
     if (menu) menu.style.display = 'grid'; // <-- Usamos grid para que se vea ordenado
