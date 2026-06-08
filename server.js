@@ -181,6 +181,21 @@ app.get('/logout', (req, res) => {
         res.redirect('/login.html');
     });
 });
+// 🔥 NUEVO: Cierre de sesión exclusivo para los Clientes (Pegalo acá)
+app.get('/logout-cliente', (req, res) => {
+    req.session.destroy((err) => {
+        if (err) {
+            console.error("Error al destruir la sesión del cliente:", err);
+            return res.send("Error al cerrar sesión.");
+        }
+        // Borramos la misma cookie
+        res.clearCookie('sessionId'); 
+        
+        // 🚪 Redirigimos al inicio o al login de clientes
+        // Si tu pantalla principal de carga/login es la raíz, dejás '/'
+        res.redirect('/index.html'); 
+    });
+});
 
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
