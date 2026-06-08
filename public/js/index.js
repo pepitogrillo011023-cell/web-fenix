@@ -219,6 +219,9 @@ function descontarCreditoVisual(juegoKey) {
 // MENÚS Y CHAT
 // ==========================================
 function irAlMenuPrincipal() {
+    if (typeof socket !== 'undefined' && socket.emit) {
+        socket.emit('cliente_cambia_pestaña', { pestaña: 'Menú' });
+    }
     const dep = document.getElementById('container-deposit-options');
     const chatIn = document.getElementById('container-chat-input');
     const games = document.getElementById('container-games-options');
