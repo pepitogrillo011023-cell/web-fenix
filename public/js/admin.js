@@ -84,6 +84,22 @@ function abrirGanamosPopup() {
         `width=${popupWidth},height=${popupHeight},top=${popupTop},left=${popupLeft},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
     );
 }
+function abrirOropuroPopup() {
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarWidth = sidebar ? sidebar.offsetWidth : 250; 
+    const popupWidth = window.innerWidth - sidebarWidth;
+    const popupHeight = window.innerHeight;
+    const borderX = (window.outerWidth - window.innerWidth) / 2;
+    const headerHeight = window.outerHeight - window.innerHeight - borderX;
+    const popupLeft = window.screenX + borderX + sidebarWidth;
+    const popupTop = window.screenY + headerHeight;
+
+    window.open(
+        'https://admin.oropuro.org/', // <--- CAMBIA ESTO POR LA URL REAL
+        'OropuroPanel', 
+        `width=${popupWidth},height=${popupHeight},top=${popupTop},left=${popupLeft},scrollbars=yes,resizable=yes,toolbar=no,menubar=no,location=no,status=no`
+    );
+}
 
 // ==========================================
 // FUNCIONES MODALES GLOBALES
