@@ -336,7 +336,20 @@ function enviarMensajeLibreCliente() {
 
 socket.on('recibir_mensaje_admin', (datos) => {
     mostrarChat(); 
-    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble admin"><b>Asesor:</b> ${datos.mensaje}</div></div>`;
+    
+    // Si el servidor no manda la hora, el cliente calcula su hora actual en formato 24hs
+    const horaActual = datos.hora || new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+    // Modificamos el HTML para meter el tag de la hora abajo del mensaje
+    msgArea.innerHTML += `
+        <div class="bubble-wrapper">
+            <div class="bubble admin">
+                <b>Asesor:</b> ${datos.mensaje}
+                <span class="hora-chat">${horaActual}</span>
+            </div>
+        </div>
+    `;
+
     document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
     msgArea.scrollTop = msgArea.scrollHeight;
 });
