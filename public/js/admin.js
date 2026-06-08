@@ -1021,23 +1021,49 @@ socket.on('cargar_datos_tablas', (datos) => {
 });
 
 socket.on('lista_usuarios_actualizada', (usuarios) => {
-    const listaDiv = document.getElementById('lista-usuarios'); if (!listaDiv) return;
+    const listaDiv = document.getElementById('lista-usuarios'); 
+    if (!listaDiv) return;
     listaDiv.innerHTML = '';
+    
     usuarios.forEach(user => {
         let tieneMensajesSinLeer = user.historial.some(h => h.emisor === 'cliente' && h.leido === false);
         let claseNoLeido = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? 'unread-chat' : '';
         let dotVisual = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? '<span class="unread-indicator"></span>' : '';
         
+        // ==============================================================
+        // OPTIMIZACIÓN: Colores dinámicos para identificar el estado al toque
+        // ==============================================================
+        let colorBadge = '#2563eb'; // Azul por defecto (Menú Principal)
+        const estadoLimpio = (user.estado || 'Menú').toLowerCase();
+
+        if (estadoLimpio.includes('retiro')) {
+            colorBadge = '#16a34a'; // Verde para Retiros
+        } else if (estadoLimpio.includes('depós') || estadoLimpio.includes('carg')) {
+            colorBadge = '#eab308'; // Amarillo/Oro para Cargar Créditos
+        } else if (estadoLimpio.includes('mini') || estadoLimpio.includes('juego') || estadoLimpio.includes('tienda')) {
+            colorBadge = '#7c3aed'; // Violeta para Minijuegos/Tienda
+        } else if (estadoLimpio.includes('soport')) {
+            colorBadge = '#06b6d4'; // Cian para Soporte técnico
+        } else if (estadoLimpio.includes('refer')) {
+            colorBadge = '#ec4899'; // Rosa para Referidos
+        }
+        // ==============================================================
+
         const item = document.createElement('div');
         item.className = `user-item ${usuarioSeleccionadoActivo === user.nombre ? 'selected-user' : ''} ${claseNoLeido}`;
-        item.innerHTML = `<div>👤 ${dotVisual}${user.nombre}</div><div class="badge" style="background:#2563eb">${user.estado}</div>`;
+        
+        // Aplicamos el colorBadge dinámico aquí:
+        item.innerHTML = `<div>👤 ${dotVisual}${user.nombre}</div><div class="badge" style="background:${colorBadge}; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: bold; color: white;">${user.estado || 'Menú'}</div>`;
+        
         item.onclick = () => {
             usuarioSeleccionadoActivo = user.nombre;
             document.getElementById('active-chat-username').innerText = "Monitoreando a: " + user.nombre;
-            document.getElementById('admin-message-input').disabled = false; document.getElementById('btn-enviar-msg').disabled = false;
+            document.getElementById('admin-message-input').disabled = false; 
+            document.getElementById('btn-enviar-msg').disabled = false;
             socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
             renderizarHistorialChat(user.historial);
         };
+        
         listaDiv.appendChild(item);
         if (usuarioSeleccionadoActivo === user.nombre) renderizarHistorialChat(user.historial);
     });
