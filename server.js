@@ -150,14 +150,15 @@ app.use(session({
 
 // Middleware de protección de rutas
 const requireLogin = (req, res, next) => {
-    if (req.session && req.session.loggedIn) { 
+    // Verificamos si la sesión existe y tiene el ID de usuario
+    if (req.session && req.session.userId) { 
         next(); 
     } else { 
-        // Si es una petición de API (empieza con /api/), devolvemos 401
+        // Si no hay sesión y es una petición de API, devolvemos 401
         if (req.path.startsWith('/api/')) {
             return res.status(401).json({ message: "No autorizado" });
         }
-        // Si es una página normal, redireccionamos
+        // Solo redirige si no es API
         res.redirect('/login.html'); 
     }
 };
@@ -211,14 +212,12 @@ app.get('/logout-cliente', (req, res) => {
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
-app.post('/api/cambiar-contrasena', async (req, res) => {
+app.post('/api/cambiar-contrasena', requireLogin, async (req, res) => {
     try {
         const { nuevaPassword } = req.body;
         
         // Verificamos que el usuario esté logueado (sesión activa)
-        if (!req.session.userId) {
-            return res.status(401).json({ message: "No autorizado" });
-        }
+        const userId = req.session.userId;
 
         // Actualizamos en la base de datos
         // Asegurate de que tu modelo 'User' tenga esta funcionalidad
