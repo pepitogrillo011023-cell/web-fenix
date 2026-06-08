@@ -1,6 +1,5 @@
 const mongoose = require('mongoose');
 const Minigame = require('../models/Minigame'); 
-const express = require('express'); // 1. Importar express
 
 module.exports = function(app, requireLogin, io, sharedState) {
     const Cliente = mongoose.model('Cliente');
