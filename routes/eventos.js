@@ -85,6 +85,9 @@ module.exports = function(app, requireLogin, io, sharedState) {
      // ==============================================================
     // 🎫 1.5 NOTIFICACIONES Y PUSH
     // ==============================================================
+const express = require('express'); // 1. Importar express
+const router = express.Router();    // 2. Definir el router
+    
     router.post('/enviar-push', (req, res) => {
     const { titulo, mensaje } = req.body;
     const io = req.app.get('io'); // Obtenemos la instancia que definimos en server.js
