@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const Minigame = require('../models/Minigame'); 
+const express = require('express'); // 1. Importar express
 
 module.exports = function(app, requireLogin, io, sharedState) {
     const Cliente = mongoose.model('Cliente');
@@ -85,7 +86,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
      // ==============================================================
     // 🎫 1.5 NOTIFICACIONES Y PUSH
     // ==============================================================
-const express = require('express'); // 1. Importar express
+
 const router = express.Router();    // 2. Definir el router
     
     router.post('/enviar-push', (req, res) => {
