@@ -259,3 +259,84 @@ body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI'
 .btn-accion:active {
     background-color: #374151; /* Efecto feedback al tocar en el celular */
 }
+/* ==============================================================
+   MENÚ DESPLEGABLE DE TRES PUNTOS (HEADER)
+   ============================================================== */
+
+/* Contenedor relativo para que el menú se posicione justo abajo */
+.user-menu-dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+/* El botón de los tres puntitos */
+.btn-dots {
+    background: none;
+    border: none;
+    color: #9ca3af; /* Gris claro de tu interfaz */
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 4px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.2s ease;
+    line-height: 1;
+}
+
+.btn-dots:hover {
+    color: #ffffff; /* Brilla al pasar el mouse */
+}
+
+/* Caja contenedora del menú desplegable */
+.dropdown-content {
+    display: none; /* Escondido por defecto */
+    position: absolute;
+    right: 0; /* Alineado al borde derecho de la pantalla */
+    top: 120%; /* Espacio justo abajo del botón */
+    background-color: #111827; /* Fondo oscuro premium a tono con Fénix */
+    border: 1px solid #374151; /* Borde sutil */
+    min-width: 170px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    z-index: 1000; /* Asegura que flote por encima de banners y botones */
+    overflow: hidden;
+}
+
+/* Clase dinámica que agregaremos con JS para mostrarlo */
+.dropdown-content.show {
+    display: block;
+    animation: fadeInDropdown 0.15s ease-out;
+}
+
+/* Opciones de adentro del menú */
+.dropdown-content a {
+    color: #d1d5db;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13.5px;
+    font-weight: 500;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+/* Efecto hover general de las opciones */
+.dropdown-content a:hover {
+    background-color: #1f2937;
+    color: #ffffff;
+}
+
+/* Estilo especial destructivo para Cerrar Sesión al pasar el mouse */
+#btn-user-logout:hover {
+    background-color: #311b1b;
+    color: #f87171;
+}
+
+/* Animación sutil de aparición */
+@keyframes fadeInDropdown {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
