@@ -5,7 +5,7 @@ const { Server } = require('socket.io');
 const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 
 // Importar modelos
 const slotRoutes = require('./routes/slot'); 
