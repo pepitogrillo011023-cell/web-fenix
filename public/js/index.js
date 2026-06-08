@@ -276,7 +276,7 @@ function seleccionarOpcion(opcion) {
         mostrarChat();
         const dep = document.getElementById('container-deposit-options');
         if (dep) dep.style.display = 'grid';
-        let msgBot = `<b>CBU:</b> 0000151500038126204154<br><b>ALIAS:</b> 20719709.URBANATRADE<br><br>Enviá el comprobante 📄`;
+        let msgBot = `<b>CBU:</b> 0000003100089390479373<br><b>ALIAS:</b> bille.win<br><b>TITULAR:</b> Maria del Carmen Acuña<br><br>Enviá el comprobante 📄`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
         socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: msgBot });
 
