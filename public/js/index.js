@@ -221,6 +221,40 @@ function descontarCreditoVisual(juegoKey) {
 }
 
 // ==========================================
+// NOTIFICACIONES
+// ==========================================
+
+const bell = document.getElementById('notificacion-bell');
+const popup = document.getElementById('notificacion-popup');
+const badge = document.getElementById('badge-contador');
+const lista = document.getElementById('lista-notificaciones');
+
+// Lógica de apertura/cierre de la campanita
+bell.addEventListener('click', () => {
+    popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
+    badge.style.display = 'none'; // Ocultamos el badge al abrir
+    badge.innerText = '0';
+});
+
+// ESCUCHA DEL EVENTO
+socket.on('nueva_notificacion', (data) => {
+    // 1. Mostrar badge
+    badge.style.display = 'block';
+    let count = parseInt(badge.innerText) || 0;
+    badge.innerText = count + 1;
+
+    // 2. Agregar a la lista
+    const li = document.createElement('li');
+    li.style.marginBottom = '10px';
+    li.style.borderBottom = '1px solid #4b5563';
+    li.innerHTML = `<strong>${data.titulo}</strong><br><small>${data.mensaje}</small>`;
+    lista.prepend(li); // Agrega arriba
+    
+    // 3. (Opcional) Un pequeño aviso sonoro o visual
+    console.log("Nueva notificación recibida:", data);
+});
+
+// ==========================================
 // MENÚS Y CHAT
 // ==========================================
 function irAlMenuPrincipal() {
