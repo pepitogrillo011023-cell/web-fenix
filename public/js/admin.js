@@ -423,11 +423,22 @@ function guardarBorradoresLocales() {
 function restaurarBorradoresLocales() {
     let borradorRecuperado = false;
 
-    // 1. Restaurar Retiros
-    const dataRetiros = JSON.parse(localStorage.getItem('borrador_retiros'));
+   let dataRetiros = null;
+    try {
+        const rawRetiros = localStorage.getItem('borrador_retiros');
+        if (rawRetiros) {
+            dataRetiros = JSON.parse(rawRetiros);
+        }
+    } catch (e) {
+        console.error("Error crítico al parsear borrador_retiros, limpiando almacenamiento...", e);
+        localStorage.removeItem('borrador_retiros'); // Limpiamos para evitar bucles de error
+        dataRetiros = null;
+    }
+
+    // Si pasó el parseo sin errores y contiene datos, renderizamos
     if (dataRetiros && dataRetiros.retiros && dataRetiros.retiros.length > 0) {
-        document.getElementById('global-retiro-fecha').value = dataRetiros.globalFecha;
-        document.getElementById('global-retiro-turno').value = dataRetiros.globalTurno;
+        if (document.getElementById('global-retiro-fecha')) document.getElementById('global-retiro-fecha').value = dataRetiros.globalFecha;
+        if (document.getElementById('global-retiro-turno')) document.getElementById('global-retiro-turno').value = dataRetiros.globalTurno;
         
         const tbody = document.getElementById('tbody-retiros');
         if(tbody) {
@@ -454,8 +465,22 @@ function restaurarBorradoresLocales() {
         }
     }
 
-    // 2. Restaurar Cierre de Caja
-    const dataCierre = JSON.parse(localStorage.getItem('borrador_cierre'));
+    // ==========================================
+    // 2. RESTAURAR CIERRE DE CAJA (PROTEGIDO)
+    // ==========================================
+    let dataCierre = null;
+    try {
+        const rawCierre = localStorage.getItem('borrador_cierre');
+        if (rawCierre) {
+            dataCierre = JSON.parse(rawCierre);
+        }
+    } catch (e) {
+        console.error("Error crítico al parsear borrador_cierre, limpiando almacenamiento...", e);
+        localStorage.removeItem('borrador_cierre'); // Limpiamos para evitar bucles de error
+        dataCierre = null;
+    }
+
+    // Si pasó el parseo sin errores y contiene datos, renderizamos
     if (dataCierre) {
         if(dataCierre.inputs) {
             if(document.getElementById('cc-fecha-inicio')) document.getElementById('cc-fecha-inicio').value = dataCierre.inputs.fechaInicio;
@@ -498,12 +523,11 @@ function restaurarBorradoresLocales() {
         calcCierre(); // Recalcular totales
     }
 
-    // Activamos el loop de guardado cada 3 segundos
+    // Activamos el loop de guardado cada 3 segundos de manera segura
     setInterval(guardarBorradoresLocales, 3000);
     
     return borradorRecuperado;
 }
-
 // ==========================================
 // RETIROS (NUEVO CONTROL DE CAJAS)
 // ==========================================
