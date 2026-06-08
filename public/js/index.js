@@ -236,7 +236,7 @@ bell.addEventListener('click', () => {
     badge.style.display = 'none'; // Ocultamos el badge al abrir
     badge.innerText = '0';
 });
-
+ }
 // ESCUCHA DEL EVENTO
 socket.on('nueva_notificacion', (data) => {
     // 1. Mostrar badge
@@ -245,7 +245,7 @@ socket.on('nueva_notificacion', (data) => {
     badge.innerText = count + 1;
 
     // 2. Agregar a la lista
-    }
+   
     if (lista) {
     const li = document.createElement('li');
     li.style.marginBottom = '10px';
