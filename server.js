@@ -542,6 +542,21 @@ io.on('connection', (socket) => {
             if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
     });
+    socket.on('cliente_cambia_pestaña', async (datos) => {
+        let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
+        if (usuario) {
+            // Actualizamos el estado del usuario en el servidor con la pestaña que abrió
+            usuario.estado = datos.pestaña; 
+            
+            // Opcional: Si querés guardar en la Base de Datos en qué sección quedó
+            await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { estado: datos.pestaña });
+            
+            // Le enviamos la lista con los estados frescos al Administrador al instante
+            if (sharedState.adminSocketId) {
+                io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+            }
+        }
+    });
 
     socket.on('admin_envia_mensaje', async (datos) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === datos.paraUsuario);
