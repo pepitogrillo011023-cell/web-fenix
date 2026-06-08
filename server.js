@@ -171,13 +171,38 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.post('/login', (req, res) => {
+app.post('/login', async (req, res) => {
     const { username, password } = req.body;
-    if (username === 'admin' && password === '1234') {
-        req.session.loggedIn = true;
-        res.redirect('/admin.html');
-    } else {
-        res.send('Usuario o contraseña incorrectos. <a href="/login.html">Volver</a>');
+
+    try {
+        // Buscamos al usuario en MongoDB usando tu modelo 'User'
+        // Asegurate que los campos 'user' y 'pass' coincidan con los de tu esquema
+        const user = await User.findOne({ user: username, pass: password });
+
+        if (user) {
+            // Guardamos la sesión
+            req.session.loggedIn = true;
+            req.session.userId = user._id; // 🔥 ESTO ES LO QUE FALTABA
+            
+            // Forzamos el guardado de la sesión antes de redirigir
+            req.session.save((err) => {
+                if (err) {
+                    return res.status(500).send("Error al guardar sesión.");
+                }
+                
+                // Redirigimos según el rol (si tu modelo tiene campo 'role' o 'isAdmin')
+                if (username === 'admin') {
+                    res.redirect('/admin.html');
+                } else {
+                    res.redirect('/index.html');
+                }
+            });
+        } else {
+            res.send('Usuario o contraseña incorrectos. <a href="/login.html">Volver</a>');
+        }
+    } catch (error) {
+        console.error("Error en login:", error);
+        res.status(500).send("Error interno del servidor.");
     }
 });
 
