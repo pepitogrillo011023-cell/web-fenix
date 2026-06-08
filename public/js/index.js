@@ -221,9 +221,8 @@ function descontarCreditoVisual(juegoKey) {
 }
 
 // ==========================================
-// NOTIFICACIONES
+// NOTIFICACIONES (CORREGIDO)
 // ==========================================
-
 const bell = document.getElementById('notificacion-bell');
 const popup = document.getElementById('notificacion-popup');
 const badge = document.getElementById('badge-contador');
@@ -231,28 +230,31 @@ const lista = document.getElementById('lista-notificaciones');
 
 // Lógica de apertura/cierre de la campanita
 if (bell) {
-bell.addEventListener('click', () => {
-    popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
-    badge.style.display = 'none'; // Ocultamos el badge al abrir
-    badge.innerText = '0';
-    }
-});
- }
+    bell.addEventListener('click', () => {
+        if (popup) popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
+        if (badge) {
+            badge.style.display = 'none'; // Ocultamos el badge al abrir
+            badge.innerText = '0';
+        }
+    });
+}
+
 // ESCUCHA DEL EVENTO
 socket.on('nueva_notificacion', (data) => {
     // 1. Mostrar badge
-    badge.style.display = 'block';
-    let count = parseInt(badge.innerText) || 0;
-    badge.innerText = count + 1;
+    if (badge) {
+        badge.style.display = 'block';
+        let count = parseInt(badge.innerText) || 0;
+        badge.innerText = count + 1;
+    }
 
     // 2. Agregar a la lista
-   
     if (lista) {
-    const li = document.createElement('li');
-    li.style.marginBottom = '10px';
-    li.style.borderBottom = '1px solid #4b5563';
-    li.innerHTML = `<strong>${data.titulo}</strong><br><small>${data.mensaje}</small>`;
-    lista.prepend(li); // Agrega arriba
+        const li = document.createElement('li');
+        li.style.marginBottom = '10px';
+        li.style.borderBottom = '1px solid #4b5563';
+        li.innerHTML = `<strong>${data.titulo}</strong><br><small>${data.mensaje}</small>`;
+        lista.prepend(li); // Agrega arriba
     }
     // 3. (Opcional) Un pequeño aviso sonoro o visual
     console.log("Nueva notificación recibida:", data);
@@ -358,6 +360,7 @@ function seleccionarOpcion(opcion) {
     
     msgArea.scrollTop = msgArea.scrollHeight;
 }
+
 function ejecutarAccionDeposito(accion) {
     let msg = accion === 'Subir Comprobante' ? "📁 Archivo recibido." : "✅ Pago reportado.";
     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msg}</div></div>`;
@@ -399,6 +402,7 @@ socket.on('recibir_mensaje_admin', (datos) => {
 socket.on('tus_mensajes_fueron_leidos', () => {
     document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
 });
+
 async function abrirModalReferidos() {
     console.log("Intentando abrir modal referidos...");
     try {
@@ -426,6 +430,7 @@ async function abrirModalReferidos() {
         console.error("Error de conexión:", error);
     }
 }
+
 async function enviarRetiro() {
     // Usamos la variable global que ya tienes al inicio de este archivo
     const usuario = window.usuarioLogueado;
@@ -813,47 +818,48 @@ async function abrirTienda() {
     }
     
     window.canjearProducto = async function(nombre, costo) {
-    console.log(`Intentando canjear: ${nombre} por ${costo} CR`);
+        console.log(`Intentando canjear: ${nombre} por ${costo} CR`);
 
-    // 1. Verificación básica de seguridad
-    const usuario = localStorage.getItem('casino_fenix_user');
-    if (!usuario) {
-        alert('Debes iniciar sesión para realizar un canje.');
-        return;
-    }
-
-    // 2. Confirmación opcional
-    if (!confirm(`¿Confirmás el canje de "${nombre}" por ${costo} CR?`)) {
-        return;
-    }
-
-    try {
-        // 3. Enviamos la petición al servidor
-        const response = await fetch('/api/canjear-producto', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                usuario: usuario, 
-                nombre: nombre, 
-                costo: costo 
-            })
-        });
-
-        const data = await response.json();
-
-        // 4. Procesamos la respuesta
-        if (data.exito) {
-            alert("¡Canje realizado con éxito! " + (data.mensaje || ""));
-            // Opcional: recargar la tienda o actualizar el saldo visualmente aquí
-        } else {
-            alert("Error al canjear: " + (data.mensaje || "Error desconocido"));
+        // 1. Verificación básica de seguridad
+        const usuario = localStorage.getItem('casino_fenix_user');
+        if (!usuario) {
+            alert('Debes iniciar sesión para realizar un canje.');
+            return;
         }
-    } catch (error) {
-        console.error("Error al canjear:", error);
-        alert("Hubo un error de conexión con el servidor.");
-    }
-};
+
+        // 2. Confirmación opcional
+        if (!confirm(`¿Confirmás el canje de "${nombre}" por ${costo} CR?`)) {
+            return;
+        }
+
+        try {
+            // 3. Enviamos la petición al servidor
+            const response = await fetch('/api/canjear-producto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    usuario: usuario, 
+                    nombre: nombre, 
+                    costo: costo 
+                })
+            });
+
+            const data = await response.json();
+
+            // 4. Procesamos la respuesta
+            if (data.exito) {
+                alert("¡Canje realizado con éxito! " + (data.mensaje || ""));
+                // Opcional: recargar la tienda o actualizar el saldo visualmente aquí
+            } else {
+                alert("Error al canjear: " + (data.mensaje || "Error desconocido"));
+            }
+        } catch (error) {
+            console.error("Error al canjear:", error);
+            alert("Hubo un error de conexión con el servidor.");
+        }
+    };
 }
+
 // ==============================================================
 // MENÚ DESPLEGABLE DE TRES PUNTOS (PEGADO AL FINAL)
 // ==============================================================
@@ -935,4 +941,4 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-});
+}); // <--- CORREGIDO: Se quitó la llave '}' extra que sobraba acá al final
