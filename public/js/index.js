@@ -853,20 +853,36 @@ document.addEventListener('DOMContentLoaded', () => {
             e.preventDefault();
             
             // 1. Desplegamos el cuadro para que el cliente escriba la contraseña
-            const nuevaPassword = prompt("Ingresá tu nueva contraseña (mínimo 6 caracteres):");
-            
-            // 2. Validamos si el usuario no apretó "Cancelar"
-            if (nuevaPassword !== null) { 
-                if (nuevaPassword.trim().length >= 6) {
-                    
-                    // 💡 [PRO TIP]: El día que quieras conectar esto con tu base de datos, 
-                    // vas a meter tu método fetch() justo en esta línea de acá abajo.
-                    
-                    alert("¡Contraseña modificada con éxito! 🎉");
+            const btnChangePass = document.getElementById('btn-change-password');
+if (btnChangePass) {
+    btnChangePass.addEventListener('click', async (e) => { // Agregamos async
+        e.preventDefault();
+        
+        const nuevaPassword = prompt("Ingresá tu nueva contraseña (mínimo 6 caracteres):");
+        
+        if (nuevaPassword !== null && nuevaPassword.trim().length >= 6) {
+            try {
+                // Aquí realizamos la conexión real con el servidor
+                const response = await fetch('/api/cambiar-contrasena', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nuevaPassword })
+                });
+
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert("¡Contraseña actualizada correctamente! ✅");
                 } else {
-                    alert("❌ La contraseña es demasiado corta. Intentá de nuevo.");
+                    alert("Error: " + (data.message || "No se pudo actualizar"));
                 }
+            } catch (err) {
+                console.error("Error:", err);
+                alert("Error de conexión con el servidor.");
             }
-        });
-    }
+        } else if (nuevaPassword !== null) {
+            alert("❌ La contraseña es demasiado corta. Intentá de nuevo.");
+        }
+    });
+}
 });
