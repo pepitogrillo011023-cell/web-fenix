@@ -238,10 +238,15 @@ app.post('/api/cambiar-contrasena', requireLogin, async (req, res) => {
         const { nuevaPassword } = req.body;
         const userId = req.session.userId;
 
-        // 1. Encriptamos la nueva contraseña antes de guardarla
-        const hashedPassword = await bcrypt.hash(nuevaPassword, 10);
+        // Validar que el ID sea válido (evitar error con el admin)
+        if (!userId || userId === 'admin') {
+            return res.status(400).json({ message: "No puedes cambiar contraseña de Admin aquí" });
+        }
 
-        // 2. Actualizamos en la base de datos con el hash
+        // Encriptar la nueva contraseña
+        const hashedPassword = await bcryptjs.hash(nuevaPassword, 10);
+
+        // Actualizar en la base de datos
         await User.findByIdAndUpdate(userId, { password: hashedPassword });
         
         res.json({ success: true, message: "Contraseña actualizada" });
