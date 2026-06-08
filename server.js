@@ -732,4 +732,4 @@ async function inicializarDatosDePrueba() {
 
 const PUERTO = process.env.PORT || 3000;
 server.listen(PUERTO, () => { console.log(`🚀 Servidor en puerto ${PUERTO}`); });
-module.exports = app;
+module.exports = { app, server };
