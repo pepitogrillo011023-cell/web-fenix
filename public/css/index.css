@@ -203,3 +203,58 @@ body { margin: 0; padding: 0; background-color: #0b0f19; font-family: 'Segoe UI'
     background: linear-gradient(135deg, #b8860b, #d4af37);
     color: #000; /* Negro para que el texto resalte sobre el dorado */
 }
+/* Contenedor principal de la app (el que envuelve a todo el celular) */
+.app-wrapper {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* Empuja todo hacia arriba, eliminando el vacío */
+    gap: 12px; /* Espaciado parejo y controlado entre bloques */
+    padding: 15px;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow-y: auto; /* Por si en pantallas muy chicas se necesita un toque de scroll */
+}
+
+/* NUEVO: Estilo del contenedor del Banner */
+.banner-promocional {
+    width: 100%;
+    height: 95px; /* Altura ideal en celular para que no tape el resto del menú */
+    background-color: #111827; /* Fondo oscuro integrado */
+    border: 1px dashed #374151; /* Borde punteado provisional */
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4b5563;
+    font-size: 11px;
+    margin: 5px 0; /* Margen pequeño para respirar */
+}
+
+/* OPTIMIZADO: Cuadrícula de 4 botones un poco más altos */
+.acciones-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    width: 100%;
+}
+
+/* Botones de Cargar, Retirar, Soporte, Referí */
+.btn-accion {
+    background-color: #1e2937;
+    color: white;
+    border: 1px solid #374151;
+    border-radius: 8px;
+    padding: 14px 10px; /* Le subimos el padding vertical para mejor tacto en celular */
+    font-size: 13.5px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s;
+}
+
+.btn-accion:active {
+    background-color: #374151; /* Efecto feedback al tocar en el celular */
+}
