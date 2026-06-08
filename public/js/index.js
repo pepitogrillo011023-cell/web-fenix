@@ -292,7 +292,7 @@ function seleccionarOpcion(opcion) {
             formRetiro.style.display = 'flex'; 
         } else {
             console.error("No se encontró el contenedor del formulario de retiro");
-        
+        }
         
     } else if (opcion === 'Referido') {
 
