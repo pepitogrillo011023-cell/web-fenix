@@ -889,7 +889,6 @@ document.addEventListener('DOMContentLoaded', () => {
             badge.innerText = count + 1;
         });
     }
-});
 
     // Escucha el botón de cerrar sesión
     const btnLogout = document.getElementById('btn-user-logout');
