@@ -533,7 +533,8 @@ io.on('connection', (socket) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
         if (usuario) {
             let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
-            usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensaje, leido: estaMirandome });
+            usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensaje, leido: estaMirandome, hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
+                });
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
             if (sharedState.adminSocketId) {
                 io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
@@ -561,7 +562,7 @@ io.on('connection', (socket) => {
     socket.on('admin_envia_mensaje', async (datos) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === datos.paraUsuario);
         if (usuario) {
-            usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true });
+            usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true, hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) });
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
             if(usuario.id) io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
             socket.emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
