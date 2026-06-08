@@ -296,8 +296,6 @@ function seleccionarOpcion(opcion) {
         } else {
             console.error("No se encontró el contenedor del formulario de retiro");
         }
-        
-    } else if (opcion === 'Referido') {
 
     } else if (opcion === 'Referido') {
         // --- AQUÍ ESTÁ LA NUEVA LÓGICA ---
