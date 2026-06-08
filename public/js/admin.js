@@ -1263,7 +1263,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!recuperoAlgo) {
         inicializarTurnoLogico();
     }
+    
+// LÓGICA MANUAL PARA CERRAR SESIÓN (Adentro para asegurar que el botón ya exista en el HTML)
+    const btnLogout = document.getElementById('btn-logout');
+    if (btnLogout) {
+        btnLogout.addEventListener('click', () => {
+            const confirmar = confirm("¿Estás seguro de que querés cerrar sesión en el panel?");
+            if (confirmar) {
+                window.location.href = '/logout';
+            }
+        });
+    }
+    
+    // ⏰ Iniciamos el contador de inactividad apenas carga la página
+    resetearTimerInactividad();
 });
+
 // ==============================================================
 // CONTROL DE INACTIVIDAD DEL ADMINISTRADOR
 // ==============================================================
