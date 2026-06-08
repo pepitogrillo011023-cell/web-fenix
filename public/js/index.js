@@ -836,7 +836,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btnChangePass) {
         btnChangePass.addEventListener('click', (e) => {
             e.preventDefault();
-            alert("Función para cambiar contraseña.");
+            
+            // 1. Desplegamos el cuadro para que el cliente escriba la contraseña
+            const nuevaPassword = prompt("Ingresá tu nueva contraseña (mínimo 6 caracteres):");
+            
+            // 2. Validamos si el usuario no apretó "Cancelar"
+            if (nuevaPassword !== null) { 
+                if (nuevaPassword.trim().length >= 6) {
+                    
+                    // 💡 [PRO TIP]: El día que quieras conectar esto con tu base de datos, 
+                    // vas a meter tu método fetch() justo en esta línea de acá abajo.
+                    
+                    alert("¡Contraseña modificada con éxito! 🎉");
+                } else {
+                    alert("❌ La contraseña es demasiado corta. Intentá de nuevo.");
+                }
+            }
         });
     }
 });
