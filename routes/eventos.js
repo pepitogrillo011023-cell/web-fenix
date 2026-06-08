@@ -82,6 +82,22 @@ module.exports = function(app, requireLogin, io, sharedState) {
             res.json({ exito: true, mensaje: msgBot, premio: premio });
         } catch (e) { res.status(500).json({ exito: false }); }
     });
+     // ==============================================================
+    // 🎫 1.5 NOTIFICACIONES Y PUSH
+    // ==============================================================
+    router.post('/enviar-push', (req, res) => {
+    const { titulo, mensaje } = req.body;
+    const io = req.app.get('io'); // Obtenemos la instancia que definimos en server.js
+
+    // Emitimos a TODOS los clientes conectados
+    io.emit('nueva_notificacion', {
+        titulo: titulo,
+        mensaje: mensaje,
+        fecha: new Date()
+    });
+
+    res.status(200).send('Notificación enviada');
+});
 
     // ==============================================================
     // 🎫 2. RASPA Y GANA
