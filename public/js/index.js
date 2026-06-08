@@ -235,6 +235,7 @@ bell.addEventListener('click', () => {
     popup.style.display = (popup.style.display === 'none') ? 'block' : 'none';
     badge.style.display = 'none'; // Ocultamos el badge al abrir
     badge.innerText = '0';
+    }
 });
  }
 // ESCUCHA DEL EVENTO
