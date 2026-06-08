@@ -174,26 +174,21 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // 1. Intentamos buscar en la BD
-        // ¡OJO! Cambia 'username' y 'password' por los nombres exactos de tus campos en MongoDB
-        const user = await User.findOne({ username: username, password: password });
+        // 1. Buscamos al usuario por el campo correcto 'usuarioCasino'
+        const user = await User.findOne({ usuarioCasino: username });
 
-        if (user) {
+        // 2. Comparamos el password ingresado con el hash de la base de datos
+        if (user && await bcrypt.compare(password, user.password)) {
             req.session.loggedIn = true;
             req.session.userId = user._id;
-            return req.session.save(() => res.redirect('/admin.html'));
+
+            req.session.save(() => {
+                // Redirigir según el caso
+                res.redirect(username === 'admin' ? '/admin.html' : '/index.html');
+            });
+        } else {
+            res.send('Usuario o contraseña incorrectos. <a href="/login.html">Volver</a>');
         }
-
-        // 2. FALLBACK DE EMERGENCIA: Si no está en BD, probamos el hardcodeado para entrar
-        if (username === 'admin' && password === '1234') {
-            req.session.loggedIn = true;
-            // Si no tenemos un user._id real, ponemos un ID genérico o null
-            req.session.userId = 'admin_default_id'; 
-            return req.session.save(() => res.redirect('/admin.html'));
-        }
-
-        res.send('Usuario o contraseña incorrectos. <a href="/login.html">Volver</a>');
-
     } catch (error) {
         console.error("Error en login:", error);
         res.status(500).send("Error interno.");
