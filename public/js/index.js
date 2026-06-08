@@ -261,6 +261,7 @@ function mostrarSubMenuMinijuegos() {
 
 function seleccionarOpcion(opcion) {
     const menu = document.getElementById('container-menu-options');
+    socket.emit('cliente_cambia_pestaña', { pestaña: opcion });
     if (menu) menu.style.display = 'none';
     
     if (opcion === 'Depósito') {
