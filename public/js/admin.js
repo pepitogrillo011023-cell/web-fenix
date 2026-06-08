@@ -1,4 +1,7 @@
-const socket = io();
+const socket = io({
+    transports: ['websocket'],
+    upgrade: false
+});
 let usuarioSeleccionadoActivo = null;
 let raspaYaJugadaAdmin = false;
 let currentRotationAdmin = 0;
