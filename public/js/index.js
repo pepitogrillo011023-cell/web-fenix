@@ -817,6 +817,7 @@ async function abrirTienda() {
     }
 };
 }
+JavaScript
 // ==============================================================
 // MENÚ DESPLEGABLE DE TRES PUNTOS (PEGADO AL FINAL)
 // ==============================================================
@@ -837,52 +838,45 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 🔥 NUEVO: Escucha el botón de cerrar sesión y borra las credenciales guardadas
+    // Escucha el botón de cerrar sesión
     const btnLogout = document.getElementById('btn-user-logout');
     if (btnLogout) {
         btnLogout.addEventListener('click', () => {
-            // Borramos los datos para que el auto-login del window.onload no se reactive
             localStorage.removeItem('casino_fenix_user');
             localStorage.removeItem('casino_fenix_pass');
         });
     }
 
+    // Lógica para cambiar contraseña (limpia y sin duplicados)
     const btnChangePass = document.getElementById('btn-change-password');
     if (btnChangePass) {
-        btnChangePass.addEventListener('click', (e) => {
+        btnChangePass.addEventListener('click', async (e) => {
             e.preventDefault();
             
-            // 1. Desplegamos el cuadro para que el cliente escriba la contraseña
-            const btnChangePass = document.getElementById('btn-change-password');
-if (btnChangePass) {
-    btnChangePass.addEventListener('click', async (e) => { // Agregamos async
-        e.preventDefault();
-        
-        const nuevaPassword = prompt("Ingresá tu nueva contraseña (mínimo 6 caracteres):");
-        
-        if (nuevaPassword !== null && nuevaPassword.trim().length >= 6) {
-            try {
-                // Aquí realizamos la conexión real con el servidor
-                const response = await fetch('/api/cambiar-contrasena', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ nuevaPassword })
-                });
+            const nuevaPassword = prompt("Ingresá tu nueva contraseña (mínimo 6 caracteres):");
+            
+            if (nuevaPassword !== null && nuevaPassword.trim().length >= 6) {
+                try {
+                    const response = await fetch('/api/cambiar-contrasena', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nuevaPassword })
+                    });
 
-                const data = await response.json();
-                
-                if (response.ok) {
-                    alert("¡Contraseña actualizada correctamente! ✅");
-                } else {
-                    alert("Error: " + (data.message || "No se pudo actualizar"));
+                    const data = await response.json();
+                    
+                    if (response.ok) {
+                        alert("¡Contraseña actualizada correctamente! ✅");
+                    } else {
+                        alert("Error: " + (data.message || "No se pudo actualizar"));
+                    }
+                } catch (err) {
+                    console.error("Error:", err);
+                    alert("Error de conexión con el servidor.");
                 }
-            } catch (err) {
-                console.error("Error:", err);
-                alert("Error de conexión con el servidor.");
+            } else if (nuevaPassword !== null) {
+                alert("❌ La contraseña es demasiado corta. Intentá de nuevo.");
             }
-        } else if (nuevaPassword !== null) {
-            alert("❌ La contraseña es demasiado corta. Intentá de nuevo.");
-        }
-    });
-}
+        });
+    }
 });
