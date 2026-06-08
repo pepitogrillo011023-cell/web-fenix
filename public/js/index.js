@@ -859,6 +859,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     const response = await fetch('/api/cambiar-contrasena', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
                         body: JSON.stringify({ nuevaPassword })
                     });
 
