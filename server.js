@@ -151,17 +151,16 @@ app.use(session({
 
 // Middleware de protección de rutas
 const requireLogin = (req, res, next) => {
-    // Verificamos si la sesión existe y tiene el ID de usuario
-    if (req.session && req.session.userId) { 
-        next(); 
-    } else { 
-        // Si no hay sesión y es una petición de API, devolvemos 401
-        if (req.path.startsWith('/api/')) {
-            return res.status(401).json({ message: "No autorizado" });
-        }
-        // Solo redirige si no es API
-        res.redirect('/login.html'); 
+    if (req.session && req.session.loggedIn) {
+        return next();
     }
+    
+    // Si es un fetch, devolvemos 401, si es navegación normal, redirigimos
+    if (req.originalUrl.startsWith('/api/')) {
+        return res.status(401).json({ message: "No autorizado" });
+    }
+    
+    res.redirect('/login.html');
 };
 
 // ==============================================================
