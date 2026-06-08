@@ -70,13 +70,17 @@ function cambiarSubJuego(juego) {
 // ==========================================
 function abrirEnPopup(url, nombreVentana) {
     const sidebar = document.querySelector('.sidebar');
+    // Obtenemos el ancho del sidebar para saber dónde empieza el recuadro rojo
     const sidebarWidth = sidebar ? sidebar.offsetWidth : 250; 
+    
+    // Calculamos el espacio disponible para el "recuadro rojo"
     const popupWidth = window.innerWidth - sidebarWidth;
-    const popupHeight = window.innerHeight;
-    const borderX = (window.outerWidth - window.innerWidth) / 2;
-    const headerHeight = window.outerHeight - window.innerHeight - borderX;
-    const popupLeft = window.screenX + borderX + sidebarWidth;
-    const popupTop = window.screenY + headerHeight;
+    const popupHeight = window.innerHeight; // Altura completa del navegador
+    
+    // Posicionamos el popup justo donde empieza el recuadro rojo
+    // Usamos screenX/Y para posicionar en la pantalla, no dentro de la ventana
+    const popupLeft = window.screenX + sidebarWidth;
+    const popupTop = window.screenY; 
 
     window.open(
         url, 
