@@ -175,17 +175,22 @@ app.post('/login', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        // 1. Buscamos al usuario por el campo correcto 'usuarioCasino'
+        // 1. Caso especial: Admin (si no está en la BD)
+        if (username === 'admin' && password === '1234') {
+            req.session.loggedIn = true;
+            req.session.userId = 'admin';
+            return req.session.save(() => res.redirect('/admin.html'));
+        }
+
+        // 2. Caso clientes: Buscar en la BD por 'usuarioCasino'
         const user = await User.findOne({ usuarioCasino: username });
 
-        // 2. Comparamos el password ingresado con el hash de la base de datos
-        if (user && await bcrypt.compare(password, user.password)) {
+        if (user && await bcryptjs.compare(password, user.password)) {
             req.session.loggedIn = true;
             req.session.userId = user._id;
-
-            req.session.save(() => {
-                // Redirigir según el caso
-                res.redirect(username === 'admin' ? '/admin.html' : '/index.html');
+            
+            return req.session.save(() => {
+                res.redirect('/index.html');
             });
         } else {
             res.send('Usuario o contraseña incorrectos. <a href="/login.html">Volver</a>');
