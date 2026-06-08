@@ -167,32 +167,34 @@ input:checked + .slider:before { transform: translateX(22px); }
 .card-front { background: linear-gradient(135deg, #1f2937, #111827); color: #ffaa00; font-size: 50px; }
 .card-back { background-color: white; color: black; transform: rotateY(180deg); padding: 10px; }
 .coin-flip { width: 120px; height: 120px; margin: 20px auto; background: radial-gradient(#fcd34d, #ca8a04); border-radius: 50%; border: 4px solid #fef08a; display: flex; justify-content: center; align-items: center; font-size: 50px; font-weight: bold; color: #713f12; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: transform 1s; }
-/* Forzar el diseño del botón de cerrar sesión */
-#btn-logout.btn-sidebar-logout {
+/* Contenedor del botón de salida */
+.logout-section {
+    padding: 15px;
+    margin-top: auto; /* Si el sidebar es flex, esto lo empuja abajo del todo automáticamente */
+}
+
+/* Estilo del botón */
+.btn-sidebar-logout {
+    width: 100%;
+    background-color: #311b1b; /* Un rojo oscuro sutil que combina con tu fondo */
+    color: #f87171; /* Texto rojo claro para que resalte */
+    border: 1px solid #7f1d1d;
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    width: 100%;
-    background-color: #241414; /* Fondo rojo/marrón muy oscuro */
-    color: #f87171; /* Texto rojo clarito */
-    border: 1px solid #7f1d1d;
-    border-radius: 6px;
-    padding: 12px;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-    margin-top: 15px; /* Le da aire con el botón de arriba */
-    box-sizing: border-box;
     transition: all 0.2s ease;
-    appearance: none; /* Elimina cualquier rastro de estilo de Windows/Chrome */
-    -webkit-appearance: none;
 }
 
-/* Efecto cuando pasás el mouse por arriba */
-#btn-logout.btn-sidebar-logout:hover {
-    background-color: #991b1b; /* Rojo más encendido */
-    color: #ffffff;
+/* Efecto Hover al pasar el mouse */
+.btn-sidebar-logout:hover {
+    background-color: #991b1b; /* Se vuelve un rojo más vivo */
+    color: white;
     border-color: #ef4444;
-    box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
+    box-shadow: 0 0 10px rgba(239, 68, 68, 0.2);
 }
