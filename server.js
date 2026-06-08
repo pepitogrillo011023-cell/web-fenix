@@ -116,22 +116,44 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
 // ==============================================================
 // 3. MIDDLEWARES, SESIÓN Y SEGURIDAD
 // ==============================================================
+
+// Configuración robusta para Render (Proxy) - DEBE IR ANTES DE LA SESIÓN
+app.set('trust proxy', 1); 
+
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+
 app.use((req, res, next) => {
     console.log(`Petición recibida: ${req.method} ${req.path}`);
     next();
 });
+
+// UNA SOLA CONFIGURACIÓN DE SESIÓN (Producción / Render lista)
 app.use(session({
-    secret: 'CasinoFenix2026_Seguro',
+    secret: 'CasinoFenix2026_Seguro', // Tu secreto definitivo
+    name: 'sessionId',
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 1000 * 60 * 60 * 24 }
+    cookie: {
+        httpOnly: true,
+        secure: true,      // OBLIGATORIO: Para HTTPS en Render
+        sameSite: 'none',  // OBLIGATORIO: Permite comunicación cross-site en Render
+        maxAge: 1000 * 60 * 60 * 24 // 24 horas de duración máxima
+    }
 }));
 
+// Middleware de protección de rutas
 const requireLogin = (req, res, next) => {
-    if (req.session.loggedIn) { next(); } else { res.redirect('/login.html'); }
+    if (req.session.loggedIn) { 
+        next(); 
+    } else { 
+        res.redirect('/login.html'); 
+    }
 };
+
+// ==============================================================
+// RUTAS DE AUTENTICACIÓN Y MENÚ
+// ==============================================================
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
@@ -147,30 +169,22 @@ app.post('/login', (req, res) => {
     }
 });
 
+// MODIFICADO: Logout seguro con función Callback
 app.get('/logout', (req, res) => {
-    req.session.destroy();
-    res.redirect('/login.html');
+    req.session.destroy((err) => {
+        if (err) {
+            console.error("Error al destruir la sesión:", err);
+            return res.send("Error al cerrar sesión.");
+        }
+        // Borramos la cookie del navegador manualmente para mayor seguridad
+        res.clearCookie('sessionId'); 
+        res.redirect('/login.html');
+    });
 });
 
 app.get('/admin.html', requireLogin, (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
-
-// Configuración robusta para Render
-app.set('trust proxy', 1); // Necesario para que Render (proxy) pase la cookie
-
-app.use(session({
-    secret: 'tu_secreto_muy_seguro', // Cambia esto por algo único
-    name: 'sessionId',
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-        httpOnly: true,
-        secure: true,      // OBLIGATORIO: Porque estás en HTTPS
-        sameSite: 'none',  // OBLIGATORIO: Permite la comunicación cross-site en Render
-        maxAge: 24 * 60 * 60 * 1000 // 24 horas
-    }
-}));
 // ==========================================
 // CONFIGURACIÓN DEL MOTOR MATEMÁTICO DEL SLOT
 // ==========================================
