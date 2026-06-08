@@ -6,14 +6,14 @@ const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
 const bcrypt = require('bcryptjs');
-const eventosRouter = require('./routes/eventos');
+
 
 // Importar modelos
 const slotRoutes = require('./routes/slot'); 
 console.log("CONTENIDO DE SLOTROUTES:", slotRoutes); // <--- AGREGA ESTO
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
-
+const eventosRouter = require('./routes/eventos');
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -136,6 +136,17 @@ app.use((req, res, next) => {
     next();
 });
 app.use('/eventos', eventosRouter);
+app._router.stack.forEach(function(r){
+  if (r.route && r.route.path){
+    console.log("Ruta definida: " + r.route.path);
+  } else if (r.name === 'router') {
+    r.handle.stack.forEach(function(handler){
+      if (handler.route) {
+        console.log("Ruta en router: " + handler.route.path);
+      }
+    });
+  }
+});
 // UNA SOLA CONFIGURACIÓN DE SESIÓN (Producción / Render lista)
 app.use(session({
     secret: 'CasinoFenix2026_Seguro', // Tu secreto definitivo
