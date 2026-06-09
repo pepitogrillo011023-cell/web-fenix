@@ -244,12 +244,29 @@ function sumarInputModal(montoAAgregar) {
 }
 
 async function ejecutarGestion(accion) {
+    // 1. BUSCAR LOS ELEMENTOS Y GUARDAR TEXTOS (Esto faltaba)
+    const btnDepositar = document.getElementById('btn-depositar');
+    const btnRetirar = document.getElementById('btn-retirar');
+    
+    // Validar que existan
+    if (!btnDepositar || !btnRetirar) {
+        console.error("No se encontraron los botones en el HTML.");
+        return;
+    }
+
+    const textoDepositar = btnDepositar.innerText;
+    const textoRetirar = btnRetirar.innerText;
+    
     const monto = Number(document.getElementById('gestion-monto').value);
     const tipo = document.getElementById('gestion-tipo-saldo').value;
     
     if (!monto || monto <= 0) return alert("Por favor, ingresá un monto mayor a 0.");
     
-    // ... (resto de tu código de botones) ...
+    // 2. DESHABILITAR Y CAMBIAR TEXTO
+    btnDepositar.disabled = true;
+    btnRetirar.disabled = true;
+    if (accion === 'add') btnDepositar.innerText = "PROCESANDO...";
+    if (accion === 'remove') btnRetirar.innerText = "PROCESANDO...";
 
     try {
         let res, data;
@@ -259,7 +276,7 @@ async function ejecutarGestion(accion) {
             res = await fetch('/api/gestion-manual-creditos', {
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' },
-                credentials: 'include', // <--- AGREGAR ESTO
+                credentials: 'include',
                 body: JSON.stringify({ userId: gestionIdSeleccionado, amount: monto, action: accion })
             });
         } 
@@ -269,7 +286,7 @@ async function ejecutarGestion(accion) {
             res = await fetch('/api/cargar-saldo', { 
                 method: 'POST', 
                 headers: { 'Content-Type': 'application/json' }, 
-                credentials: 'include', // <--- AGREGAR ESTO
+                credentials: 'include',
                 body: JSON.stringify({ usuario: gestionUserSeleccionado, monto: montoFinal }) 
             });
         }
@@ -280,7 +297,6 @@ async function ejecutarGestion(accion) {
         }
 
         data = await res.json();
-        
         alert(data.message || data.mensaje || "Operación realizada con éxito.");
         cerrarModalGeneral('modal-gestion-creditos');
         
@@ -288,11 +304,13 @@ async function ejecutarGestion(accion) {
         console.error(error);
         alert("Error técnico al conectar con el servidor.");
     } finally {
-        btnDepositar.disabled = false; btnRetirar.disabled = false;
-        btnDepositar.innerText = textoDepositar; btnRetirar.innerText = textoRetirar;
+        // 3. AHORA SÍ: Como las variables fueron definidas al inicio, esto funcionará
+        btnDepositar.disabled = false;
+        btnRetirar.disabled = false;
+        btnDepositar.innerText = textoDepositar;
+        btnRetirar.innerText = textoRetirar;
     }
 }
-
 // ==========================================
 // FUNCIONES DE CRÉDITOS Y COSTOS
 // ==========================================
