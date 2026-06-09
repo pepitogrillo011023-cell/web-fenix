@@ -105,7 +105,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
     console.log("Datos recibidos en el servidor:", req.body);
     
     const { titulo, mensaje } = req.body;
-    const io = req.app.get('io'); 
+   /* const io = req.app.get('io');*/ 
 
     // 2. Verificar que io exista
     if (!io) {
