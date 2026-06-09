@@ -98,7 +98,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
     });
 
     res.status(200).send('Notificación enviada');
-});*/
+});
    /* app.post('/eventos/enviar-push', (req, res) => {
     // 1. Ver qué datos llegaron
     console.log("Datos recibidos en el servidor:", req.body);
