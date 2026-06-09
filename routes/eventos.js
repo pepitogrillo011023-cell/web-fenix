@@ -169,6 +169,11 @@ module.exports = function(app, requireLogin, io, sharedState) {
             const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!${msgExtra}<br>Premio: <b>${premio.premio}</b>.<br>Se acreditaron <b>$${premio.valor}</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
             await cliente.save();
+            // ⚡ [NUEVO] Si el usuario está conectado ahora mismo, le actualizamos la pantalla al toque
+const usuarioEnVivo = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
+if (usuarioEnVivo && usuarioEnVivo.id) {
+    io.to(usuarioEnVivo.id).emit('actualizar_creditos_en_vivo', { creditos: cliente.creditos });
+}
             await notificarPanelAdmin(usuario, cliente);
             res.json({ exito: true, mensaje: msgBot, premio: premio });
         } catch (e) { res.status(500).json({ exito: false }); }
