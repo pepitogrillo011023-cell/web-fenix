@@ -718,7 +718,41 @@ io.on('connection', (socket) => {
             clienteDB = new Cliente({
                 usuarioCasino: datos.usuario,
                 historialChat: [{ emisor: 'bot', mensaje: 'Volviste al menú principal. ¿En qué te podemos ayudar?', leido: true }]
+                if (sharedState.adminSocketId) {
+            io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+            const clientesDB = await Cliente.find();
+            io.to(sharedState.adminSocketId).emit('cargar_datos_tablas', { clientes: clientesDB });
+        }
             });
+    // 1. ENVIAR CLAVE VAPID AL CELULAR VÍA SOCKET (Evita bloqueos de rutas HTTP)
+    socket.on('solicitar_clave_vapid', () => {
+        if (process.env.VAPID_PUBLIC_KEY) {
+            socket.emit('respuesta_clave_vapid', { publicKey: process.env.VAPID_PUBLIC_KEY });
+        } else {
+            console.log("❌ Error: VAPID_PUBLIC_KEY no está definida en las variables de entorno de Render.");
+        }
+    });
+
+    // 2. GUARDAR LA SUSCRIPCIÓN EN MONGO DB VÍA SOCKET
+    socket.on('guardar_suscripcion_push', async (datos) => {
+        try {
+            if (!socket.username) {
+                console.log("❌ Intento de guardar push sin usuario identificado en el socket.");
+                return;
+            }
+
+            // Buscamos a 'Adidas' o el usuario logueado y guardamos su llave push
+            await Cliente.findOneAndUpdate(
+                { usuarioCasino: socket.username },
+                { pushSubscription: datos.subscription }
+            );
+
+            console.log(`✅ Suscripción push guardada con éxito vía Socket para: ${socket.username}`);
+            socket.emit('suscripcion_guardada_exito');
+        } catch (error) {
+            console.error('❌ Error al guardar suscripción por Socket:', error);
+        }
+    });
             await clienteDB.save();
         }
         let usuarioExistente = sharedState.usuariosConectados.find(u => u.nombre === datos.usuario);
