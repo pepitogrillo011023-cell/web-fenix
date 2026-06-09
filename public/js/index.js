@@ -263,6 +263,9 @@ socket.on('nueva_notificacion', (data) => {
 
     // 2. Agregar el mensaje arriba de todo en la lista
     if (lista) {
+        // 🔥 NUEVO: Si existe el cartel de "no hay notificaciones", lo borramos
+        const txtSinNotis = document.getElementById('sin-notificaciones');
+        if (txtSinNotis) txtSinNotis.remove();
         const li = document.createElement('li');
         li.style.padding = '10px';
         li.style.borderBottom = '1px solid #4b5563';
