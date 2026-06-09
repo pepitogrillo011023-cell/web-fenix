@@ -354,6 +354,13 @@ app.post('/api/guardar-suscripcion', requireLogin, async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
+// RUTA PARA EXTREER LA CLAVE PÚBLICA DESDE EL .ENV HACIA EL FRONTEND
+app.get('/api/vapid-public-key', (req, res) => {
+    if (!process.env.VAPID_PUBLIC_KEY) {
+        return res.status(500).json({ error: "Falta configurar VAPID_PUBLIC_KEY en las variables de entorno de Render" });
+    }
+    res.json({ publicKey: process.env.VAPID_PUBLIC_KEY });
+});
 
 // 🔥 RUTA TEMPORAL PARA PROBAR EL PUSH AL TOQUE
 app.get('/api/test-push-rapido', async (req, res) => {
