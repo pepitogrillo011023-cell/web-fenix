@@ -921,7 +921,7 @@ async function ejecutarVerificacionRetencion() {
             if (reglaAplicable && reglaAplicable.mensaje) {
                 const payload = JSON.stringify({
                     title: '🎰 Casino Fénix',
-                    body: reglaApplicable.mensaje
+                    body: reglaAplicable.mensaje
                 });
 
                 webpush.sendNotification(cliente.pushSubscription, payload)
