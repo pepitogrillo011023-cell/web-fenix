@@ -910,6 +910,16 @@ async function abrirTienda() {
             // 4. Procesamos la respuesta
             if (data.exito) {
                 alert("¡Canje realizado con éxito! " + (data.mensaje || ""));
+                // ========================================================
+                // 🔥 [NUEVO] ACTUALIZACIÓN DE CRÉDITOS EN VIVO EN LA TIENDA
+                // ========================================================
+                if (data.nuevoSaldo !== undefined) {
+                    const elementoSaldo = document.getElementById('txt-creditos');
+                    if (elementoSaldo) {
+                        // Formatea el nuevo saldo con puntos de miles para Argentina
+                        elementoSaldo.innerText = Number(data.nuevoSaldo).toLocaleString('es-AR');
+                    }
+                }
                 // Opcional: recargar la tienda o actualizar el saldo visualmente aquí
             } else {
                 alert("Error al canjear: " + (data.mensaje || "Error desconocido"));
