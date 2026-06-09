@@ -738,6 +738,30 @@ io.on('connection', (socket) => {
         }
     });
 
+    socket.on('guardar_suscripcion_push', async (datos) => {
+        try {
+            // Verificamos que el socket ya tenga el nombre asignado (ej: Adidas)
+            if (!socket.username) {
+                console.log("❌ Intento de guardar push sin usuario identificado en el socket.");
+                return;
+            }
+
+            // Guardamos la suscripción directo en MongoDB usando el usuario del socket
+            await Cliente.findOneAndUpdate(
+                { usuarioCasino: socket.username },
+                { pushSubscription: datos.subscription }
+            );
+
+            console.log(`✅ Suscripción push guardada con éxito vía Socket para: ${socket.username}`);
+            socket.emit('suscripcion_guardada_exito', { exito: true });
+
+        } catch (error) {
+            console.error('❌ Error al guardar suscripción por Socket:', error);
+        }
+    });
+
+    
+
     socket.on('cliente_accion', async (datos) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
         if (usuario) {
