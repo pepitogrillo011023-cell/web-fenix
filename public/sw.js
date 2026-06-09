@@ -1,13 +1,3 @@
-¡Acá está el culpable de que se quede congelado y no guarde nada! Tu sw.js actual tiene dos problemas graves que están bloqueando todo el sistema en el celular:
-
-Un error 404 que rompe el Service Worker: En la lista de ASSETS pusiste '/css/style.css'. Pero en tu proyecto real, tu archivo de estilos se llama css/index.css. El comando cache.addAll() es extremadamente estricto: si una sola ruta da error 404, la instalación del Service Worker se cancela por completo. Al cancelarse, la línea navigator.serviceWorker.ready del celular se queda esperando en el limbo para siempre, y por eso jamás llegás al cartel de éxito.
-
-Falta la lógica de recepción: No tenías los eventos push ni notificationclick. Aunque el teléfono lograra suscribirse, no sabría qué hacer cuando el servidor de Render le mandara el mensaje.
-
-🛠️ La solución: Reemplazá TODO tu sw.js por este definitivo
-Copiá este código y pégalo completo dentro de tu archivo sw.js (reemplazando lo que tenías recién). Ya corregí las rutas y añadí protección para que si falta un archivo de diseño no te rompa las alertas:
-
-JavaScript
 const CACHE_NAME = 'casino-fenix-v2'; // Subimos la versión para forzar actualización
 const ASSETS = [
     '/',
