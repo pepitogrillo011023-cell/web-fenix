@@ -249,38 +249,43 @@ async function ejecutarGestion(accion) {
     
     if (!monto || monto <= 0) return alert("Por favor, ingresá un monto mayor a 0.");
     
-    const btnDepositar = document.querySelector('#modal-gestion-creditos .btn-save[style*="#10b981"]');
-    const btnRetirar = document.querySelector('#modal-gestion-creditos .btn-save[style*="#ef4444"]');
-    const textoDepositar = btnDepositar.innerText;
-    const textoRetirar = btnRetirar.innerText;
-    
-    btnDepositar.disabled = true; btnRetirar.disabled = true;
-    if(accion === 'add') btnDepositar.innerText = "PROCESANDO...";
-    if(accion === 'remove') btnRetirar.innerText = "PROCESANDO...";
+    // ... (resto de tu código de botones) ...
 
     try {
         let res, data;
         
+        // --- OPCIÓN 1: Gestión Manual ---
         if (tipo === 'creditos') {
             res = await fetch('/api/gestion-manual-creditos', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include', // <--- AGREGAR ESTO
                 body: JSON.stringify({ userId: gestionIdSeleccionado, amount: monto, action: accion })
             });
-        } else if (tipo === 'saldo') {
+        } 
+        // --- OPCIÓN 2: Cargar Saldo ---
+        else if (tipo === 'saldo') {
             let montoFinal = (accion === 'remove') ? -Math.abs(monto) : Math.abs(monto);
             res = await fetch('/api/cargar-saldo', { 
-                method: 'POST', headers: { 'Content-Type': 'application/json' }, 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' }, 
+                credentials: 'include', // <--- AGREGAR ESTO
                 body: JSON.stringify({ usuario: gestionUserSeleccionado, monto: montoFinal }) 
             });
         }
         
-        if(res && res.redirected) return window.location.href = '/login.html';
+        if (res.status === 401) {
+            alert("Sesión expirada. Por favor, iniciá sesión de nuevo.");
+            return window.location.href = '/login.html';
+        }
+
         data = await res.json();
         
         alert(data.message || data.mensaje || "Operación realizada con éxito.");
         cerrarModalGeneral('modal-gestion-creditos');
         
     } catch (error) {
+        console.error(error);
         alert("Error técnico al conectar con el servidor.");
     } finally {
         btnDepositar.disabled = false; btnRetirar.disabled = false;
