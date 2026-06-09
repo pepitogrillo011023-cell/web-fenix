@@ -1,15 +1,3 @@
-// TRUCO TEMPORAL PARA GENERAR LLAVES PUSH
-try {
-    const webpush = require('web-push');
-    const keys = webpush.generateVAPIDKeys();
-    console.log("========================================");
-    console.log("TU CLAVE PÚBLICA:", keys.publicKey);
-    console.log("TU CLAVE PRIVADA:", keys.privateKey);
-    console.log("========================================");
-} catch (e) {
-    console.log("Esperando que Render termine de instalar web-push...");
-}
-
 require('dotenv').config();
 const express = require('express');
 const http = require('http');
