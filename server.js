@@ -27,29 +27,6 @@ const slotRoutes = require('./routes/slot');
 console.log("CONTENIDO DE SLOTROUTES:", slotRoutes); // <--- AGREGA ESTO
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
-// RUTA PARA GUARDAR LAS REGLAS DESDE EL PANEL DE CONTROL (ADMIN)
-app.post('/api/guardar-reglas-retencion', requireLogin, async (req, res) => {
-    try {
-        // Validamos que sea el administrador
-        if (req.session.userId !== 'admin') {
-            return res.status(403).json({ error: 'Acceso denegado' });
-        }
-
-        const { reglas } = req.body;
-
-        // Buscamos la configuración global y la actualizamos (si no existe, la crea)
-        await ConfigRetencion.findOneAndUpdate(
-            { id: 'config_global' },
-            { reglas: reglas },
-            { upsert: true, new: true }
-        );
-
-        res.status(200).json({ success: true, mensaje: '¡Reglas de retención guardadas correctamente! 🚀' });
-    } catch (error) {
-        console.error('Error al guardar reglas de retención:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
-    }
-});
 
 const app = express();
 const server = http.createServer(app);
@@ -70,6 +47,19 @@ const io = new Server(server, {
 // ==============================================================
 // 1. MODELOS DE DATOS
 // ==============================================================
+const configRetencionSchema = new mongoose.Schema({
+    id: { type: String, default: 'config_global' },
+    reglas: {
+        h24: { activo: { type: Boolean, default: true }, mensaje: { type: String, default: '' } },
+        d3:  { activo: { type: Boolean, default: true }, mensaje: { type: String, default: '' } },
+        d7:  { activo: { type: Boolean, default: true }, mensaje: { type: String, default: '' } },
+        d15: { activo: { type: Boolean, default: true }, mensaje: { type: String, default: '' } },
+        d30: { activo: { type: Boolean, default: true }, mensaje: { type: String, default: '' } }
+    }
+});
+const ConfigRetencion = mongoose.model('ConfigRetencion', configRetencionSchema);
+ 
+
 const clienteSchema = new mongoose.Schema({
     usuarioCasino: { type: String, required: true, unique: true },
     password: { type: String, default: '1234' },
@@ -85,11 +75,12 @@ const clienteSchema = new mongoose.Schema({
     ultimaCarta: { type: Date, default: null },
     ultimaMoneda: { type: Date, default: null },
     lastWithdrawal: { type: Date, default: null },
-    
-    // --- CAMPOS NUEVOS ---
+     // --- CAMPOS NUEVOS ---
     referralCode: { type: String, unique: true, index: true }, 
     referredBy: { type: String, default: null },
     pushSubscription: { type: Object, default: null } // <--- AGREGÁ ESTA LÍNEA ACÁ
+    
+  
 });
 
 // Middleware automático: Crea el código al guardar
@@ -221,6 +212,27 @@ const requireLogin = (req, res, next) => {
 // ==============================================================
 // RUTAS DE AUTENTICACIÓN Y MENÚ
 // ==============================================================
+// RUTA PARA GUARDAR LAS REGLAS DESDE EL PANEL DE CONTROL (ADMIN)
+app.post('/api/guardar-reglas-retencion', requireLogin, async (req, res) => {
+    try {
+        if (req.session.userId !== 'admin') {
+            return res.status(403).json({ error: 'Acceso denegado' });
+        }
+
+        const { reglas } = req.body;
+
+        await ConfigRetencion.findOneAndUpdate(
+            { id: 'config_global' },
+            { reglas: reglas },
+            { upsert: true, new: true }
+        );
+
+        res.status(200).json({ success: true, mensaje: '¡Reglas de retención guardadas correctamente! 🚀' });
+    } catch (error) {
+        console.error('Error al guardar reglas de retención:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
