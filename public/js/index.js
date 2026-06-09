@@ -219,8 +219,66 @@ function descontarCreditoVisual(juegoKey) {
         if (document.getElementById('txt-creditos')) document.getElementById('txt-creditos').innerText = misCreditos;
     }
 }
-
 // ==========================================
+// NOTIFICACIONES (CORREGIDO Y OPTIMIZADO)
+// ==========================================
+const bell = document.getElementById('notificacion-bell');
+const popup = document.getElementById('notificacion-popup');
+const badge = document.getElementById('badge-contador');
+const lista = document.getElementById('lista-notificaciones');
+
+// Lógica de apertura/cierre de la campanita
+if (bell && popup) {
+    bell.addEventListener('click', (e) => {
+        e.stopPropagation(); // Evita que otros clics lo cierren sin querer
+        
+        // FIX: Detecta si está oculto tanto por JS como si viene vacío desde el CSS
+        const estaOculto = popup.style.display === 'none' || popup.style.display === '';
+        
+        popup.style.display = estaOculto ? 'block' : 'none';
+        
+        // Si lo abrimos, limpiamos el badge
+        if (estaOculto && badge) {
+            badge.style.display = 'none'; 
+            badge.innerText = '0';
+        }
+    });
+}
+
+// Cerrar el popup si el usuario hace clic afuera de la campanita
+document.addEventListener('click', () => {
+    if (popup) popup.style.display = 'none';
+});
+
+// ESCUCHA DEL EVENTO EN VIVO
+socket.on('nueva_notificacion', (data) => {
+    console.log("Nueva notificación recibida en vivo:", data);
+
+    // 1. Mostrar y aumentar el badge contador
+    if (badge) {
+        badge.style.display = 'block';
+        let count = parseInt(badge.innerText) || 0;
+        badge.innerText = count + 1;
+    }
+
+    // 2. Agregar el mensaje arriba de todo en la lista
+    if (lista) {
+        const li = document.createElement('li');
+        li.style.padding = '10px';
+        li.style.borderBottom = '1px solid #4b5563';
+        li.style.listStyle = 'none'; // Le saca el puntito de lista feo
+        
+        // Ponemos el título en amarillo/oro para que resalte y el mensaje abajo
+        li.innerHTML = `
+            <div style="font-weight: bold; color: #f59e0b; margin-bottom: 2px;">🔔 ${data.titulo}</div>
+            <div style="font-size: 13px; color: #fff;">${data.mensaje}</div>
+        `;
+        
+        lista.prepend(li); // Lo mete arriba de todo
+    }
+});
+
+/*// ==========================================
 // NOTIFICACIONES (CORREGIDO)
 // ==========================================
 const bell = document.getElementById('notificacion-bell');
@@ -258,7 +316,7 @@ socket.on('nueva_notificacion', (data) => {
     }
     // 3. (Opcional) Un pequeño aviso sonoro o visual
     console.log("Nueva notificación recibida:", data);
-});
+});*/
 
 // ==========================================
 // MENÚS Y CHAT
