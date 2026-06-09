@@ -27,6 +27,29 @@ const slotRoutes = require('./routes/slot');
 console.log("CONTENIDO DE SLOTROUTES:", slotRoutes); // <--- AGREGA ESTO
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
+// RUTA PARA GUARDAR LAS REGLAS DESDE EL PANEL DE CONTROL (ADMIN)
+app.post('/api/guardar-reglas-retencion', requireLogin, async (req, res) => {
+    try {
+        // Validamos que sea el administrador
+        if (req.session.userId !== 'admin') {
+            return res.status(403).json({ error: 'Acceso denegado' });
+        }
+
+        const { reglas } = req.body;
+
+        // Buscamos la configuración global y la actualizamos (si no existe, la crea)
+        await ConfigRetencion.findOneAndUpdate(
+            { id: 'config_global' },
+            { reglas: reglas },
+            { upsert: true, new: true }
+        );
+
+        res.status(200).json({ success: true, mensaje: '¡Reglas de retención guardadas correctamente! 🚀' });
+    } catch (error) {
+        console.error('Error al guardar reglas de retención:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
+    }
+});
 
 const app = express();
 const server = http.createServer(app);
