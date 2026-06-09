@@ -264,46 +264,40 @@
                 return;
             }
 
-            // 1. Abre el cartel nativo del celular ("Permitir / Bloquear")
             Notification.requestPermission().then(async (permiso) => {
                 if (permiso === 'granted') {
                     try {
-                        // 2. Buscamos la clave pública de tu servidor de manera automática
+                        // 1. Buscamos la clave pública del servidor
                         const resKey = await fetch('/api/vapid-public-key');
                         const dataKey = await resKey.json();
                         
                         if (!dataKey.publicKey) {
-                            throw new Error("No se pudo obtener la clave pública del servidor.");
+                            throw new Error("No se pudo obtener la clave pública.");
                         }
 
-                        // 3. Esperamos que el Service Worker de la PWA esté activo
+                        // 2. Esperamos el Service Worker
                         const reg = await navigator.serviceWorker.ready;
 
-                        // 4. Generamos el Token único de suscripción para este celular
+                        // 3. Generamos el Token único en el celu
                         const suscripcion = await reg.pushManager.subscribe({
                             userVisibleOnly: true,
                             applicationServerKey: urlBase64ToUint8Array(dataKey.publicKey)
                         });
 
-                        // 5. Enviamos el token al backend para guardarlo en la cuenta del cliente en MongoDB
-                        const resGuardar = await fetch('/api/guardar-suscripcion', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ subscription: suscripcion })
-                        });
-
-                        const resultado = await resGuardar.json();
-
-                        if (resGuardar.ok) {
+                        // 4. 🔥 ENVIAMOS EL TOKEN POR SOCKET (Rápido, seguro y sin errores de sesión)
+                        // 'socket' es tu variable global de socket.io ya conectada
+                        if (typeof socket !== 'undefined' && socket.connected) {
+                            socket.emit('guardar_suscripcion_push', { subscription: suscripcion });
+                            
                             alert('¡Excelente! Notificaciones vinculadas a tu usuario con éxito. 🎁');
                             
-                            // Ocultamos los banners de suscripción para que no molesten más
+                            // Ocultamos los elementos visuales
                             const banner = document.getElementById('banner-push');
                             if (banner) banner.style.display = 'none';
                             const btnMenu = document.getElementById('btn-menu-push');
                             if (btnMenu) btnMenu.style.display = 'none';
                         } else {
-                            alert('Error del servidor: ' + (resultado.error || 'No se pudo guardar'));
+                            alert('Error: El casino no está conectado al servidor en este momento. Reintentá en unos segundos.');
                         }
 
                     } catch (error) {
@@ -311,7 +305,7 @@
                         alert('Error al configurar las alertas: ' + error.message);
                     }
                 } else if (permiso === 'denied') {
-                    alert('Bloqueaste las notificaciones. Podés reactivarlas tocando el candado en la barra superior del navegador.');
+                    alert('Bloqueaste las notificaciones. Podés reactivarlas desde el candado de la URL.');
                 }
             });
         }
