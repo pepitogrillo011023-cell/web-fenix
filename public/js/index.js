@@ -8,6 +8,7 @@ const msgArea = document.getElementById('messages-area'); //
 window.usuarioLogueado = null; //
 
 // VARIABLES GLOBALES JUEGOS
+let cargaPendiente = { plataforma: '', monto: 0 };
 let ruletaConfig = []; let raspaConfig = [];
 let currentRotation = 0; let raspaYaJugada = false;
 let tragaJugado = false; let cartasJugado = false; let monedaJugado = false;
