@@ -380,10 +380,10 @@ function seleccionarOpcion(opcion) {
         
         // PASO 1: El bot saluda y muestra los botones de las dos plataformas en vivo
         let msgBot = `¡Hola! Para iniciar tu carga, por favor elegí la plataforma donde querés tus fichas:
-                      <div class="plataformas-chat-container" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center;">
-                          <button onclick="elegirPlataformaCarga('Ganamos')" style="background: #7c3aed; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A GANAMOS</button>
-                          <button onclick="elegirPlataformaCarga('Oropuro')" style="background: #eab308; color: black; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A OROPURO</button>
-                      </div>`;
+                  <div class="plataformas-chat-container" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center;">
+                      <button onclick="window.elegirPlataformaCarga('Ganamos')" style="background: #7c3aed; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A GANAMOS</button>
+                      <button onclick="window.elegirPlataformaCarga('Oropuro')" style="background: #eab308; color: black; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A OROPURO</button>
+                  </div>`;
         
         msgArea.innerHTML += `
             <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
