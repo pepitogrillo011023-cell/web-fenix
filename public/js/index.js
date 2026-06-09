@@ -367,6 +367,79 @@ function mostrarSubMenuMinijuegos() {
     if (msgArea) msgArea.style.display = 'none'; 
     if (games) games.style.display = 'grid'; // <-- Usamos grid para los botones
 }
+// ==============================================================
+// 🌐 FUNCIONES GLOBALES PARA EL FLUJO DE CARGA 
+// (Ponelas acá arriba, justo antes de seleccionarOpcion)
+// ==============================================================
+window.cargaPendiente = { plataforma: '', monto: 0 };
+
+window.elegirPlataformaCarga = function(plataforma) {
+    window.cargaPendiente.plataforma = plataforma;
+    
+    const contenedorBotones = document.querySelector('.plataformas-chat-container');
+    if (contenedorBotones) contenedorBotones.remove();
+    
+    msgArea.innerHTML += `
+        <div class="bubble-wrapper"><div class="bubble cliente">Plataforma: ${plataforma}</div><span class="status-text">✓ Seleccionado</span></div>
+    `;
+    
+    let msgBotDatos = `
+        Perfecto, vas a cargar en <b>${plataforma.toUpperCase()}</b>.<br><br>
+        <b>CBU:</b> 0000003100089390479373<br>
+        <b>ALIAS:</b> bille.win<br>
+        <b>TITULAR:</b> Maria del Carmen Acuña<br><br>
+        <b>Ingresá el monto transferido y adjuntá tu comprobante:</b>
+        
+        <div class="form-carga-chat" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid #334155;">
+            <input type="number" id="monto-comprobante" placeholder="¿Cuánto transferiste? (Ej: 5000)" 
+                   style="padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 14px; outline: none;">
+            
+            <label for="file-comprobante" style="background: #334155; color: white; padding: 10px; text-align: center; border-radius: 6px; cursor: pointer; display: block; font-size: 14px; font-weight: 500;">
+                <span id="txt-file-status">📄 Seleccionar Comprobante</span>
+            </label>
+            <input type="file" id="file-comprobante" accept="image/*" onchange="window.actualizarTextoArchivo()" style="display: none;">
+            
+            <button onclick="window.enviarFormularioCarga()" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">
+                ENVIAR SOLICITUD
+            </button>
+        </div>
+    `;
+    
+    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${msgBotDatos}</div></div>`;
+    msgArea.scrollTop = msgArea.scrollHeight;
+};
+
+window.actualizarTextoArchivo = function() {
+    const input = document.getElementById('file-comprobante');
+    const txt = document.getElementById('txt-file-status');
+    if (input && input.files.length > 0) {
+        let nombreArchivo = input.files[0].name;
+        if(nombreArchivo.length > 18) nombreArchivo = nombreArchivo.substring(0, 15) + "...";
+        txt.innerText = "✅ Captura: " + nombreArchivo;
+        txt.parentElement.style.background = "#065f46"; 
+    }
+};
+
+window.enviarFormularioCarga = function() {
+    const monto = document.getElementById('monto-comprobante').value;
+    const archivoInput = document.getElementById('file-comprobante');
+    
+    if (!monto || monto <= 0) return alert("Por favor, ingresá un monto válido.");
+    if (!archivoInput || archivoInput.files.length === 0) return alert("Por favor, seleccioná la foto de tu comprobante.");
+    
+    window.cargaPendiente.monto = monto;
+    const file = archivoInput.files[0];
+    
+    document.querySelector('.form-carga-chat').style.opacity = "0.5";
+    document.querySelector('.form-carga-chat').style.pointerEvents = "none";
+
+    msgArea.innerHTML += `
+        <div class="bubble-wrapper"><div class="bubble cliente">Enviando comprobante por $${monto}...</div><span class="status-text">Procesando...</span></div>
+    `;
+    msgArea.scrollTop = msgArea.scrollHeight;
+
+    console.log("Listo para el backend:", window.cargaPendiente.plataforma, window.cargaPendiente.monto, file);
+};
 
 function seleccionarOpcion(opcion) {
     const menu = document.getElementById('container-menu-options');
@@ -1061,92 +1134,5 @@ socket.on('actualizar_creditos_en_vivo', (data) => {
     } else {
         console.error("No encontré el elemento con ID 'txt-creditos' en tu HTML");
     }
-    // PASO 2: El usuario elige plataforma y el bot le muestra el CBU + Formulario de carga
-// ==============================================================
-// 🌐 FUNCIONES GLOBALES PARA EL FLUJO DE CARGA (AL FINAL DE INDEX.JS)
-// ==============================================================
-
-// Hacemos que la variable sea global por seguridad
-window.cargaPendiente = { plataforma: '', monto: 0 };
-
-// PASO 2: El usuario elige plataforma
-window.elegirPlataformaCarga = function(plataforma) {
-    window.cargaPendiente.plataforma = plataforma;
-    
-    // Removemos los botones de la burbuja anterior para evitar doble clics
-    const contenedorBotones = document.querySelector('.plataformas-chat-container');
-    if (contenedorBotones) contenedorBotones.remove();
-    
-    // Mostramos la elección del cliente como burbuja azul
-    msgArea.innerHTML += `
-        <div class="bubble-wrapper"><div class="bubble cliente">Plataforma: ${plataforma}</div><span class="status-text">✓ Seleccionado</span></div>
-    `;
-    
-    // El bot responde con los datos bancarios y los campos interactivos
-    let msgBotDatos = `
-        Perfecto, vas a cargar en <b>${plataforma.toUpperCase()}</b>.<br><br>
-        <b>CBU:</b> 0000003100089390479373<br>
-        <b>ALIAS:</b> bille.win<br>
-        <b>TITULAR:</b> Maria del Carmen Acuña<br><br>
-        <b>Ingresá el monto transferido y adjuntá tu comprobante:</b>
-        
-        <div class="form-carga-chat" style="margin-top: 12px; display: flex; flex-direction: column; gap: 10px; background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid #334155;">
-            
-            <input type="number" id="monto-comprobante" placeholder="¿Cuánto transferiste? (Ej: 5000)" 
-                   style="padding: 10px; border-radius: 6px; border: 1px solid #475569; background: #1e293b; color: white; font-size: 14px; outline: none;">
-            
-            <label for="file-comprobante" style="background: #334155; color: white; padding: 10px; text-align: center; border-radius: 6px; cursor: pointer; display: block; font-size: 14px; font-weight: 500;">
-                <span id="txt-file-status">📄 Seleccionar Comprobante</span>
-            </label>
-            <input type="file" id="file-comprobante" accept="image/*" onchange="window.actualizarTextoArchivo()" style="display: none;">
-            
-            <button onclick="window.enviarFormularioCarga()" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">
-                ENVIAR SOLICITUD
-            </button>
-        </div>
-    `;
-    
-    msgArea.innerHTML += `
-        <div class="bubble-wrapper"><div class="bubble bot">${msgBotDatos}</div></div>
-    `;
-    
-    msgArea.scrollTop = msgArea.scrollHeight;
-};
-
-// Cambia el aspecto del botón a verde cuando el usuario elige la foto
-window.actualizarTextoArchivo = function() {
-    const input = document.getElementById('file-comprobante');
-    const txt = document.getElementById('txt-file-status');
-    if (input && input.files.length > 0) {
-        let nombreArchivo = input.files[0].name;
-        if(nombreArchivo.length > 18) nombreArchivo = nombreArchivo.substring(0, 15) + "...";
-        
-        txt.innerText = "✅ Captura: " + nombreArchivo;
-        txt.parentElement.style.background = "#065f46"; 
-    }
-};
-
-// Acción final al presionar "ENVIAR SOLICITUD"
-window.enviarFormularioCarga = function() {
-    const monto = document.getElementById('monto-comprobante').value;
-    const archivoInput = document.getElementById('file-comprobante');
-    
-    if (!monto || monto <= 0) return alert("Por favor, ingresá un monto válido.");
-    if (!archivoInput || archivoInput.files.length === 0) return alert("Por favor, seleccioná la foto de tu comprobante.");
-    
-    window.cargaPendiente.monto = monto;
-    const file = archivoInput.files[0];
-    
-    // Deshabilitamos el contenedor visual
-    document.querySelector('.form-carga-chat').style.opacity = "0.5";
-    document.querySelector('.form-carga-chat').style.pointerEvents = "none";
-
-    // Mostramos confirmación en el chat
-    msgArea.innerHTML += `
-        <div class="bubble-wrapper"><div class="bubble cliente">Enviando comprobante por $${monto}...</div><span class="status-text">Procesando...</span></div>
-    `;
-    msgArea.scrollTop = msgArea.scrollHeight;
-
-    console.log("Listo para el backend:", window.cargaPendiente.plataforma, window.cargaPendiente.monto, file);
-};
+  
 });
