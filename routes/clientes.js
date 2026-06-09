@@ -129,32 +129,35 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
-   app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
+ app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
         const { usuario, monto } = req.body;
         try {
-            // 1. Actualizamos los créditos y pedimos que nos devuelva el cliente ya actualizado con { new: true }
-            // IMPORTANTE: Cambié 'saldo' por 'creditos' para que coincida con el campo que lee tu UI en el index.html
+            // 1. Actualizamos el saldo y pedimos que nos devuelva el cliente actualizado con { new: true }
+            // IMPORTANTE: Asegurate de usar "creditos" si es lo que lee tu front, o "saldo" si usas ese nombre.
+            // Según tu index.html, usas "creditos". Si en tu base de datos el campo se llama "saldo", cambialo abajo.
             const clienteActualizado = await Cliente.findOneAndUpdate(
                 { usuarioCasino: usuario }, 
-                { $inc: { creditos: monto } },
-                { new: true } 
+                { $inc: { creditos: monto } }, 
+                { new: true }
             );
 
             if (!clienteActualizado) {
                 return res.status(404).json({ exito: false, mensaje: 'Usuario no encontrado.' });
             }
 
-            // 2. Buscamos al usuario en la lista de conectados en vivo
+            // 2. Buscamos al usuario en la memoria de sockets conectados (sharedState)
             const usuarioEnVivo = sharedState.usuariosConectados.find(u => 
                 u.nombre.toLowerCase() === usuario.toLowerCase()
             );
 
-            // 3. Si el usuario está conectado, le disparamos el evento
+            // 3. SI está conectado, le enviamos el nuevo saldo en vivo
             if (usuarioEnVivo && usuarioEnVivo.id) {
                 io.to(usuarioEnVivo.id).emit('actualizar_creditos_en_vivo', { 
                     creditos: clienteActualizado.creditos 
                 });
-                console.log(`✅ Créditos actualizados en vivo para: ${usuario}`);
+                console.log(`✅ Créditos enviados en vivo a: ${usuario}`);
+            } else {
+                console.log(`⚠️ Usuario ${usuario} no conectado, solo se actualizó la DB.`);
             }
 
             res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron ${monto} al cliente ${usuario}.` });
