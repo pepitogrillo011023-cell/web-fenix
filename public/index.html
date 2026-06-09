@@ -245,5 +245,37 @@
 
     <script src="js/index.js"></script>
             <script src="/socket.io/socket.io.js"></script>
+            <script>
+        function solicitarPermisoPush() {
+            if (!('Notification' in window)) {
+                alert('Este navegador no soporta notificaciones push.');
+                return;
+            }
+
+            // Lanza el cuadro de diálogo nativo del celular
+            Notification.requestPermission().then(permiso => {
+                if (permiso === 'granted') {
+                    alert('¡Excelente! Notificaciones permitidas con éxito. 🎁');
+                    
+                    // Ocultamos el banner o botón para que no moleste más una vez aceptado
+                    const banner = document.getElementById('banner-push');
+                    if (banner) banner.style.display = 'none';
+                    const btnMenu = document.getElementById('btn-menu-push');
+                    if (btnMenu) btnMenu.style.display = 'none';
+                    
+                    // Ejecuta la función que tengas en index.js para guardar la suscripción
+                    if (typeof registrarSuscripcionEnServidor === 'function') {
+                        registrarSuscripcionEnServidor();
+                    } else if (typeof inicializarPush === 'function') {
+                        inicializarPush();
+                    } else {
+                        console.log("Falta llamar a la función de registro en tu archivo js/index.js");
+                    }
+                } else if (permiso === 'denied') {
+                    alert('Bloqueaste las notificaciones. Podés reactivarlas tocando el candado de la barra del navegador.');
+                }
+            });
+        }
+    </script>
 </body>
 </html>
