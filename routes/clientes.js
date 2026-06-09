@@ -129,15 +129,37 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
-    app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
+   app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
         const { usuario, monto } = req.body;
         try {
-            await Cliente.updateOne(
+            // 1. Actualizamos los créditos y pedimos que nos devuelva el cliente ya actualizado con { new: true }
+            // IMPORTANTE: Cambié 'saldo' por 'creditos' para que coincida con el campo que lee tu UI en el index.html
+            const clienteActualizado = await Cliente.findOneAndUpdate(
                 { usuarioCasino: usuario }, 
-                { $inc: { saldo: monto } }
+                { $inc: { creditos: monto } },
+                { new: true } 
             );
-            res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron $${monto} al cliente ${usuario}.` });
+
+            if (!clienteActualizado) {
+                return res.status(404).json({ exito: false, mensaje: 'Usuario no encontrado.' });
+            }
+
+            // 2. Buscamos al usuario en la lista de conectados en vivo
+            const usuarioEnVivo = sharedState.usuariosConectados.find(u => 
+                u.nombre.toLowerCase() === usuario.toLowerCase()
+            );
+
+            // 3. Si el usuario está conectado, le disparamos el evento
+            if (usuarioEnVivo && usuarioEnVivo.id) {
+                io.to(usuarioEnVivo.id).emit('actualizar_creditos_en_vivo', { 
+                    creditos: clienteActualizado.creditos 
+                });
+                console.log(`✅ Créditos actualizados en vivo para: ${usuario}`);
+            }
+
+            res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron ${monto} al cliente ${usuario}.` });
         } catch (error) {
+            console.error("Error al cargar saldo:", error);
             res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
         }
     });
