@@ -19,6 +19,7 @@ const mongoose = require('mongoose');
 const session = require('express-session'); 
 const path = require('path');
 const bcrypt = require('bcryptjs');
+const webpush = require('web-push');
 
 
 // Importar modelos
@@ -29,6 +30,12 @@ const User = require('./models/User');
 
 const app = express();
 const server = http.createServer(app);
+// 🔥 CONFIGURACIÓN INTERNA DE WEB PUSH
+webpush.setVapidDetails(
+    process.env.VAPID_EMAIL,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+);
 const io = new Server(server, {
     cors: {
         origin: "*", // O el dominio específico de tu app si lo tenés restringido
@@ -58,7 +65,8 @@ const clienteSchema = new mongoose.Schema({
     
     // --- CAMPOS NUEVOS ---
     referralCode: { type: String, unique: true, index: true }, 
-    referredBy: { type: String, default: null }
+    referredBy: { type: String, default: null },
+    pushSubscription: { type: Object, default: null } // <--- AGREGÁ ESTA LÍNEA ACÁ
 });
 
 // Middleware automático: Crea el código al guardar
@@ -276,6 +284,39 @@ app.post('/api/cambiar-contrasena', requireLogin, async (req, res) => {
     } catch (error) {
         console.error("Error al cambiar contraseña:", error);
         res.status(500).json({ message: "Error al actualizar la contraseña" });
+    }
+});
+// 📌 RUTA NUEVA: GUARDAR LA SUSCRIPCIÓN PUSH DEL CELULAR DEL JUGADOR
+app.post('/api/guardar-suscripcion', requireLogin, async (req, res) => {
+    try {
+        const userId = req.session.userId;
+
+        // Validamos que no sea el admin global
+        if (!userId || userId === 'admin') {
+            return res.status(400).json({ error: 'No se puede generar suscripción push para el Admin' });
+        }
+
+        const { subscription } = req.body;
+
+        // 1. Buscamos el usuario en la colección 'User' usando el ID de la sesión
+        const usuarioLogueado = await User.findById(userId);
+        if (!usuarioLogueado) {
+            return res.status(404).json({ error: 'Usuario de autenticación no encontrado' });
+        }
+
+        // 2. Buscamos y actualizamos su perfil de juego en la colección 'Cliente'
+        await Cliente.findOneAndUpdate(
+            { usuarioCasino: usuarioLogueado.usuarioCasino },
+            { 
+                pushSubscription: subscription,
+                ultimaConexion: new Date() // Actualizamos su última actividad
+            }
+        );
+
+        res.status(200).json({ mensaje: 'Suscripción guardada con éxito 🎉' });
+    } catch (error) {
+        console.error('Error al guardar la suscripción push:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 // ==========================================
