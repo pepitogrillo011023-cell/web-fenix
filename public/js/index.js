@@ -368,13 +368,41 @@ function mostrarSubMenuMinijuegos() {
     if (games) games.style.display = 'grid'; // <-- Usamos grid para los botones
 }
 // ==============================================================
-// 🌐 FUNCIONES GLOBALES PARA EL FLUJO DE CARGA 
-// (Ponelas acá arriba, justo antes de seleccionarOpcion)
+// 🎯 SISTEMA AUTOMÁTICO DE CONTROL DE CARGAS POR EVENTOS
 // ==============================================================
-window.cargaPendiente = { plataforma: '', monto: 0 };
+let cargaPendiente = { plataforma: '', monto: 0 };
 
-window.elegirPlataformaCarga = function(plataforma) {
-    window.cargaPendiente.plataforma = plataforma;
+// 1. Detectar Clics en los botones dinámicos del Chat
+document.addEventListener('click', function (e) {
+    // Si hace clic en un botón de plataforma
+    if (e.target && e.target.classList.contains('btn-elegir-plataforma')) {
+        const plataformaElegida = e.target.getAttribute('data-plataforma');
+        ejecutarFlujoPlataforma(plataformaElegida);
+    }
+    
+    // Si hace clic en el botón final de enviar solicitud
+    if (e.target && e.target.id === 'btn-submit-carga') {
+        procesarEnvioFormulario();
+    }
+});
+
+// 2. Detectar cambios en el archivo seleccionado (Captura)
+document.addEventListener('change', function (e) {
+    if (e.target && e.target.id === 'file-comprobante') {
+        const input = e.target;
+        const txt = document.getElementById('txt-file-status');
+        if (input && input.files.length > 0) {
+            let nombreArchivo = input.files[0].name;
+            if (nombreArchivo.length > 18) nombreArchivo = nombreArchivo.substring(0, 15) + "...";
+            txt.innerText = "✅ Captura: " + nombreArchivo;
+            txt.parentElement.style.background = "#065f46"; 
+        }
+    }
+});
+
+// 3. Función interna que despliega los datos del CBU
+function ejecutarFlujoPlataforma(plataforma) {
+    cargaPendiente.plataforma = plataforma;
     
     const contenedorBotones = document.querySelector('.plataformas-chat-container');
     if (contenedorBotones) contenedorBotones.remove();
@@ -397,9 +425,9 @@ window.elegirPlataformaCarga = function(plataforma) {
             <label for="file-comprobante" style="background: #334155; color: white; padding: 10px; text-align: center; border-radius: 6px; cursor: pointer; display: block; font-size: 14px; font-weight: 500;">
                 <span id="txt-file-status">📄 Seleccionar Comprobante</span>
             </label>
-            <input type="file" id="file-comprobante" accept="image/*" onchange="window.actualizarTextoArchivo()" style="display: none;">
+            <input type="file" id="file-comprobante" accept="image/*" style="display: none;">
             
-            <button onclick="window.enviarFormularioCarga()" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">
+            <button id="btn-submit-carga" style="background: #10b981; color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px;">
                 ENVIAR SOLICITUD
             </button>
         </div>
@@ -407,27 +435,17 @@ window.elegirPlataformaCarga = function(plataforma) {
     
     msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble bot">${msgBotDatos}</div></div>`;
     msgArea.scrollTop = msgArea.scrollHeight;
-};
+}
 
-window.actualizarTextoArchivo = function() {
-    const input = document.getElementById('file-comprobante');
-    const txt = document.getElementById('txt-file-status');
-    if (input && input.files.length > 0) {
-        let nombreArchivo = input.files[0].name;
-        if(nombreArchivo.length > 18) nombreArchivo = nombreArchivo.substring(0, 15) + "...";
-        txt.innerText = "✅ Captura: " + nombreArchivo;
-        txt.parentElement.style.background = "#065f46"; 
-    }
-};
-
-window.enviarFormularioCarga = function() {
+// 4. Función interna que valida los datos finales al enviar
+function procesarEnvioFormulario() {
     const monto = document.getElementById('monto-comprobante').value;
     const archivoInput = document.getElementById('file-comprobante');
     
     if (!monto || monto <= 0) return alert("Por favor, ingresá un monto válido.");
     if (!archivoInput || archivoInput.files.length === 0) return alert("Por favor, seleccioná la foto de tu comprobante.");
     
-    window.cargaPendiente.monto = monto;
+    cargaPendiente.monto = monto;
     const file = archivoInput.files[0];
     
     document.querySelector('.form-carga-chat').style.opacity = "0.5";
@@ -438,8 +456,8 @@ window.enviarFormularioCarga = function() {
     `;
     msgArea.scrollTop = msgArea.scrollHeight;
 
-    console.log("Listo para el backend:", window.cargaPendiente.plataforma, window.cargaPendiente.monto, file);
-};
+    console.log("Listo para enviar al backend de Render:", cargaPendiente.plataforma, cargaPendiente.monto, file);
+}
 
 function seleccionarOpcion(opcion) {
     const menu = document.getElementById('container-menu-options');
@@ -454,8 +472,8 @@ function seleccionarOpcion(opcion) {
         // PASO 1: El bot saluda y muestra los botones de las dos plataformas en vivo
         let msgBot = `¡Hola! Para iniciar tu carga, por favor elegí la plataforma donde querés tus fichas:
                   <div class="plataformas-chat-container" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center;">
-                      <button onclick="window.elegirPlataformaCarga('Ganamos')" style="background: #7c3aed; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A GANAMOS</button>
-                      <button onclick="window.elegirPlataformaCarga('Oropuro')" style="background: #eab308; color: black; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A OROPURO</button>
+                      <button class="btn-elegir-plataforma" data-plataforma="Ganamos" style="background: #7c3aed; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A GANAMOS</button>
+                      <button class="btn-elegir-plataforma" data-plataforma="Oropuro" style="background: #eab308; color: black; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A OROPURO</button>
                   </div>`;
         
         msgArea.innerHTML += `
