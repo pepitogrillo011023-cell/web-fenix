@@ -258,56 +258,75 @@
             return outputArray;
         }
 
-        function solicitarPermisoPush() {
+        async function solicitarPermisoPush() {
             if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-                alert('Este navegador o dispositivo no soporta notificaciones push.');
+                alert('🚫 Este dispositivo o navegador no soporta notificaciones push nativas.');
                 return;
             }
 
-            Notification.requestPermission().then(async (permiso) => {
-                if (permiso === 'granted') {
+            // Pedimos el permiso nativo
+            const permiso = await Notification.requestPermission();
+            if (permiso !== 'granted') {
+                alert('⚠️ No diste permiso para las notificaciones. Restablecé los permisos desde el candado de la URL.');
+                return;
+            }
+
+            try {
+                // VERIFICACIÓN DEL SERVICE WORKER (Para evitar congelamientos)
+                let reg = await navigator.serviceWorker.getRegistration();
+                
+                // Si el navegador no lo tiene activo, intentamos registrar el archivo básico obligatoriamente
+                if (!reg) {
+                    alert("🔧 Registrando Service Worker en el teléfono...");
+                    reg = await navigator.serviceWorker.register('/sw.js').catch(err => {
+                        throw new Error("Falta el archivo 'sw.js' en la raíz de tu proyecto o falló su carga: " + err.message);
+                    });
+                }
+
+                // Esperamos que esté 100% disponible
+                const readyReg = await navigator.serviceWorker.ready;
+
+                // Verificamos conexión del túnel del casino
+                if (typeof socket === 'undefined' || !socket.connected) {
+                    throw new Error("El casino no está conectado al servidor de alertas en este momento.");
+                }
+
+                alert("📡 Sincronizando llaves criptográficas con Casino Fénix...");
+
+                // Pedimos la clave pública por el Socket seguro
+                socket.emit('solicitar_clave_vapid');
+
+                // Escuchamos la respuesta una única vez
+                socket.once('respuesta_clave_vapid', async (data) => {
                     try {
-                        // 1. Buscamos la clave pública del servidor
-                        const resKey = await fetch('/api/vapid-public-key');
-                        const dataKey = await resKey.json();
-                        
-                        if (!dataKey.publicKey) {
-                            throw new Error("No se pudo obtener la clave pública.");
+                        if (!data || !data.publicKey) {
+                            throw new Error("El servidor no envió una clave VAPID válida. Revisá Render.");
                         }
 
-                        // 2. Esperamos el Service Worker
-                        const reg = await navigator.serviceWorker.ready;
-
-                        // 3. Generamos el Token único en el celu
-                        const suscripcion = await reg.pushManager.subscribe({
+                        // Generamos el Token único para este celular
+                        const suscripcion = await readyReg.pushManager.subscribe({
                             userVisibleOnly: true,
-                            applicationServerKey: urlBase64ToUint8Array(dataKey.publicKey)
+                            applicationServerKey: urlBase64ToUint8Array(data.publicKey)
                         });
 
-                        // 4. 🔥 ENVIAMOS EL TOKEN POR SOCKET (Rápido, seguro y sin errores de sesión)
-                        // 'socket' es tu variable global de socket.io ya conectada
-                        if (typeof socket !== 'undefined' && socket.connected) {
-                            socket.emit('guardar_suscripcion_push', { subscription: suscripcion });
-                            
-                            alert('¡Excelente! Notificaciones vinculadas a tu usuario con éxito. 🎁');
-                            
-                            // Ocultamos los elementos visuales
-                            const banner = document.getElementById('banner-push');
-                            if (banner) banner.style.display = 'none';
-                            const btnMenu = document.getElementById('btn-menu-push');
-                            if (btnMenu) btnMenu.style.display = 'none';
-                        } else {
-                            alert('Error: El casino no está conectado al servidor en este momento. Reintentá en unos segundos.');
-                        }
+                        // Enviamos la suscripción al Backend por el Socket de 'Adidas'
+                        socket.emit('guardar_suscripcion_push', { subscription: suscripcion });
 
-                    } catch (error) {
-                        console.error('Error detallado en la suscripción:', error);
-                        alert('Error al configurar las alertas: ' + error.message);
+                        alert('¡Excelente! Notificaciones vinculadas con éxito. 🦅🎁');
+                        
+                        // Ocultamos los banners
+                        if (document.getElementById('banner-push')) document.getElementById('banner-push').style.display = 'none';
+                        if (document.getElementById('btn-menu-push')) document.getElementById('btn-menu-push').style.display = 'none';
+
+                    } catch (errInner) {
+                        alert("❌ Error en suscripción interna: " + errInner.message);
                     }
-                } else if (permiso === 'denied') {
-                    alert('Bloqueaste las notificaciones. Podés reactivarlas desde el candado de la URL.');
-                }
-            });
+                });
+
+            } catch (error) {
+                // ¡Si se congela o rompe, este cartel te va a cantar el motivo exacto!
+                alert("⚠️ Alerta del sistema: " + error.message);
+            }
         }
     </script>
 </body>
