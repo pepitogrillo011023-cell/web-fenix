@@ -586,9 +586,10 @@
             </div>
             <input type="hidden" id="gestion-tipo-saldo"> 
             <div style="display: flex; gap: 15px; margin-top: 25px;">
-                <button class="btn-save" style="background-color: #10b981; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('add')">DEPOSITAR</button>
-                <button class="btn-save" style="background-color: #ef4444; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('remove')">RETIRAR</button>
-            </div>
+    <button id="btn-depositar" class="btn-save" style="background-color: #10b981; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('add')">DEPOSITAR</button>
+    
+    <button id="btn-retirar" class="btn-save" style="background-color: #ef4444; flex: 1; margin: 0; padding: 15px; font-size: 15px;" onclick="ejecutarGestion('remove')">RETIRAR</button>
+</div>
             <button class="btn-action-small" style="margin-top:15px; width:100%; padding:12px; background-color:#374151; border: none; font-size: 14px;" onclick="cerrarModalGeneral('modal-gestion-creditos')">CANCELAR</button>
         </div>
     </div>
