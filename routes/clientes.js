@@ -129,43 +129,48 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
- app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
-        const { usuario, monto } = req.body;
-        try {
-            // 1. Actualizamos el saldo y pedimos que nos devuelva el cliente actualizado con { new: true }
-            // IMPORTANTE: Asegurate de usar "creditos" si es lo que lee tu front, o "saldo" si usas ese nombre.
-            // Según tu index.html, usas "creditos". Si en tu base de datos el campo se llama "saldo", cambialo abajo.
-            const clienteActualizado = await Cliente.findOneAndUpdate(
-                { usuarioCasino: usuario }, 
-                { $inc: { creditos: monto } }, 
-                { new: true }
-            );
+app.post('/api/cargar-saldo', requireLogin, async (req, res) => {
+    const { usuario, monto } = req.body;
+    console.log(`--- [DEBUG] Intentando cargar ${monto} a ${usuario} ---`);
+    
+    try {
+        const clienteActualizado = await Cliente.findOneAndUpdate(
+            { usuarioCasino: usuario }, 
+            { $inc: { creditos: monto } }, 
+            { new: true }
+        );
 
-            if (!clienteActualizado) {
-                return res.status(404).json({ exito: false, mensaje: 'Usuario no encontrado.' });
-            }
-
-            // 2. Buscamos al usuario en la memoria de sockets conectados (sharedState)
-            const usuarioEnVivo = sharedState.usuariosConectados.find(u => 
-                u.nombre.toLowerCase() === usuario.toLowerCase()
-            );
-
-            // 3. SI está conectado, le enviamos el nuevo saldo en vivo
-            if (usuarioEnVivo && usuarioEnVivo.id) {
-                io.to(usuarioEnVivo.id).emit('actualizar_creditos_en_vivo', { 
-                    creditos: clienteActualizado.creditos 
-                });
-                console.log(`✅ Créditos enviados en vivo a: ${usuario}`);
-            } else {
-                console.log(`⚠️ Usuario ${usuario} no conectado, solo se actualizó la DB.`);
-            }
-
-            res.json({ exito: true, mensaje: `¡Panel actualizado! Se sumaron ${monto} al cliente ${usuario}.` });
-        } catch (error) {
-            console.error("Error al cargar saldo:", error);
-            res.status(500).json({ exito: false, mensaje: 'Hubo un error de base de datos.' });
+        if (!clienteActualizado) {
+            console.log("❌ ERROR: Usuario no encontrado en DB");
+            return res.status(404).json({ exito: false, mensaje: 'Usuario no encontrado.' });
         }
-    });
+
+        console.log(`✅ Base de datos OK. Usuarios conectados actualmente: ${sharedState.usuariosConectados.length}`);
+        
+        // Buscamos el usuario
+        const usuarioEnVivo = sharedState.usuariosConectados.find(u => 
+            u.nombre.toLowerCase() === usuario.toLowerCase()
+        );
+
+        if (usuarioEnVivo) {
+            console.log(`✅ Usuario encontrado en Sockets. ID: ${usuarioEnVivo.id}`);
+            
+            // Forzamos el emit
+            io.to(usuarioEnVivo.id).emit('actualizar_creditos_en_vivo', { 
+                creditos: clienteActualizado.creditos 
+            });
+            console.log(`🚀 EVENTO EMITIDO a ${usuarioEnVivo.id}`);
+        } else {
+            console.log(`⚠️ Usuario ${usuario} NO está en la lista de conectados.`);
+            console.log("Lista actual:", JSON.stringify(sharedState.usuariosConectados));
+        }
+
+        res.json({ exito: true, mensaje: 'Saldo cargado' });
+    } catch (error) {
+        console.error("❌ ERROR CRÍTICO:", error);
+        res.status(500).json({ exito: false, mensaje: 'Error interno.' });
+    }
+});
 
     app.post('/api/guardar-config', requireLogin, async (req, res) => {
         try {
