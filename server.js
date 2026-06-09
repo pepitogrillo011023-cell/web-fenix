@@ -819,5 +819,65 @@ async function inicializarDatosDePrueba() {
 }
 
 const PUERTO = process.env.PORT || 3000;
+// FUNCTION AUTOMÁTICA: REVISAR INACTIVOS Y ENVIAR NOTIFICACIONES
+async function ejecutarVerificacionRetencion() {
+    console.log('🔄 Ejecutando control diario de retención de usuarios...');
+    try {
+        // 1. Traemos las reglas del admin
+        const config = await ConfigRetencion.findOne({ id: 'config_global' });
+        if (!config) return console.log('⚠️ No hay reglas de retención configuradas aún.');
+
+        const ahora = new Date();
+
+        // 2. Traemos todos los clientes que tengan una suscripción push activa registrada
+        const clientes = await Cliente.find({ pushSubscription: { $ne: null } });
+
+        for (let cliente of clientes) {
+            if (!cliente.ultimaConexion) continue;
+
+            // Calcular cuántos días pasaron desde su última conexión
+            const diferenciaTiempo = ahora.getTime() - new Date(cliente.ultimaConexion).getTime();
+            const diasInactivo = Math.floor(diferenciaTiempo / (1000 * 60 * 60 * 24));
+
+            let reglaAplicable = null;
+
+            // Mapeamos los días de inactividad con las reglas del panel
+            if (diasInactivo === 1 && config.reglas.h24.activo) reglaAplicable = config.reglas.h24;
+            else if (diasInactivo === 3 && config.reglas.d3.activo) reglaAplicable = config.reglas.d3;
+            else if (diasInactivo === 7 && config.reglas.d7.activo) reglaAplicable = config.reglas.d7;
+            else if (diasInactivo === 15 && config.reglas.d15.activo) reglaAplicable = config.reglas.d15;
+            else if (diasInactivo === 30 && config.reglas.d30.activo) reglaAplicable = config.reglas.d30;
+
+            // 3. Si cumple la condición, ¡Le disparamos la notificación push!
+            if (reglaAplicable && reglaAplicable.mensaje) {
+                const payload = JSON.stringify({
+                    title: '🎰 Casino Fénix',
+                    body: reglaApplicable.mensaje
+                });
+
+                webpush.sendNotification(cliente.pushSubscription, payload)
+                    .then(() => console.log(`✅ Push de retención enviado con éxito a: ${cliente.usuarioCasino}`))
+                    .catch(async (err) => {
+                        console.error(`❌ Error al enviar push a ${cliente.usuarioCasino}. Posiblemente desinstaló la PWA.`);
+                        // Si el token expiró o la app se borró, limpiamos la base de datos para no gastar recursos
+                        if (err.statusCode === 410 || err.statusCode === 404) {
+                            cliente.pushSubscription = null;
+                            await cliente.save();
+                        }
+                    });
+            }
+        }
+    } catch (error) {
+        console.error('Error en el motor de retención automatizado:', error);
+    }
+}
+
+// Configurar para que corra AUTOMÁTICAMENTE cada 24 horas
+// (1000ms * 60s * 60m * 24h)
+setInterval(ejecutarVerificacionRetencion, 1000 * 60 * 60 * 24);
+
+// 🛠️ TRUCO DE PRUEBA: Correr la función 10 segundos después de que el servidor se encienda
+// Esto te sirve para probar si funciona al toque sin esperar 24 horas reales.
+setTimeout(ejecutarVerificacionRetencion, 10000);
 server.listen(PUERTO, () => { console.log(`🚀 Servidor en puerto ${PUERTO}`); });
 module.exports = { app, server };
