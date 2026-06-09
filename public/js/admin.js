@@ -1381,33 +1381,32 @@ async function enviarPushMasivo() {
 // ---------------------------------------------------------
 
 async function guardarReglasRetencion() {
-    // 1. Recolectar los datos del panel (Estados de los switches y textos)
-    // NOTA: Asegurate de que los IDs coincidan con los de tu HTML
+    // 1. Recolectamos los datos usando los IDs reales de tu admin.html
     const reglas = {
         h24: {
-            activo: document.getElementById('switch-24h').checked,
-            mensaje: document.getElementById('input-24h').value
+            activo: document.getElementById('ret-chk-0').checked,
+            mensaje: document.getElementById('ret-txt-0').value
         },
         d3: {
-            activo: document.getElementById('switch-3d').checked,
-            mensaje: document.getElementById('input-3d').value
+            activo: document.getElementById('ret-chk-1').checked,
+            mensaje: document.getElementById('ret-txt-1').value
         },
         d7: {
-            activo: document.getElementById('switch-7d').checked,
-            mensaje: document.getElementById('input-7d').value
+            activo: document.getElementById('ret-chk-2').checked,
+            mensaje: document.getElementById('ret-txt-2').value
         },
         d15: {
-            activo: document.getElementById('switch-15d').checked,
-            mensaje: document.getElementById('input-15d').value
+            activo: document.getElementById('ret-chk-3').checked,
+            mensaje: document.getElementById('ret-txt-3').value
         },
         d30: {
-            activo: document.getElementById('switch-30d').checked,
-            mensaje: document.getElementById('input-30d').value
+            activo: document.getElementById('ret-chk-4').checked,
+            mensaje: document.getElementById('ret-txt-4').value
         }
     };
 
     try {
-        // 2. Enviar la configuración estructurada al backend
+        // 2. Enviamos la configuración estructurada al backend
         const response = await fetch('/api/guardar-reglas-retencion', {
             method: 'POST',
             headers: {
@@ -1418,7 +1417,7 @@ async function guardarReglasRetencion() {
 
         const data = await response.json();
 
-        // 3. Feedback visual
+        // 3. Alerta de confirmación
         if (response.ok && data.success) {
             alert('¡Reglas de retención guardadas con éxito! 🚀');
         } else {
