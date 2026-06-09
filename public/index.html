@@ -246,88 +246,114 @@
     <script src="js/index.js"></script>
             <script src="/socket.io/socket.io.js"></script>
             <script>
-       // Función auxiliar obligatoria para procesar la clave de seguridad del servidor
-        function urlBase64ToUint8Array(base64String) {
-            const padding = '='.repeat((4 - base64String.length % 4) % 4);
-            const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
-            const rawData = window.atob(base64);
-            const outputArray = new Uint8Array(rawData.length);
-            for (let i = 0; i < rawData.length; ++i) {
-                outputArray[i] = rawData.charCodeAt(i);
-            }
-            return outputArray;
+    // Función auxiliar obligatoria para procesar la clave de seguridad del servidor
+    function urlBase64ToUint8Array(base64String) {
+        const padding = '='.repeat((4 - base64String.length % 4) % 4);
+        const base64 = (base64String + padding).replace(/\-/g, '+').replace(/_/g, '/');
+        const rawData = window.atob(base64);
+        const outputArray = new Uint8Array(rawData.length);
+        for (let i = 0; i < rawData.length; ++i) {
+            outputArray[i] = rawData.charCodeAt(i);
+        }
+        return outputArray;
+    }
+
+    async function solicitarPermisoPush() {
+        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+            alert('🚫 Este dispositivo o navegador no soporta notificaciones push nativas.');
+            return;
         }
 
-        async function solicitarPermisoPush() {
-            if (!('Notification' in window) || !('serviceWorker' in navigator)) {
-                alert('🚫 Este dispositivo o navegador no soporta notificaciones push nativas.');
-                return;
-            }
+        // Pedimos el permiso nativo
+        const permiso = await Notification.requestPermission();
+        if (permiso !== 'granted') {
+            alert('⚠️ No diste permiso para las notificaciones. Restablecé los permisos desde el candado de la URL.');
+            return;
+        }
 
-            // Pedimos el permiso nativo
-            const permiso = await Notification.requestPermission();
-            if (permiso !== 'granted') {
-                alert('⚠️ No diste permiso para las notificaciones. Restablecé los permisos desde el candado de la URL.');
-                return;
-            }
-
-            try {
-                // VERIFICACIÓN DEL SERVICE WORKER (Para evitar congelamientos)
-                let reg = await navigator.serviceWorker.getRegistration();
-                
-                // Si el navegador no lo tiene activo, intentamos registrar el archivo básico obligatoriamente
-                if (!reg) {
-                    alert("🔧 Registrando Service Worker en el teléfono...");
-                    reg = await navigator.serviceWorker.register('/sw.js').catch(err => {
-                        throw new Error("Falta el archivo 'sw.js' en la raíz de tu proyecto o falló su carga: " + err.message);
-                    });
-                }
-
-                // Esperamos que esté 100% disponible
-                const readyReg = await navigator.serviceWorker.ready;
-
-                // Verificamos conexión del túnel del casino
-                if (typeof socket === 'undefined' || !socket.connected) {
-                    throw new Error("El casino no está conectado al servidor de alertas en este momento.");
-                }
-
-                alert("📡 Sincronizando llaves criptográficas con Casino Fénix...");
-
-                // Pedimos la clave pública por el Socket seguro
-                socket.emit('solicitar_clave_vapid');
-
-                // Escuchamos la respuesta una única vez
-                socket.once('respuesta_clave_vapid', async (data) => {
-                    try {
-                        if (!data || !data.publicKey) {
-                            throw new Error("El servidor no envió una clave VAPID válida. Revisá Render.");
-                        }
-
-                        // Generamos el Token único para este celular
-                        const suscripcion = await readyReg.pushManager.subscribe({
-                            userVisibleOnly: true,
-                            applicationServerKey: urlBase64ToUint8Array(data.publicKey)
-                        });
-
-                        // Enviamos la suscripción al Backend por el Socket de 'Adidas'
-                        socket.emit('guardar_suscripcion_push', { subscription: suscripcion });
-
-                        alert('¡Excelente! Notificaciones vinculadas con éxito. 🦅🎁');
-                        
-                        // Ocultamos los banners
-                        if (document.getElementById('banner-push')) document.getElementById('banner-push').style.display = 'none';
-                        if (document.getElementById('btn-menu-push')) document.getElementById('btn-menu-push').style.display = 'none';
-
-                    } catch (errInner) {
-                        alert("❌ Error en suscripción interna: " + errInner.message);
-                    }
+        try {
+            // VERIFICACIÓN DEL SERVICE WORKER (Para evitar congelamientos)
+            let reg = await navigator.serviceWorker.getRegistration();
+            
+            // Si el navegador no lo tiene activo, intentamos registrar el archivo básico obligatoriamente
+            if (!reg) {
+                alert("🔧 Registrando Service Worker en el teléfono...");
+                reg = await navigator.serviceWorker.register('/sw.js').catch(err => {
+                    throw new Error("Falta el archivo 'sw.js' en la raíz de tu proyecto o falló su carga: " + err.message);
                 });
-
-            } catch (error) {
-                // ¡Si se congela o rompe, este cartel te va a cantar el motivo exacto!
-                alert("⚠️ Alerta del sistema: " + error.message);
             }
+
+            // Esperamos que esté 100% disponible
+            const readyReg = await navigator.serviceWorker.ready;
+
+            // Verificamos conexión del túnel del casino
+            if (typeof socket === 'undefined' || !socket.connected) {
+                throw new Error("El casino no está conectado al servidor de alertas en este momento.");
+            }
+
+            alert("📡 Sincronizando llaves criptográficas con Casino Fénix...");
+
+            // Pedimos la clave pública por el Socket seguro
+            socket.emit('solicitar_clave_vapid');
+
+            // Escuchamos la respuesta una única vez
+            socket.once('respuesta_clave_vapid', async (data) => {
+                try {
+                    if (!data || !data.publicKey) {
+                        throw new Error("El servidor no envió una clave VAPID válida. Revisá Render.");
+                    }
+
+                    // Generamos el Token único para este celular
+                    const suscripcion = await readyReg.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(data.publicKey)
+                    });
+
+                    // Enviamos la suscripción al Backend por el Socket de 'Adidas'
+                    socket.emit('guardar_suscripcion_push', { subscription: suscripcion });
+
+                    // 🔥 [NUEVO] Guardamos permanentemente en la memoria del dispositivo que ya aceptó
+                    localStorage.setItem('notificaciones_activadas', 'true');
+
+                    alert('¡Excelente! Notificaciones vinculadas con éxito. 🦅🎁');
+                    
+                    // Ocultamos los banners de inmediato
+                    ocultarBannersPush();
+
+                } catch (errInner) {
+                    alert("❌ Error en suscripción interna: " + errInner.message);
+                }
+            });
+
+        } catch (error) {
+            // ¡Si se congela o rompe, este cartel te va a cantar el motivo exacto!
+            alert("⚠️ Alerta del sistema: " + error.message);
         }
-    </script>
+    }
+
+    // 🔥 [NUEVA FUNCIÓN] Encargada de limpiar la pantalla eliminando los banners
+    function ocultarBannersPush() {
+        if (document.getElementById('banner-push')) document.getElementById('banner-push').style.display = 'none';
+        if (document.getElementById('btn-menu-push')) document.getElementById('btn-menu-push').style.display = 'none';
+    }
+
+    // 🔥 [NUEVA FUNCIÓN] Se autoejecuta al cargar la app para comprobar si se esconde el banner de una
+    function verificarEstadoNotificaciones() {
+        const yaAceptoLocal = localStorage.getItem('notificaciones_activadas') === 'true';
+        const tienePermisoNativo = ('Notification' in window) && Notification.permission === 'granted';
+
+        // Si ya aceptó en este navegador O el permiso del candado ya está concedido nativamente:
+        if (yaAceptoLocal || tienePermisoNativo) {
+            // Intentamos ocultarlo al instante
+            ocultarBannersPush();
+            
+            // Reforzamos la ejecución cuando el HTML termine de procesarse por completo
+            document.addEventListener('DOMContentLoaded', ocultarBannersPush);
+        }
+    }
+
+    // Iniciamos la verificación automática apenas se lee este script
+    verificarEstadoNotificaciones();
+</script>
 </body>
 </html>
