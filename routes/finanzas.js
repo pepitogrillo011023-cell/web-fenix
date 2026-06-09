@@ -237,25 +237,45 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     });
 
-    app.post('/api/gestion-manual-creditos', requireLogin, async (req, res) => {
-        try {
-            const { userId, amount, action } = req.body;
-            const cliente = await Cliente.findById(userId);
+   app.post('/api/gestion-manual-creditos', requireLogin, async (req, res) => {
+    try {
+        const { userId, amount, action } = req.body;
+        const cliente = await Cliente.findById(userId);
 
-            if (action === 'add') cliente.creditos = (cliente.creditos || 0) + amount;
-            else if (action === 'remove') cliente.creditos = Math.max(0, (cliente.creditos || 0) - amount);
+        if (!cliente) return res.status(404).json({ success: false, message: 'Usuario no encontrado' });
 
-            await cliente.save();
-            await notificarPanelAdmin();
+        if (action === 'add') cliente.creditos = (cliente.creditos || 0) + amount;
+        else if (action === 'remove') cliente.creditos = Math.max(0, (cliente.creditos || 0) - amount);
+
+        await cliente.save();
+        await notificarPanelAdmin();
+        
+        // --- CORRECCIÓN AQUÍ ---
+        // 1. Usamos toLowerCase() para comparar sin importar mayúsculas
+        const socketCliente = sharedState.usuariosConectados.find(u => 
+            u.nombre.toLowerCase() === cliente.usuarioCasino.toLowerCase()
+        );
+
+        console.log(`DEBUG: Buscando usuario ${cliente.usuarioCasino}. ¿Encontrado?: ${!!socketCliente}`);
+
+        if (socketCliente && io) {
+            // 2. Usamos el nombre de evento correcto: 'actualizar_creditos_en_vivo'
+            // 3. Usamos .id (verificá si en tu objeto es .id o .socketId)
+            const idParaEmitir = socketCliente.id || socketCliente.socketId; 
             
-            const socketCliente = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
-            if (socketCliente && io) {
-                io.to(socketCliente.socketId).emit('actualizar_creditos', { nuevosCreditos: cliente.creditos });
-            }
-
-            res.json({ success: true, message: 'Créditos actualizados.' });
-        } catch (error) {
-            res.status(500).json({ success: false, message: error.message });
+            console.log(`🚀 Emitiendo 'actualizar_creditos_en_vivo' al socket ${idParaEmitir}`);
+            
+            io.to(idParaEmitir).emit('actualizar_creditos_en_vivo', { 
+                creditos: cliente.creditos 
+            });
+        } else {
+            console.log(`⚠️ Usuario ${cliente.usuarioCasino} no encontrado en sockets.`);
         }
-    });
+
+        res.json({ success: true, message: 'Créditos actualizados.' });
+    } catch (error) {
+        console.error("Error en finanzas.js:", error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+});
 };
