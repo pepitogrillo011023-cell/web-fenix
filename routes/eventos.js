@@ -87,9 +87,8 @@ module.exports = function(app, requireLogin, io, sharedState) {
     // ==============================================================
 
     
-  /*  router.post('/enviar-push', (req, res) => {
+   app.post('/eventos/enviar-push', (req, res) => {
     const { titulo, mensaje } = req.body;
-    const io = req.app.get('io'); // Obtenemos la instancia que definimos en server.js
 
     // Emitimos a TODOS los clientes conectados
     io.emit('nueva_notificacion', {
@@ -100,12 +99,12 @@ module.exports = function(app, requireLogin, io, sharedState) {
 
     res.status(200).send('Notificación enviada');
 });*/
-    app.post('/eventos/enviar-push', (req, res) => {
+   /* app.post('/eventos/enviar-push', (req, res) => {
     // 1. Ver qué datos llegaron
     console.log("Datos recibidos en el servidor:", req.body);
     
     const { titulo, mensaje } = req.body;
-   /* const io = req.app.get('io');*/ 
+    const io = req.app.get('io'); 
 
     // 2. Verificar que io exista
     if (!io) {
@@ -122,7 +121,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
     });
 
     res.status(200).send('Notificación enviada correctamente');
-});
+});*/
 
    
 
