@@ -1027,3 +1027,23 @@ if ('serviceWorker' in navigator) {
             });
     });
 }
+// --- ESCUCHAR ACTUALIZACIONES DEL SERVIDOR ---
+socket.on('actualizar_creditos_en_vivo', (data) => {
+    console.log("¡Evento de créditos recibido!", data);
+    
+    // 1. Actualizamos tu variable local
+    misCreditos = data.creditos;
+
+    // 2. Buscamos el elemento en el HTML y actualizamos el texto
+    // Asegurate de que el ID en tu HTML sea 'txt-creditos'
+    const displayCreditos = document.getElementById('txt-creditos');
+    if (displayCreditos) {
+        displayCreditos.innerText = data.creditos + " CR"; // O como lo muestres tú
+        
+        // Opcional: una pequeña animación para que el usuario note el cambio
+        displayCreditos.style.color = "#10b981"; 
+        setTimeout(() => { displayCreditos.style.color = ""; }, 1000);
+    } else {
+        console.error("No encontré el elemento con ID 'txt-creditos' en tu HTML");
+    }
+});
