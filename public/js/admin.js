@@ -1376,3 +1376,56 @@ async function enviarPushMasivo() {
         alert('Error de conexión con el servidor.');
     }
 }
+// ---------------------------------------------------------
+// GUARDAR REGLAS DE RETENCIÓN AUTOMÁTICA
+// ---------------------------------------------------------
+
+async function guardarReglasRetencion() {
+    // 1. Recolectar los datos del panel (Estados de los switches y textos)
+    // NOTA: Asegurate de que los IDs coincidan con los de tu HTML
+    const reglas = {
+        h24: {
+            activo: document.getElementById('switch-24h').checked,
+            mensaje: document.getElementById('input-24h').value
+        },
+        d3: {
+            activo: document.getElementById('switch-3d').checked,
+            mensaje: document.getElementById('input-3d').value
+        },
+        d7: {
+            activo: document.getElementById('switch-7d').checked,
+            mensaje: document.getElementById('input-7d').value
+        },
+        d15: {
+            activo: document.getElementById('switch-15d').checked,
+            mensaje: document.getElementById('input-15d').value
+        },
+        d30: {
+            activo: document.getElementById('switch-30d').checked,
+            mensaje: document.getElementById('input-30d').value
+        }
+    };
+
+    try {
+        // 2. Enviar la configuración estructurada al backend
+        const response = await fetch('/api/guardar-reglas-retencion', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ reglas })
+        });
+
+        const data = await response.json();
+
+        // 3. Feedback visual
+        if (response.ok && data.success) {
+            alert('¡Reglas de retención guardadas con éxito! 🚀');
+        } else {
+            alert('Hubo un error al guardar las reglas: ' + (data.error || 'Error desconocido'));
+        }
+    } catch (error) {
+        console.error('Error al conectar con el servidor:', error);
+        alert('Error de conexión con el backend.');
+    }
+}
