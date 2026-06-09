@@ -354,6 +354,41 @@ app.post('/api/guardar-suscripcion', requireLogin, async (req, res) => {
         res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
+
+// 🔥 RUTA TEMPORAL PARA PROBAR EL PUSH AL TOQUE
+app.get('/api/test-push-rapido', async (req, res) => {
+    try {
+        const { usuario } = req.query;
+        if (!usuario) {
+            return res.send("Falta poner el usuario en la URL. Ej: /api/test-push-rapido?usuario=tu_usuario");
+        }
+
+        // Buscamos tu usuario en la base de datos de Clientes
+        const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        
+        if (!cliente) {
+            return res.send(`No se encontró el usuario '${usuario}' en la colección Cliente.`);
+        }
+
+        if (!cliente.pushSubscription) {
+            return res.send(`El usuario '${usuario}' existe, pero NO tiene una suscripción Push registrada. Asegurate de haber entrado desde el celu y darle al botón de permitir.`);
+        }
+
+        // El mensaje de prueba que va a viajar al celular
+        const payload = JSON.stringify({
+            title: '🎰 Casino Fénix 🦅',
+            body: '¡Espectacular! Si estás viendo esto, las notificaciones push nativas están activas al 100%. 🚀'
+        });
+
+        // Enviamos la notificación push directo a tu dispositivo
+        await webpush.sendNotification(cliente.pushSubscription, payload);
+        
+        res.send(`¡Notificación enviada con éxito al usuario ${usuario}! Revisa la pantalla de tu celu.`);
+    } catch (error) {
+        console.error("Error en el test de push:", error);
+        res.status(500).send("Error al enviar el push: " + error.message);
+    }
+});
 // ==========================================
 // CONFIGURACIÓN DEL MOTOR MATEMÁTICO DEL SLOT
 // ==========================================
