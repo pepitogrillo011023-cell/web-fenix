@@ -196,3 +196,26 @@ input:checked + .slider:before { transform: translateX(22px); }
     border-color: #ef4444;
     box-shadow: 0 0 10px rgba(239, 68, 68, 0.25);
 }
+/* Circulito de notificación flotante */
+.dot-notificacion {
+    width: 8px;
+    height: 8px;
+    background-color: #22c55e; /* Verde brillante */
+    border-radius: 50%;
+    display: inline-block;
+    margin-left: auto; /* Lo empuja a la derecha del contenedor */
+    box-shadow: 0 0 10px #22c55e, 0 0 20px #22c55e;
+    animation: pulsoNotificacion 1.5s infinite;
+}
+
+/* Efecto de parpadeo suave */
+@keyframes pulsoNotificacion {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.6; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Clase auxiliar para ocultarlo cuando no hay mensajes */
+.oculto-notif {
+    display: none !important;
+}
