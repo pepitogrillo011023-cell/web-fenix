@@ -1484,6 +1484,13 @@ async function obtenerCargasPendientes() {
 
         // Rellenamos las filas de la tabla con los datos de MongoDB
         cargas.forEach(carga => {
+            // 🔥 NUEVO: Distinción visual para saber qué es saldo interno y qué es plataforma externa
+            let celdaPlataforma = "";
+            if (carga.plataforma === 'Créditos') {
+                celdaPlataforma = `<span style="background: #10b981; color: #fff; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; border: 1px solid #047857; letter-spacing: 0.5px;">💰 CRÉDITOS LOCALES</span>`;
+            } else {
+                celdaPlataforma = `<span style="background: #27272a; color: #ddd; padding: 4px 10px; border-radius: 4px; font-size: 11px; border: 1px solid #3f3f46;">🎰 ${carga.plataforma}</span>`;
+            }
             tbody.innerHTML += `
                 <tr style="border-bottom: 1px solid #2a2a2a; background: #141414; transition: 0.2s;">
                     <td style="padding: 14px; font-weight: bold; color: #f59e0b;">${carga.usuario}</td>
