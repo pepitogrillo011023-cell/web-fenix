@@ -598,7 +598,7 @@ function seleccionarOpcion(opcion) {
 
 
 
-/ ==========================================
+// ==========================================
 // MENÚS Y CHAT (Estructura corregida)
 // ==========================================
 function seleccionarOpcion(opcion) {
