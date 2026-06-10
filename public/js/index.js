@@ -584,7 +584,7 @@ function seleccionarOpcion(opcion) {
         console.error("Error en enviarSolicitudCreditos:", error);
         alert("Hubo un error de red al intentar subir el comprobante.");
     }
-             window.enviarSolicitudCreditos = enviarSolicitudCreditos;
+           
 }; // <-- Asegurate de que cierre con el };
        
         
