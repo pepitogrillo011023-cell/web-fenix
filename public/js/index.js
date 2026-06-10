@@ -649,10 +649,11 @@ async function enviarSolicitudCreditos(event) {
         console.error("Error en enviarSolicitudCreditos:", error);
         alert("Hubo un error de red al intentar subir el comprobante.");
     }
-}
+
+
 window.enviarSolicitudCreditos = enviarSolicitudCreditos;
         
-     else if (opcion === 'Soporte') {
+    }else if (opcion === 'Soporte') {
         mostrarChat();
         let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
