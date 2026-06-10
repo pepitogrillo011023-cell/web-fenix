@@ -20,6 +20,8 @@ const session = require('express-session');
 const path = require('path');
 const bcrypt = require('bcryptjs');
 const webpush = require('web-push');
+const multer = require('multer'); // <--- 🛠️ AGREGÁ ESTA LÍNEA ACÁ
+const fs = require('fs');
 
 
 // Importar modelos
@@ -394,6 +396,58 @@ app.get('/api/test-push-rapido', async (req, res) => {
     } catch (error) {
         console.error("Error en el test de push:", error);
         res.status(500).send("Error al enviar el push: " + error.message);
+    }
+});
+// ==============================================================
+// 🛠️ CONFIGURACIÓN DE MULTER PARA GUARDAR COMPROBANTES DE CARGA
+// ==============================================================
+
+// Nos aseguramos de que exista una carpeta llamada "uploads" en el servidor para que no falle
+const carpetaUploads = path.join(__dirname, 'public', 'uploads');
+if (!fs.existsSync(carpetaUploads)){
+    fs.mkdirSync(carpetaUploads, { recursive: true });
+}
+
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, carpetaUploads); // Guarda las fotos en public/uploads/
+    },
+    filename: function (req, file, cb) {
+        // Le ponemos de nombre un número único (timestamp) + su extensión original (ej: .jpeg)
+        cb(null, 'comprobante-' + Date.now() + path.extname(file.originalname));
+    }
+});
+const upload = multer({ storage: storage });
+
+// 🚀 ENDPOINT QUE CONECTA CON EL FETCH DEL FRONTEND
+// 'comprobante' tiene que ser exactamente el mismo nombre que pusiste en formData.append('comprobante', file)
+app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res) => {
+    try {
+        const { usuario, plataforma, monto } = req.body;
+        const archivo = req.file;
+
+        if (!archivo) {
+            return res.status(400).json({ exito: false, mensaje: "No se recibió ninguna imagen de comprobante." });
+        }
+
+        console.log(`📥 NUEVA FOTO DE COMPROBANTE RECIBIDA EN EL SERVIDOR:`);
+        console.log(`👤 Usuario: ${usuario} | 🎰 Plataforma: ${plataforma} | 💰 Monto: $${monto}`);
+        console.log(`📁 Archivo guardado localmente en: ${archivo.filename}`);
+
+        // --------------------------------------------------------------------------
+        // 📝 NOTA: Si en el futuro querés guardar el comprobante en una colección
+        // de la Base de Datos (ej: Nuevo modelo SolicitudCarga), lo hacés acá.
+        // --------------------------------------------------------------------------
+
+        // Respondemos un OK rotundo al frontend
+        res.json({ 
+            exito: true, 
+            mensaje: "¡Comprobante recibido y guardado con éxito en el servidor!" 
+        });
+
+    } catch (error) {
+        console.error("❌ Error en el servidor al procesar comprobante:", error);
+        res.status(500).json({ exito: false, mensaje: "Error interno del servidor al procesar la imagen." });
     }
 });
 // ==========================================
