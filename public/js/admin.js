@@ -1583,16 +1583,3 @@ async function actualizarBadgeSilencioso() {
         console.log("Error silencioso al actualizar el badge:", e);
     }
 }
-// 🔥 ESCUCHADOR NATIVO: Engancha el botón sin depender de funciones globales
-document.addEventListener('DOMContentLoaded', () => {
-    const botonReporte = document.getElementById('btn-enviar-reporte');
-    
-    if (botonReporte) {
-        botonReporte.addEventListener('click', (event) => {
-            // Llamamos a tu función original pasándole el evento
-            enviarSolicitudCreditos(event);
-        });
-    } else {
-        console.warn("⚠️ Alerta: No se encontró el botón 'btn-enviar-reporte' en el DOM.");
-    }
-});
