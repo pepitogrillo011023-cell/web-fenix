@@ -440,8 +440,6 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
             return res.status(400).json({ exito: false, mensaje: "No se recibió ninguna imagen de comprobante." });
         }
 
-        console.log(`📥 NUEVA FOTO DE COMPROBANTE RECIBIDA EN EL SERVIDOR:`);
-        console.log(`👤 Usuario: ${usuario} | 🎰 Plataforma: ${plataforma} | 💰 Monto: $${monto}`);
 
         // 🔥 NUEVO: Guardamos la solicitud en la colección 'Carga' con estado 'pendiente'
         const nuevaSolicitud = new Carga({
@@ -491,6 +489,12 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
 
         if (accion === 'aprobar') {
             solicitud.estado = 'aprobado';
+            // 🔥 NUEVA LÓGICA COEXISTENTE: Si es Créditos, el sistema suma el saldo solo de forma interna
+            if (solicitud.plataforma === 'Créditos') {
+                if (cliente) {
+                    cliente.creditos += solicitud.monto; // Suma automática en Mongo
+                    await cliente.save();
+                }
             mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉 Revisa tu cajero.`;
         } else {
             solicitud.estado = 'rechazado';
