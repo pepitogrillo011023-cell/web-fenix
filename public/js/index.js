@@ -598,7 +598,74 @@ function seleccionarOpcion(opcion) {
 
 
 
-// 🔥 SECCIÓN LIBERADA: Ahora la función vive afuera y es accesible globalmente
+/ ==========================================
+// MENÚS Y CHAT (Estructura corregida)
+// ==========================================
+function seleccionarOpcion(opcion) {
+    const menu = document.getElementById('container-menu-options');
+    socket.emit('cliente_cambia_pestaña', { pestaña: opcion });
+    if (menu) menu.style.display = 'none';
+    
+    if (opcion === 'Depósito') {
+        mostrarChat();
+        const dep = document.getElementById('container-deposit-options');
+        if (dep) dep.style.display = 'grid';
+        
+        let msgBot = `¡Hola! Para iniciar tu carga, por favor elegí la plataforma donde querés tus fichas:
+                  <div class="plataformas-chat-container" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center;">
+                      <button class="btn-elegir-plataforma" data-plataforma="Ganamos" style="background: #7c3aed; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A GANAMOS</button>
+                      <button class="btn-elegir-plataforma" data-plataforma="Oropuro" style="background: #eab308; color: black; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A OROPURO</button>
+                  </div>`;
+        
+        msgArea.innerHTML += `
+            <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
+            <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+        
+        socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: 'Selección de plataforma iniciada.' });
+        
+        msgArea.scrollTop = msgArea.scrollHeight;
+
+    // ✅ AHORA EL ELSE IF CONECTA DIRECTAMENTE CON EL IF DE ARRIBA
+    } else if (opcion === 'Soporte') {
+        mostrarChat();
+        let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
+        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+        socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+
+    } else if (opcion === 'Retiro') {
+        const menu = document.getElementById('container-menu-options');
+        if (menu) menu.style.display = 'none';
+
+        const msgArea = document.getElementById('messages-area');
+        const chatInput = document.getElementById('container-chat-input');
+        if (msgArea) msgArea.style.display = 'none';
+        if (chatInput) chatInput.style.display = 'none';
+
+        const formRetiro = document.getElementById('container-retiro-form');
+        if (formRetiro) {
+            formRetiro.style.display = 'flex'; 
+        } else {
+            console.error("No se encontró el contenedor del formulario de retiro");
+        }
+
+    } else if (opcion === 'Referido') {
+        abrirModalReferidos();
+        if (menu) menu.style.display = 'grid'; 
+
+    } else {
+        mostrarChat();
+        let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
+        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+        socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
+        setTimeout(irAlMenuPrincipal, 4000); 
+    }
+    
+    msgArea.scrollTop = msgArea.scrollHeight;
+}
+
+// ========================================================
+// 📩 FUNCIÓN LIBERADA (VIVE COMPLETAMENTE AFUERA)
+// ========================================================
 async function enviarSolicitudCreditos(event) {
     if (event) event.preventDefault(); 
     console.log("Boton presionado: Ejecutando reporte de créditos...");
@@ -649,89 +716,10 @@ async function enviarSolicitudCreditos(event) {
         console.error("Error en enviarSolicitudCreditos:", error);
         alert("Hubo un error de red al intentar subir el comprobante.");
     }
+}
 
-
+// Hacerla accesible globalmente desde el objeto window
 window.enviarSolicitudCreditos = enviarSolicitudCreditos;
-        
-    }else if (opcion === 'Soporte') {
-        mostrarChat();
-        let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
-        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
-        socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
-
-    } else if (opcion === 'Retiro') {
-        // 1. Ocultamos el menú principal
-        const menu = document.getElementById('container-menu-options');
-        if (menu) menu.style.display = 'none';
-
-        // 2. Ocultamos el chat si estaba abierto
-        const msgArea = document.getElementById('messages-area');
-        const chatInput = document.getElementById('container-chat-input');
-        if (msgArea) msgArea.style.display = 'none';
-        if (chatInput) chatInput.style.display = 'none';
-
-        // 3. MOSTRAMOS EL FORMULARIO DE RETIRO
-        const formRetiro = document.getElementById('container-retiro-form');
-        if (formRetiro) {
-            formRetiro.style.display = 'flex'; 
-        } else {
-            console.error("No se encontró el contenedor del formulario de retiro");
-        }
-
-    } else if (opcion === 'Referido') {
-        // --- AQUÍ ESTÁ LA NUEVA LÓGICA ---
-        abrirModalReferidos();
-        // Volvemos a mostrar el menú para que no desaparezca si el usuario cierra el modal
-        if (menu) menu.style.display = 'grid'; 
-
-    } else {
-        mostrarChat();
-        let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
-        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
-        socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
-        setTimeout(irAlMenuPrincipal, 4000); 
-    }
-    
-    msgArea.scrollTop = msgArea.scrollHeight;
-
-
-function ejecutarAccionDeposito(accion) {
-    let msg = accion === 'Subir Comprobante' ? "📁 Archivo recibido." : "✅ Pago reportado.";
-    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${accion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msg}</div></div>`;
-    msgArea.scrollTop = msgArea.scrollHeight;
-    socket.emit('cliente_accion', { estado: accion, mensajeCliente: accion, mensajeBot: msg });
-}
-
-function enviarMensajeLibreCliente() {
-    const input = document.getElementById('client-raw-input'); 
-    if (!input) return;
-    const texto = input.value.trim(); 
-    if (texto === '') return;
-    msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${texto}</div><span class="status-text">✓ Enviado</span></div>`;
-    msgArea.scrollTop = msgArea.scrollHeight;
-    socket.emit('cliente_envia_mensaje_libre', { mensaje: texto }); 
-    input.value = '';
-}
-
-socket.on('recibir_mensaje_admin', (datos) => {
-    mostrarChat(); 
-    
-    // Si el servidor no manda la hora, el cliente calcula su hora actual en formato 24hs
-    const horaActual = datos.hora || new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
-
-    // Modificamos el HTML para meter el tag de la hora abajo del mensaje
-    msgArea.innerHTML += `
-        <div class="bubble-wrapper">
-            <div class="bubble admin">
-                <b>Asesor:</b> ${datos.mensaje}
-                <span class="hora-chat">${horaActual}</span>
-            </div>
-        </div>
-    `;
-
-    document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
-    msgArea.scrollTop = msgArea.scrollHeight;
-});
 
 socket.on('tus_mensajes_fueron_leidos', () => {
     document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
