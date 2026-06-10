@@ -538,7 +538,9 @@ async function procesarEnvioFormulario() {
 
 function seleccionarOpcion(opcion) {
     const menu = document.getElementById('container-menu-options');
-    socket.emit('cliente_cambia_pestaña', { pestaña: opcion });
+    if (typeof socket !== 'undefined' && socket.emit) {
+        socket.emit('cliente_cambia_pestaña', { pestaña: opcion });
+    }
     if (menu) menu.style.display = 'none';
     
     if (opcion === 'Depósito') {
@@ -546,7 +548,6 @@ function seleccionarOpcion(opcion) {
         const dep = document.getElementById('container-deposit-options');
         if (dep) dep.style.display = 'grid';
         
-        // PASO 1: El bot saluda y muestra los botones de las dos plataformas en vivo
         let msgBot = `¡Hola! Para iniciar tu carga, por favor elegí la plataforma donde querés tus fichas:
                   <div class="plataformas-chat-container" style="margin-top: 12px; display: flex; gap: 10px; justify-content: center;">
                       <button class="btn-elegir-plataforma" data-plataforma="Ganamos" style="background: #7c3aed; color: white; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A GANAMOS</button>
@@ -557,35 +558,65 @@ function seleccionarOpcion(opcion) {
             <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
             <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
         
-        // Emitimos la acción inicial al servidor
         socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: 'Selección de plataforma iniciada.' });
-        
-        // Auto-scroll al fondo del chat
         msgArea.scrollTop = msgArea.scrollHeight;
-        // ========================================================
-// 📩 FUNCIÓN: ENVIAR FORMULARIO DE CRÉDITOS CON ARCHIVO
-// ========================================================
+        
+    } else if (opcion === 'Soporte') {
+        mostrarChat();
+        let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
+        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+        socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+
+    } else if (opcion === 'Retiro') {
+        const menu = document.getElementById('container-menu-options');
+        if (menu) menu.style.display = 'none';
+        const msgArea = document.getElementById('messages-area');
+        const chatInput = document.getElementById('container-chat-input');
+        if (msgArea) msgArea.style.display = 'none';
+        if (chatInput) chatInput.style.display = 'none';
+
+        const formRetiro = document.getElementById('container-retiro-form');
+        if (formRetiro) {
+            formRetiro.style.display = 'flex'; 
+        } else {
+            console.error("No se encontró el contenedor del formulario de retiro");
+        }
+
+    } else if (opcion === 'Referido') {
+        abrirModalReferidos();
+        if (menu) menu.style.display = 'grid'; 
+
+    } else {
+        mostrarChat();
+        let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
+        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+        socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
+        setTimeout(irAlMenuPrincipal, 4000); 
+    }
+    
+    if (msgArea) msgArea.scrollTop = msgArea.scrollHeight;
+}
+
+// 🔥 SECCIÓN LIBERADA: Ahora la función vive afuera y es accesible globalmente
 async function enviarSolicitudCreditos(event) {
-    if (event) event.preventDefault(); // Evita comportamientos extraños del botón
+    if (event) event.preventDefault(); 
+    console.log("Boton presionado: Ejecutando reporte de créditos...");
 
     const montoInput = document.getElementById('input-creditos-monto');
     const archivoInput = document.getElementById('input-creditos-comprobante');
 
-    // 1. Validamos que el cliente haya completado ambos casilleros
     if (!montoInput || !montoInput.value || !archivoInput || !archivoInput.files[0]) {
         alert("⚠️ Por favor, ingresá el monto y subí una foto del comprobante.");
         return;
     }
 
-    // 2. Preparamos el FormData (necesario para transmitir imágenes al backend)
     const formData = new FormData();
-    formData.append('usuario', window.usuarioLogueado); // Tu variable del usuario activo
-    formData.append('plataforma', 'Créditos');         // 🔥 Seteamos fijo "Créditos" para diferenciarlo en la tabla
+    formData.append('usuario', window.usuarioLogueado || localStorage.getItem('casino_fenix_user')); 
+    formData.append('plataforma', 'Créditos');         
     formData.append('monto', montoInput.value);
-    formData.append('comprobante', archivoInput.files[0]); // El archivo de la foto
+    formData.append('comprobante', archivoInput.files[0]); 
 
     try {
-        // Envías los datos al mismo endpoint de cargas que ya usás
         const respuesta = await fetch('/api/subir-comprobante', {
             method: 'POST',
             body: formData
@@ -594,7 +625,6 @@ async function enviarSolicitudCreditos(event) {
         const resultado = await respuesta.json();
 
         if (resultado.exito) {
-            // Mensaje de éxito limpio
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
                     icon: 'success',
@@ -608,11 +638,9 @@ async function enviarSolicitudCreditos(event) {
                 alert("¡Solicitud enviada! Tu saldo se actualizará cuando el administrador la apruebe.");
             }
 
-            // 3. Reseteamos los campos del modal y lo cerramos
             montoInput.value = '';
             archivoInput.value = '';
             cerrarModal('cargar-creditos');
-
         } else {
             alert("Error: " + resultado.mensaje);
         }
@@ -621,7 +649,7 @@ async function enviarSolicitudCreditos(event) {
         alert("Hubo un error de red al intentar subir el comprobante.");
     }
 }
- window.enviarSolicitudCreditos = enviarSolicitudCreditos;
+window.enviarSolicitudCreditos = enviarSolicitudCreditos;
         
     } else if (opcion === 'Soporte') {
         mostrarChat();
@@ -1256,7 +1284,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-}); // <--- CORREGIDO: Se quitó la llave '}' extra que sobraba acá al final
+  // 🔥 CONFIGURACIÓN DEL BOTÓN DE REPORTES (Agregalo acá abajo antes de cerrar el DOMContentLoaded)
+    const botonReporte = document.getElementById('btn-enviar-reporte');
+    if (botonReporte) {
+        botonReporte.addEventListener('click', enviarSolicitudCreditos);
+    }
+}); <--- CORREGIDO: Se quitó la llave '}' extra que sobraba acá al final
 // ==========================================
 // REGISTRO DE SERVICE WORKER (PWA)
 // ==========================================
