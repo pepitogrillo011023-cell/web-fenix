@@ -22,6 +22,11 @@
         <div class="menu-category">Control Personal</div>
         <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
         <button id="btn-nav-clientes" class="nav-btn" onclick="cambiarSeccion('clientes')">📇 Clientes</button>
+        <button id="btn-nav-cargas" class="nav-btn" onclick="cambiarSeccion('cargas')" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
+    <span>🎰 Cargas Pendientes</span>
+    <span id="admin-badge-cargas" style="display: none; background: #ef4444; color: white; border-radius: 50%; padding: 2px 7px; font-size: 11px; font-weight: bold; margin-left: 10px;">0</span>
+</button>
+        
         
         <div class="menu-category">Finanzas</div>
         <button id="btn-nav-administrarcajas" class="nav-btn" onclick="cambiarSeccion('administrarcajas')" style="color:#a3e635;">💼 Administrar Cajas</button>
@@ -129,6 +134,32 @@
                     <div id="paginacion-clientes" style="display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 15px;"></div>
                 </div>
             </div>
+            
+            <div id="seccion-cargas" class="seccion-admin" style="display: none; padding: 20px;">
+    <div class="header-seccion" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 style="color: #fff; margin: 0;">📥 Solicitudes de Cargas Pendientes</h2>
+        <button onclick="obtenerCargasPendientes()" class="btn-refrescar" style="background: #f59e0b; color: #000; border: none; padding: 8px 15px; border-radius: 4px; font-weight: bold; cursor: pointer;">🔄 Actualizar Lista</button>
+    </div>
+
+    <div class="tabla-contenedor" style="background: #1e1e1e; border-radius: 8px; overflow: hidden; border: 1px solid #333;">
+        <table style="width: 100%; border-collapse: collapse; text-align: left; color: #fff;">
+            <thead>
+                <tr style="background: #2a2a2a; color: #f59e0b; border-bottom: 2px solid #333;">
+                    <th style="padding: 12px;">Usuario</th>
+                    <th style="padding: 12px;">Plataforma</th>
+                    <th style="padding: 12px;">Monto</th>
+                    <th style="padding: 12px;">Comprobante</th>
+                    <th style="padding: 12px; text-align: center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tabla-cargas-body">
+                <tr>
+                    <td colspan="5" style="padding:20px; text-align:center; color:#888;">Cargando solicitudes...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
 
             <div id="section-administrarcajas" class="view-section">
                 <div class="panel-inside">
@@ -593,6 +624,14 @@
             <button class="btn-action-small" style="margin-top:15px; width:100%; padding:12px; background-color:#374151; border: none; font-size: 14px;" onclick="cerrarModalGeneral('modal-gestion-creditos')">CANCELAR</button>
         </div>
     </div>
+
+    <div id="modal-comprobante-admin" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center;">
+    <div style="background:#222; padding:20px; border-radius:8px; max-width:90%; max-height:90%; text-align:center; position:relative; border: 1px solid #f59e0b; box-shadow: 0px 0px 15px rgba(245, 158, 11, 0.3);">
+        <span onclick="cerrarModalComprobante()" style="position:absolute; top:10px; right:15px; color:#fff; font-size:28px; cursor:pointer; font-weight:bold;">&times;</span>
+        <h3 style="color:#f59e0b; margin-top:0; margin-bottom:15px;">Comprobante de Transferencia</h3>
+        <img id="img-comprobante-modal" src="" alt="Comprobante" style="max-width:100%; max-height:70vh; border-radius:4px; border:1px solid #444;">
+    </div>
+</div>
 
     <script>
         function mostrarTiendaAdmin() {
