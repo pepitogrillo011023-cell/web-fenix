@@ -1351,6 +1351,6 @@ socket.on('resultado_carga_cliente', (data) => {
                 alert(`Tu carga de $${data.monto} en ${data.plataforma} fue rechazada.`);
             }
         }
-        }
+      }  
     
 });
