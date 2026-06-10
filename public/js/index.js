@@ -535,7 +535,6 @@ async function procesarEnvioFormulario() {
         }
     }
 }
-
 function seleccionarOpcion(opcion) {
     const menu = document.getElementById('container-menu-options');
     if (typeof socket !== 'undefined' && socket.emit) {
@@ -596,6 +595,8 @@ function seleccionarOpcion(opcion) {
     
     if (msgArea) msgArea.scrollTop = msgArea.scrollHeight;
 }
+
+
 
 // 🔥 SECCIÓN LIBERADA: Ahora la función vive afuera y es accesible globalmente
 async function enviarSolicitudCreditos(event) {
@@ -1317,13 +1318,11 @@ socket.on('actualizar_creditos_en_vivo', (data) => {
   
 });
 // --- ESCUCHAR SI EL ADMIN APRUEBA O RECHAZA NUESTRA CARGA ---
+// --- ESCUCHAR SI EL ADMIN APRUEBA O RECHAZA NUESTRA CARGA ---
 socket.on('resultado_carga_cliente', (data) => {
     // Verificamos si el evento pertenece al usuario logueado en esta pestaña
     if (window.usuarioLogueado && window.usuarioLogueado === data.usuario) {
         
-        // 🛠️ CORREGIDO: Ya no alteramos ni 'misCreditos' ni el HTML del saldo local.
-        // Solo lanzamos el aviso para informarle al jugador.
-
         if (data.estado === 'aprobado') {
             if (typeof Swal !== 'undefined') {
                 Swal.fire({
@@ -1351,6 +1350,5 @@ socket.on('resultado_carga_cliente', (data) => {
                 alert(`Tu carga de $${data.monto} en ${data.plataforma} fue rechazada.`);
             }
         }
-      }  
-    
-});
+    }
+}); // <-- El archivo ahora termina acá correc
