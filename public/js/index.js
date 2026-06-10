@@ -437,7 +437,7 @@ function ejecutarFlujoPlataforma(plataforma) {
 }
 
 // 4. Función interna que valida los datos finales al enviar
-function procesarEnvioFormulario() {
+async function procesarEnvioFormulario() {
     const monto = document.getElementById('monto-comprobante').value;
     const archivoInput = document.getElementById('file-comprobante');
     
@@ -447,15 +447,93 @@ function procesarEnvioFormulario() {
     cargaPendiente.monto = monto;
     const file = archivoInput.files[0];
     
-    document.querySelector('.form-carga-chat').style.opacity = "0.5";
-    document.querySelector('.form-carga-chat').style.pointerEvents = "none";
+    // Obtenemos el usuario logueado para saber a quién acreditarle
+    const usuario = window.usuarioLogueado || localStorage.getItem('casino_fenix_user');
+    
+    // Bloqueamos el formulario visualmente para que no den doble clic por ansiedad
+    const formCarga = document.querySelector('.form-carga-chat');
+    if (formCarga) {
+        formCarga.style.opacity = "0.5";
+        formCarga.style.pointerEvents = "none";
+    }
 
+    // Ponemos una burbuja temporal de "Procesando" en el chat
     msgArea.innerHTML += `
-        <div class="bubble-wrapper"><div class="bubble cliente">Enviando comprobante por $${monto}...</div><span class="status-text">Procesando...</span></div>
+        <div class="bubble-wrapper" id="bubble-procesando-carga">
+            <div class="bubble cliente">Enviando comprobante por $${monto}...</div>
+            <span class="status-text">Subiendo archivo...</span>
+        </div>
     `;
     msgArea.scrollTop = msgArea.scrollHeight;
 
-    console.log("Listo para enviar al backend de Render:", cargaPendiente.plataforma, cargaPendiente.monto, file);
+    // 🚀 OJO ACÁ: Creamos el contenedor especial para enviar archivos reales
+    const formData = new FormData();
+    formData.append('usuario', usuario);
+    formData.append('plataforma', cargaPendiente.plataforma);
+    formData.append('monto', monto);
+    formData.append('comprobante', file); // 'comprobante' es el nombre que debe recibir Multer en tu backend
+
+    try {
+        // Hacemos el envío real a tu endpoint del backend
+        const response = await fetch('/api/subir-comprobante', { 
+            method: 'POST',
+            body: formData 
+            // ⚠️ NOTA CLAVE: No le agregues Headers de 'Content-Type'. 
+            // Al pasarle un FormData, el navegador configura automáticamente el 'multipart/form-data' con su boundary correcto.
+        });
+
+        const data = await response.json();
+
+        // Eliminamos la burbuja temporal de "procesando"
+        const bubbleProcesando = document.getElementById('bubble-procesando-carga');
+        if (bubbleProcesando) bubbleProcesando.remove();
+
+        if (data.exito) {
+            alert("¡Comprobante enviado con éxito! El cajero revisará tu carga pronto.");
+
+            // Le pintamos al usuario las respuestas finales en el chat
+            msgArea.innerHTML += `
+                <div class="bubble-wrapper">
+                    <div class="bubble cliente">🟡 Solicitud de Carga: $${monto} en ${cargaPendiente.plataforma}</div>
+                    <span class="status-text">✓ Enviado</span>
+                </div>
+                <div class="bubble-wrapper">
+                    <div class="bubble bot">✅ ¡Recibido! Tu comprobante ya fue enviado al cajero de turno. En unos minutos se reflejarán tus fichas.</div>
+                </div>
+            `;
+            msgArea.scrollTop = msgArea.scrollHeight;
+
+            // Optional: Avisamos al servidor mediante WebSockets para que los paneles de administración se enteren al instante
+            if (typeof socket !== 'undefined') {
+                socket.emit('cliente_envia_mensaje_libre', { 
+                    mensaje: `📥 CARGA REPORTADA EN VIVO:\n👤 Usuario: ${usuario}\n🎰 Plataforma: ${cargaPendiente.plataforma}\n💰 Monto: $${monto}` 
+                });
+            }
+
+            // Limpiamos los datos y lo mandamos de vuelta al menú principal después de 3 segundos
+            setTimeout(irAlMenuPrincipal, 3000);
+
+        } else {
+            alert("Error del servidor: " + (data.mensaje || "No se pudo procesar el comprobante."));
+            // Destrabamos el formulario por si quiere volver a intentar
+            if (formCarga) {
+                formCarga.style.opacity = "1";
+                formCarga.style.pointerEvents = "auto";
+            }
+        }
+
+    } catch (error) {
+        console.error("Error en la conexión fetch de carga:", error);
+        alert("Hubo un error de conexión con el servidor al intentar subir la imagen.");
+        
+        // Destrabamos el formulario en caso de caída de red
+        const bubbleProcesando = document.getElementById('bubble-procesando-carga');
+        if (bubbleProcesando) bubbleProcesando.remove();
+        if (formCarga) {
+            formCarga.style.opacity = "1";
+            formCarga.style.pointerEvents = "auto";
+        }
+    }
 }
 
 function seleccionarOpcion(opcion) {
