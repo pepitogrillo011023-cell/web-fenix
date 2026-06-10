@@ -370,7 +370,6 @@ function mostrarSubMenuMinijuegos() {
 // ==============================================================
 // 🎯 SISTEMA AUTOMÁTICO DE CONTROL DE CARGAS POR EVENTOS
 // ==============================================================
-let cargaPendiente = { plataforma: '', monto: 0 };
 
 // 1. Detectar Clics en los botones dinámicos del Chat
 document.addEventListener('click', function (e) {
