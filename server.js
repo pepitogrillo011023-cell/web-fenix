@@ -900,6 +900,7 @@ io.on('connection', (socket) => {
             }
             if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
+        socket.broadcast.emit('cliente_accion', data);
     });
 
     socket.on('cliente_envia_mensaje_libre', async (datos) => {
