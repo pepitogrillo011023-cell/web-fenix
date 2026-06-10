@@ -1351,4 +1351,4 @@ socket.on('resultado_carga_cliente', (data) => {
             }
         }
     }
-}); // <-- El archivo ahora termina acá correc
+});
