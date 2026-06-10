@@ -526,64 +526,67 @@ function seleccionarOpcion(opcion) {
         // ========================================================
         // 📩 FUNCIÓN: ENVIAR FORMULARIO DE CRÉDITOS CON ARCHIVO
         // ========================================================
-        async function enviarSolicitudCreditos(event) {
-            if (event) event.preventDefault(); // Evita comportamientos extraños del botón
+        window.enviarSolicitudCreditos = async function(event) {
+    if (event) event.preventDefault(); // Evita recargas de formulario
 
-            const montoInput = document.getElementById('input-creditos-monto');
-            const archivoInput = document.getElementById('input-creditos-comprobante');
+    const montoInput = document.getElementById('input-creditos-monto');
+    const archivoInput = document.getElementById('input-creditos-comprobante');
 
-            // 1. Validamos que el cliente haya completado ambos casilleros
-            if (!montoInput || !montoInput.value || !archivoInput || !archivoInput.files[0]) {
-                alert("⚠️ Por favor, ingresá el monto y subí una foto del comprobante.");
-                return;
-            }
+    // 1. Validamos que el cliente haya completado ambos casilleros
+    if (!montoInput || !montoInput.value || !archivoInput || !archivoInput.files[0]) {
+        alert("⚠️ Por favor, ingresá el monto y subí una foto del comprobante.");
+        return;
+    }
 
-            // 2. Preparamos el FormData (necesario para transmitir imágenes al backend)
-            const formData = new FormData();
-            formData.append('usuario', window.usuarioLogueado); // Tu variable del usuario activo
-            formData.append('plataforma', 'Créditos');         // 🔥 Seteamos fijo "Créditos" para diferenciarlo en la tabla
-            formData.append('monto', montoInput.value);
-            formData.append('comprobante', archivoInput.files[0]); // El archivo de la foto
+    // 2. Preparamos el FormData
+    const formData = new FormData();
+    formData.append('usuario', window.usuarioLogueado || localStorage.getItem('casino_fenix_user')); 
+    formData.append('plataforma', 'Créditos'); 
+    formData.append('monto', montoInput.value);
+    formData.append('comprobante', archivoInput.files[0]);
 
-            try {
-                // Envías los datos al mismo endpoint de cargas que ya usás
-                const respuesta = await fetch('/api/subir-comprobante', {
-                    method: 'POST',
-                    body: formData
+    try {
+        const respuesta = await fetch('/api/subir-comprobante', {
+            method: 'POST',
+            body: formData
+        });
+
+        const resultado = await respuesta.json();
+
+        if (resultado.exito) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Comprobante Enviado! 💰',
+                    text: 'Tu solicitud de créditos está en revisión por el administrador.',
+                    background: '#1e1e1e',
+                    color: '#fff',
+                    confirmButtonColor: '#ffaa00'
                 });
-
-                const resultado = await respuesta.json();
-
-                if (resultado.exito) {
-                    // Mensaje de éxito limpio
-                    if (typeof Swal !== 'undefined') {
-                        Swal.fire({
-                            icon: 'success',
-                            title: '¡Comprobante Enviado! 💰',
-                            text: 'Tu solicitud de créditos está en revisión por el administrador.',
-                            background: '#1e1e1e',
-                            color: '#fff',
-                            confirmButtonColor: '#ffaa00'
-                        });
-                    } else {
-                        alert("¡Solicitud enviada! Tu saldo se actualizará cuando el administrador la apruebe.");
-                    }
-
-                    // 3. Reseteamos los campos del modal y lo cerramos
-                    montoInput.value = '';
-                    archivoInput.value = '';
-                    cerrarModal('cargar-creditos');
-
-                } else {
-                    alert("Error: " + resultado.mensaje);
-                }
-            } catch (error) {
-                console.error("Error en enviarSolicitudCreditos:", error);
-                alert("Hubo un error de red al intentar subir el comprobante.");
+            } else {
+                alert("¡Solicitud enviada! Tu saldo se actualizará cuando el administrador la apruebe.");
             }
-         
+
+            if (typeof socket !== 'undefined') {
+                socket.emit('cliente_envia_mensaje_libre', { 
+                    mensaje: `📥 CARGA CRÉDITOS REPORTADA:\n👤 Usuario: ${window.usuarioLogueado || localStorage.getItem('casino_fenix_user')}\n💰 Monto: $${montoInput.value}` 
+                });
+            }
+
+            montoInput.value = '';
+            archivoInput.value = '';
+            cerrarModal('cargar-creditos'); // Cambialo por el ID exacto de tu modal si es necesario
+
+        } else {
+            alert("Error: " + resultado.mensaje);
         }
-        window.enviarSolicitudCreditos = enviarSolicitudCreditos;
+    } catch (error) {
+        console.error("Error en enviarSolicitudCreditos:", error);
+        alert("Hubo un error de red al intentar subir el comprobante.");
+    }
+             window.enviarSolicitudCreditos = enviarSolicitudCreditos;
+}; // <-- Asegurate de que cierre con el };
+       
         
     } else if (opcion === 'Soporte') {
         mostrarChat();
