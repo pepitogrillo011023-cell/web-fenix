@@ -30,6 +30,10 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 creditos: cliente.creditos, 
                 saldo: cliente.saldo 
             });
+            // 🔥 PARCHE DE COMPATIBILIDAD: Envia también el evento que tu front ya conoce
+            io.to(usuarioEnVivo.id).emit('actualizar_creditos_en_vivo', { 
+                creditos: cliente.creditos 
+            });
         }
     };
 
