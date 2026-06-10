@@ -1232,3 +1232,49 @@ socket.on('actualizar_creditos_en_vivo', (data) => {
     }
   
 });
+// --- ESCUCHAR SI EL ADMIN APRUEBA O RECHAZA NUESTRA CARGA ---
+socket.on('resultado_carga_cliente', (data) => {
+    // 🛠️ Validación crucial: Verificar si el evento pertenece al usuario que está logueado en esta pantalla
+    if (window.usuarioLogueado && window.usuarioLogueado === data.usuario) {
+        
+        // 1. Actualizamos los créditos en la memoria global y en la pantalla
+        misCreditos = data.nuevoSaldo;
+        const displayCreditos = document.getElementById('txt-creditos');
+        if (displayCreditos) {
+            displayCreditos.innerText = data.nuevoSaldo;
+        }
+
+        // 2. Si tenés una función de "historial" o de meter la notificación adentro de un menú de campanita:
+        // siExisteTuFuncionDeCampanita(data.estado, data.monto);
+
+        // 3. Mostramos una alerta visual impactante e interactiva (Podés usar SweetAlert2 si lo tenés instalado)
+        if (data.estado === 'aprobado') {
+            // Ejemplo con SweetAlert2 (reemplazable por un alert común o un modal tuyo)
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'success',
+                    title: '¡Carga Aprobada! 🎉',
+                    text: `Se acreditaron $${data.monto} en tu cuenta de ${data.plataforma}. ¡Buena suerte!`,
+                    background: '#1e1e1e',
+                    color: '#fff',
+                    confirmButtonColor: '#f59e0b'
+                });
+            } else {
+                alert(`¡Felicidades! Tu carga de $${data.monto} en ${data.plataforma} fue aprobada.`);
+            }
+        } else if (data.estado === 'rechazado') {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Carga Rechazada ❌',
+                    text: `Tu solicitud de $${data.monto} para ${data.plataforma} no pudo ser aprobada. Contactá a soporte para más detalles.`,
+                    background: '#1e1e1e',
+                    color: '#fff',
+                    confirmButtonColor: '#ef4444'
+                });
+            } else {
+                alert(`Tu carga de $${data.monto} en ${data.plataforma} fue rechazada.`);
+            }
+        }
+    }
+});
