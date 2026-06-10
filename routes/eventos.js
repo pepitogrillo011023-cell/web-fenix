@@ -9,7 +9,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
     const Cartas = mongoose.model('Cartas');
     const Moneda = mongoose.model('Moneda');
 
-    // Función auxiliar reutilizable para avisar al panel
+    // Función auxiliar para avisar al panel de administración
     const notificarPanelAdmin = async (usuario, cliente) => {
         const usuarioExistente = sharedState.usuariosConectados.find(u => u.nombre === usuario);
         if (usuarioExistente) {
@@ -22,7 +22,18 @@ module.exports = function(app, requireLogin, io, sharedState) {
         }
     };
 
-    // Función auxiliar para sacar el premio según probabilidad
+    // Función auxiliar para emitir la actualización de Créditos en vivo al cliente
+    const actualizarClienteEnVivo = (cliente) => {
+        const usuarioEnVivo = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
+        if (usuarioEnVivo && usuarioEnVivo.id) {
+            io.to(usuarioEnVivo.id).emit('actualizar_valores_en_vivo', { 
+                creditos: cliente.creditos, 
+                saldo: cliente.saldo 
+            });
+        }
+    };
+
+    // Función auxiliar para calcular el premio según probabilidades configuradas
     const calcularPremio = (configuracion) => {
         const rand = Math.random() * 100;
         let sum = 0;
@@ -61,7 +72,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 const gameInfo = await Minigame.findOne({ name: 'Ruleta' });
                 const costo = gameInfo ? gameInfo.creditCost : 10;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya usaste tu tiro gratis. Necesitas ${costo} Créditos para jugar.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya usaste tu tiro gratis. Necesitas ${costo} CR para jugar.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -72,58 +83,30 @@ module.exports = function(app, requireLogin, io, sharedState) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor;
+            
+            // 🔥 CORRECCIÓN: El premio se suma directamente a los créditos locales (CR)
+            cliente.creditos += premio.valor; 
             
             const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
-            const msgBot = `🎰 ¡La ruleta frenó en <b>${premio.premio}</b>!${msgExtra}<br>Se acreditaron <b>$${premio.valor}</b>.`;
+            const msgBot = `🎰 ¡La ruleta frenó en <b>${premio.premio}</b>!${msgExtra}<br>Se acreditaron <b>${premio.valor} CR</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
+            
             await cliente.save();
+            actualizarClienteEnVivo(cliente); 
             await notificarPanelAdmin(usuario, cliente);
-            res.json({ exito: true, mensaje: msgBot, premio: premio });
+            
+            res.json({ exito: true, mensaje: msgBot, premio: premio, creditos: cliente.creditos, saldo: cliente.saldo });
         } catch (e) { res.status(500).json({ exito: false }); }
     });
-     // ==============================================================
-    // 🎫 1.5 NOTIFICACIONES Y PUSH
+
     // ==============================================================
-
-    
-   app.post('/eventos/enviar-push', (req, res) => {
-    const { titulo, mensaje } = req.body;
-
-    // Emitimos a TODOS los clientes conectados
-    io.emit('nueva_notificacion', {
-        titulo: titulo,
-        mensaje: mensaje,
-        fecha: new Date()
+    // 🎫 1.5 NOTIFICACIONES PUSH
+    // ==============================================================
+    app.post('/eventos/enviar-push', (req, res) => {
+        const { titulo, mensaje } = req.body;
+        io.emit('nueva_notificacion', { titulo: titulo, mensaje: mensaje, fecha: new Date() });
+        res.status(200).send('Notificación enviada');
     });
-
-    res.status(200).send('Notificación enviada');
-});
-   /* app.post('/eventos/enviar-push', (req, res) => {
-    // 1. Ver qué datos llegaron
-    console.log("Datos recibidos en el servidor:", req.body);
-    
-    const { titulo, mensaje } = req.body;
-    const io = req.app.get('io'); 
-
-    // 2. Verificar que io exista
-    if (!io) {
-        console.error("Error: io no encontrado en el servidor");
-        return res.status(500).send('Error interno: Socket.io no disponible');
-    }
-
-    // 3. Emitir el evento
-    console.log("Emitiendo evento 'nueva_notificacion'...");
-    io.emit('nueva_notificacion', {
-        titulo: titulo,
-        mensaje: mensaje,
-        fecha: new Date()
-    });
-
-    res.status(200).send('Notificación enviada correctamente');
-});*/
-
-   
 
     // ==============================================================
     // 🎫 2. RASPA Y GANA
@@ -152,7 +135,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
                 const gameInfo = await Minigame.findOne({ name: 'Raspa' });
                 const costo = gameInfo ? gameInfo.creditCost : 5;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya raspaste gratis hoy. Necesitas ${costo} Créditos.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya raspaste gratis hoy. Necesitas ${costo} CR.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -163,19 +146,19 @@ module.exports = function(app, requireLogin, io, sharedState) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor;
+            
+            // 🔥 CORRECCIÓN: Suma a créditos
+            cliente.creditos += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
-            const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!${msgExtra}<br>Premio: <b>${premio.premio}</b>.<br>Se acreditaron <b>$${premio.valor}</b>.`;
+            const msgBot = `🎫 ¡Descubriste una tarjeta de Raspa y Gana!${msgExtra}<br>Premio: <b>${premio.premio}</b>.<br>Se acreditaron <b>${premio.valor} CR</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
+            
             await cliente.save();
-            // ⚡ [NUEVO] Si el usuario está conectado ahora mismo, le actualizamos la pantalla al toque
-const usuarioEnVivo = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
-if (usuarioEnVivo && usuarioEnVivo.id) {
-    io.to(usuarioEnVivo.id).emit('actualizar_creditos_en_vivo', { creditos: cliente.creditos });
-}
+            actualizarClienteEnVivo(cliente); 
             await notificarPanelAdmin(usuario, cliente);
-            res.json({ exito: true, mensaje: msgBot, premio: premio });
+            
+            res.json({ exito: true, mensaje: msgBot, premio: premio, creditos: cliente.creditos, saldo: cliente.saldo });
         } catch (e) { res.status(500).json({ exito: false }); }
     });
 
@@ -206,7 +189,7 @@ if (usuarioEnVivo && usuarioEnVivo.id) {
                 const gameInfo = await Minigame.findOne({ name: 'Tragamonedas' });
                 const costo = gameInfo ? gameInfo.creditCost : 10;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya giraste gratis hoy. Necesitas ${costo} Créditos.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya giraste gratis hoy. Necesitas ${costo} CR.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -217,14 +200,19 @@ if (usuarioEnVivo && usuarioEnVivo.id) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor;
+            
+            // 🔥 CORRECCIÓN: Suma a créditos
+            cliente.creditos += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
-            const msgBot = `🍒 ¡El Tragamonedas formó la línea ganadora!${msgExtra}<br>Salió: <b>${premio.premio}</b>.<br>Sumaste <b>$${premio.valor}</b>.`;
+            const msgBot = `🍒 ¡El Tragamonedas formó la línea ganadora!${msgExtra}<br>Salió: <b>${premio.premio}</b>.<br>Sumaste <b>${premio.valor} CR</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
+            
             await cliente.save();
+            actualizarClienteEnVivo(cliente); 
             await notificarPanelAdmin(usuario, cliente);
-            res.json({ exito: true, mensaje: msgBot, premio: premio });
+            
+            res.json({ exito: true, mensaje: msgBot, premio: premio, creditos: cliente.creditos, saldo: cliente.saldo });
         } catch (e) { res.status(500).json({ exito: false }); }
     });
 
@@ -255,7 +243,7 @@ if (usuarioEnVivo && usuarioEnVivo.id) {
                 const gameInfo = await Minigame.findOne({ name: 'Cartas' });
                 const costo = gameInfo ? gameInfo.creditCost : 5;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya elegiste carta gratis hoy. Necesitas ${costo} Créditos.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya elegiste carta gratis hoy. Necesitas ${costo} CR.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -266,14 +254,19 @@ if (usuarioEnVivo && usuarioEnVivo.id) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor;
+            
+            // 🔥 CORRECCIÓN: Suma a créditos
+            cliente.creditos += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Jugada con Créditos)" : " (Tiro Gratis)";
-            const msgBot = `🃏 ¡Diste vuelta tu Carta de la Suerte!${msgExtra}<br>Sacaste: <b>${premio.premio}</b>.<br>Ganaste <b>$${premio.valor}</b>.`;
+            const msgBot = `🃏 ¡Diste vuelta tu Carta de la Suerte!${msgExtra}<br>Sacaste: <b>${premio.premio}</b>.<br>Ganaste <b>${premio.valor} CR</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
+            
             await cliente.save();
+            actualizarClienteEnVivo(cliente); 
             await notificarPanelAdmin(usuario, cliente);
-            res.json({ exito: true, mensaje: msgBot, premio: premio });
+            
+            res.json({ exito: true, mensaje: msgBot, premio: premio, creditos: cliente.creditos, saldo: cliente.saldo });
         } catch (e) { res.status(500).json({ exito: false }); }
     });
 
@@ -304,7 +297,7 @@ if (usuarioEnVivo && usuarioEnVivo.id) {
                 const gameInfo = await Minigame.findOne({ name: 'Moneda' });
                 const costo = gameInfo ? gameInfo.creditCost : 2;
                 if (!cliente.creditos || cliente.creditos < costo) {
-                    return res.json({ exito: false, mensaje: `❌ Ya lanzaste la moneda gratis hoy. Necesitas ${costo} Créditos.` });
+                    return res.json({ exito: false, mensaje: `❌ Ya lanzaste la moneda gratis hoy. Necesitas ${costo} CR.` });
                 }
                 cliente.creditos -= costo;
             } else {
@@ -315,14 +308,19 @@ if (usuarioEnVivo && usuarioEnVivo.id) {
             if (!db || db.configuracion.length === 0) return res.json({ exito: false, mensaje: 'En mantenimiento.' });
 
             const premio = calcularPremio(db.configuracion);
-            cliente.saldo += premio.valor;
+            
+            // 🔥 CORRECCIÓN: Suma a créditos
+            cliente.creditos += premio.valor;
             
             const msgExtra = !esTiroGratis ? " (Lanzamiento con Créditos)" : " (Tiro Gratis)";
-            const msgBot = `🪙 ¡La moneda cayó!${msgExtra}<br>Lado ganador: <b>${premio.premio}</b>.<br>Se acreditaron <b>$${premio.valor}</b>.`;
+            const msgBot = `🪙 ¡La moneda cayó!${msgExtra}<br>Lado ganador: <b>${premio.premio}</b>.<br>Se acreditaron <b>${premio.valor} CR</b>.`;
             cliente.historialChat.push({ emisor: 'bot', mensaje: msgBot, leido: true });
+            
             await cliente.save();
+            actualizarClienteEnVivo(cliente); 
             await notificarPanelAdmin(usuario, cliente);
-            res.json({ exito: true, mensaje: msgBot, premio: premio });
+            
+            res.json({ exito: true, mensaje: msgBot, premio: premio, creditos: cliente.creditos, saldo: cliente.saldo });
         } catch (e) { res.status(500).json({ exito: false }); }
     });
 
@@ -330,27 +328,14 @@ if (usuarioEnVivo && usuarioEnVivo.id) {
     // ⚙️ 6. CONFIGURACIÓN DE COSTOS DE MINIJUEGOS (ADMIN)
     // ==============================================================
     app.get('/api/configuracion-minijuegos', requireLogin, async (req, res) => {
-        try {
-            const minijuegos = await Minigame.find();
-            res.json({ success: true, minijuegos });
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al obtener la configuración de los minijuegos.', error });
-        }
+        try { const minijuegos = await Minigame.find(); res.json({ success: true, minijuegos }); } catch (error) { res.status(500).json({ success: false, message: 'Error al obtener la configuración.', error }); }
     });
 
     app.post('/api/actualizar-costo-minijuego', requireLogin, async (req, res) => {
         try {
-            const { minigameId, nuevoCosto } = req.body;
-            const minijuego = await Minigame.findById(minigameId);
-            if (!minijuego) {
-                return res.status(404).json({ success: false, message: 'Minijuego no encontrado.' });
-            }
-            minijuego.creditCost = nuevoCosto;
-            await minijuego.save();
-            res.json({ success: true, message: `Costo actualizado.` });
-        } catch (error) {
-            res.status(500).json({ success: false, message: 'Error al actualizar el costo.', error });
-        }
+            const { minigameId, nuevoCosto } = req.body; const minijuego = await Minigame.findById(minigameId);
+            if (!minijuego) return res.status(404).json({ success: false, message: 'Minijuego no encontrado.' });
+            minijuego.creditCost = nuevoCosto; await minijuego.save(); res.json({ success: true, message: `Costo actualizado.` });
+        } catch (error) { res.status(500).json({ success: false, message: 'Error al actualizar el costo.', error }); }
     });
 };
-
