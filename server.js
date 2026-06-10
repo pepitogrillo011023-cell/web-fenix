@@ -484,43 +484,38 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
             return res.status(404).json({ exito: false, mensaje: "La solicitud de carga ya no existe." });
         }
 
-        // Buscamos al cliente para tener sus datos de saldo y su suscripción Push (campanita)
+        // Buscamos al cliente únicamente para obtener su suscripción Push (campanita)
         const cliente = await Cliente.findOne({ usuarioCasino: solicitud.usuario });
-        if (!cliente) {
-            return res.status(404).json({ exito: false, mensaje: "No se encontró al usuario de casino." });
-        }
 
         let mensajePush = "";
 
         if (accion === 'aprobar') {
             solicitud.estado = 'aprobado';
-            cliente.creditos += solicitud.monto; // Sumamos créditos
-            mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉`;
+            mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉 Revisa tu cajero.`;
         } else {
             solicitud.estado = 'rechazado';
             mensajePush = `Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue rechazada. ❌ Revisa el comprobante.`;
         }
 
+        // Guardamos el cambio de estado ('aprobado' o 'rechazado') en la colección Carga
         await solicitud.save();
-        await cliente.save();
 
-        // 📡 CANAL 1: TIEMPO REAL POR SOCKET (Si está adentro del juego)
+        // 📡 CANAL 1: NOTIFICACIÓN POR SOCKET EN TIEMPO REAL (Si está adentro de la app)
         if (io) {
             io.emit('resultado_carga_cliente', {
                 usuario: solicitud.usuario,
                 estado: solicitud.estado,
                 monto: solicitud.monto,
-                plataforma: solicitud.plataforma,
-                nuevoSaldo: cliente.creditos
+                plataforma: solicitud.plataforma
             });
         }
 
         // 🔕 CANAL 2: NOTIFICACIÓN PUSH A LA CAMPANITA (Si tiene el celular bloqueado o app cerrada)
-        if (cliente.pushSubscription) {
+        if (cliente && cliente.pushSubscription) {
             const payload = JSON.stringify({
                 title: '🎰 Casino Fénix',
                 body: mensajePush,
-                icon: '/icon.png' // Asegurate de tener tu icono de la PWA
+                icon: '/icon.png'
             });
 
             webpush.sendNotification(cliente.pushSubscription, payload)
