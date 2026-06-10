@@ -428,9 +428,9 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage: storage });
 
-// 🚀 ENDPOINT QUE CONECTA CON EL FETCH DEL FRONTEND
-// 'comprobante' tiene que ser exactamente el mismo nombre que pusiste en formData.append('comprobante', file)
-// 🚀 ENDPOINT ACTUALIZADO: AHORA SÍ GUARDA EN MONGO
+// ==========================================================================
+// 📥 ENDPOINT 1: RECIBE EL COMPROBANTE DE COMPROBANTES DE CARGA
+// ==========================================================================
 app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res) => {
     try {
         const { usuario, plataforma, monto } = req.body;
@@ -440,8 +440,7 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
             return res.status(400).json({ exito: false, mensaje: "No se recibió ninguna imagen de comprobante." });
         }
 
-
-        // 🔥 NUEVO: Guardamos la solicitud en la colección 'Carga' con estado 'pendiente'
+        // Guardamos la solicitud en la colección 'Carga' con estado 'pendiente'
         const nuevaSolicitud = new Carga({
             usuario: usuario,
             plataforma: plataforma,
@@ -461,18 +460,10 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
         res.status(500).json({ exito: false, mensaje: "Error interno del servidor al procesar la imagen." });
     }
 });
-// A) Devuelve al admin la lista de todas las transferencias que están en 'pendiente'
-app.get('/api/admin/cargas-pendientes', requireLogin, async (req, res) => {
-    try {
-        const pendientes = await Carga.find({ estado: 'pendiente' }).sort({ fecha: 1 });
-        res.json(pendientes);
-    } catch (err) {
-        console.error("Error al obtener cargas pendientes:", err);
-        res.status(500).json({ exito: false, mensaje: "Error en el servidor al traer la lista." });
-    }
-});
 
-// B) Procesa la decisión del cajero: Aprueba (y suma fichas) o Rechaza la carga
+// ==========================================================================
+// 👑 ENDPOINT 2: PROCESA LA DECISIÓN DEL CAJERO (APROBAR/RECHAZAR)
+// ==========================================================================
 app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
     try {
         const { id, accion } = req.body; // accion: 'aprobar' o 'rechazar'
@@ -482,39 +473,46 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
             return res.status(404).json({ exito: false, mensaje: "La solicitud de carga ya no existe." });
         }
 
-        // Buscamos al cliente únicamente para obtener su suscripción Push (campanita)
+        // Buscamos al cliente para el saldo interno y la suscripción Push
         const cliente = await Cliente.findOne({ usuarioCasino: solicitud.usuario });
 
         let mensajePush = "";
 
         if (accion === 'aprobar') {
             solicitud.estado = 'aprobado';
-            // 🔥 NUEVA LÓGICA COEXISTENTE: Si es Créditos, el sistema suma el saldo solo de forma interna
+
+            // Si es Créditos locales, sumamos saldo automático internamente en Mongo
             if (solicitud.plataforma === 'Créditos') {
                 if (cliente) {
-                    cliente.creditos += solicitud.monto; // Suma automática en Mongo
+                    cliente.creditos += solicitud.monto;
                     await cliente.save();
                 }
-            mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉 Revisa tu cajero.`;
+                mensajePush = `¡Tu carga de $${solicitud.monto} en CRÉDITOS fue APROBADA! 💰 Tu saldo se actualizó.`;
+            } else {
+                // Si es un casino externo, no toca créditos locales y actúa de forma manual
+                mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉 Revisa tu cajero.`;
+            }
+
         } else {
             solicitud.estado = 'rechazado';
             mensajePush = `Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue rechazada. ❌ Revisa el comprobante.`;
         }
 
-        // Guardamos el cambio de estado ('aprobado' o 'rechazado') en la colección Carga
+        // Guardamos el cambio de estado definitivo en la colección Carga
         await solicitud.save();
 
-        // 📡 CANAL 1: NOTIFICACIÓN POR SOCKET EN TIEMPO REAL (Si está adentro de la app)
+        // 📡 CANAL 1: NOTIFICACIÓN POR SOCKET EN TIEMPO REAL
         if (io) {
             io.emit('resultado_carga_cliente', {
                 usuario: solicitud.usuario,
                 estado: solicitud.estado,
                 monto: solicitud.monto,
-                plataforma: solicitud.plataforma
+                plataforma: solicitud.plataforma,
+                nuevoSaldo: cliente ? cliente.creditos : 0
             });
         }
 
-        // 🔕 CANAL 2: NOTIFICACIÓN PUSH A LA CAMPANITA (Si tiene el celular bloqueado o app cerrada)
+        // 🔕 CANAL 2: NOTIFICACIÓN PUSH A LA CAMPANITA
         if (cliente && cliente.pushSubscription) {
             const payload = JSON.stringify({
                 title: '🎰 Casino Fénix',
@@ -533,28 +531,6 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
         res.status(500).json({ exito: false, mensaje: "Error interno al guardar la resolución." });
     }
 });
-// ==========================================
-// CONFIGURACIÓN DEL MOTOR MATEMÁTICO DEL SLOT
-// ==========================================
-const tablaPremios = { 'bufon': 10, 'laud': 8, 'clavas': 6, 'zapatos': 3, 'esfera': 1 };
-const pesosSimbolos = [
-    { nombre: 'esfera', peso: 35 },
-    { nombre: 'zapatos', peso: 25 },
-    { nombre: 'clavas', peso: 20 },
-    { nombre: 'laud', peso: 12 },
-    { nombre: 'bufon', peso: 3 },
-    { nombre: 'bonus', peso: 5 }
-];
-
-function tirarRodillo() {
-    let totalPeso = pesosSimbolos.reduce((acc, simbolo) => acc + simbolo.peso, 0);
-    let random = Math.floor(Math.random() * totalPeso);
-    
-    for (let s of pesosSimbolos) {
-        if (random < s.peso) return s.nombre;
-        random -= s.peso;
-    }
-}
 
 // ==========================================
 // RUTA DEL SLOT CORREGIDA (Usando Cliente)
