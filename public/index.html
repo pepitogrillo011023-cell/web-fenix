@@ -366,6 +366,72 @@
                 }
             });
         }
+
+                (function() {
+    window.enviarSolicitudCreditos = async function(event) {
+        if (event) event.preventDefault();
+
+        const montoInput = document.getElementById('input-creditos-monto');
+        const archivoInput = document.getElementById('input-creditos-comprobante');
+
+        if (!montoInput || !montoInput.value || !archivoInput || !archivoInput.files[0]) {
+            alert("⚠️ Por favor, ingresá el monto y subí una foto del comprobante.");
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('usuario', window.usuarioLogueado || localStorage.getItem('casino_fenix_user') || 'Cliente'); 
+        formData.append('plataforma', 'Créditos'); 
+        formData.append('monto', montoInput.value);
+        formData.append('comprobante', archivoInput.files[0]);
+
+        try {
+            const respuesta = await fetch('/api/subir-comprobante', {
+                method: 'POST',
+                body: formData
+            });
+
+            const resultado = await respuesta.json();
+
+            if (resultado.exito) {
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        icon: 'success',
+                        title: '¡Comprobante Enviado! 💰',
+                        text: 'Tu solicitud de créditos está en revisión por el administrador.',
+                        background: '#1e1e1e',
+                        color: '#fff',
+                        confirmButtonColor: '#ffaa00'
+                    });
+                } else {
+                    alert("¡Solicitud enviada! Tu saldo se actualizará cuando el administrador la apruebe.");
+                }
+
+                if (typeof socket !== 'undefined' && socket) {
+                    socket.emit('cliente_envia_mensaje_libre', { 
+                        mensaje: `📥 CARGA CRÉDITOS REPORTADA:\n👤 Usuario: ${localStorage.getItem('casino_fenix_user') || 'Cliente'}\n💰 Monto: $${montoInput.value}` 
+                    });
+                }
+
+                montoInput.value = '';
+                archivoInput.value = '';
+                
+                if (typeof cerrarModal === 'function') {
+                    cerrarModal('cargar-creditos');
+                } else {
+                    const modal = document.getElementById('cargar-creditos');
+                    if (modal) modal.style.display = 'none';
+                }
+
+            } else {
+                alert("Error: " + resultado.mensaje);
+            }
+        } catch (error) {
+            console.error("Error crítico en enviarSolicitudCreditos:", error);
+            alert("Hubo un error de red al intentar subir el comprobante.");
+        }
+    };
+})();
                
 </script>
              <script src="js/index.js"></script>
