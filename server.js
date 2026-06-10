@@ -127,6 +127,14 @@ const Retiro = mongoose.model('Retiro', new mongoose.Schema({
     estado: { type: String, default: 'Aprobado (Enviado)' },
     procesadoPor: { type: String, default: 'Lambda (Automático)' }
 }));
+const Carga = mongoose.model('Carga', new mongoose.Schema({
+    usuario: { type: String, required: true },
+    plataforma: { type: String, required: true },
+    monto: { type: Number, required: true },
+    comprobante: { type: String, required: true }, // Guardará el nombre del archivo (ej: comprobante-123.jpg)
+    estado: { type: String, default: 'pendiente' }, // 'pendiente', 'aprobado', 'rechazado'
+    fecha: { type: Date, default: Date.now }
+}));
 
 const UsuarioInterno = mongoose.model('UsuarioInterno', new mongoose.Schema({
     nombre: String, usuario: String, email: String, rol: String, estado: { type: String, default: 'Activo' }
@@ -421,6 +429,7 @@ const upload = multer({ storage: storage });
 
 // 🚀 ENDPOINT QUE CONECTA CON EL FETCH DEL FRONTEND
 // 'comprobante' tiene que ser exactamente el mismo nombre que pusiste en formData.append('comprobante', file)
+// 🚀 ENDPOINT ACTUALIZADO: AHORA SÍ GUARDA EN MONGO
 app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res) => {
     try {
         const { usuario, plataforma, monto } = req.body;
@@ -432,22 +441,77 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
 
         console.log(`📥 NUEVA FOTO DE COMPROBANTE RECIBIDA EN EL SERVIDOR:`);
         console.log(`👤 Usuario: ${usuario} | 🎰 Plataforma: ${plataforma} | 💰 Monto: $${monto}`);
-        console.log(`📁 Archivo guardado localmente en: ${archivo.filename}`);
 
-        // --------------------------------------------------------------------------
-        // 📝 NOTA: Si en el futuro querés guardar el comprobante en una colección
-        // de la Base de Datos (ej: Nuevo modelo SolicitudCarga), lo hacés acá.
-        // --------------------------------------------------------------------------
+        // 🔥 NUEVO: Guardamos la solicitud en la colección 'Carga' con estado 'pendiente'
+        const nuevaSolicitud = new Carga({
+            usuario: usuario,
+            plataforma: plataforma,
+            monto: Number(monto),
+            comprobante: archivo.filename
+        });
+        
+        await nuevaSolicitud.save();
 
-        // Respondemos un OK rotundo al frontend
         res.json({ 
             exito: true, 
-            mensaje: "¡Comprobante recibido y guardado con éxito en el servidor!" 
+            mensaje: "¡Comprobante recibido y registrado en espera de aprobación!" 
         });
 
     } catch (error) {
         console.error("❌ Error en el servidor al procesar comprobante:", error);
         res.status(500).json({ exito: false, mensaje: "Error interno del servidor al procesar la imagen." });
+    }
+});
+// A) Devuelve al admin la lista de todas las transferencias que están en 'pendiente'
+app.get('/api/admin/cargas-pendientes', requireLogin, async (req, res) => {
+    try {
+        const pendientes = await Carga.find({ estado: 'pendiente' }).sort({ fecha: 1 });
+        res.json(pendientes);
+    } catch (err) {
+        console.error("Error al obtener cargas pendientes:", err);
+        res.status(500).json({ exito: false, mensaje: "Error en el servidor al traer la lista." });
+    }
+});
+
+// B) Procesa la decisión del cajero: Aprueba (y suma fichas) o Rechaza la carga
+app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
+    try {
+        const { id, accion } = req.body; // accion: 'aprobar' o 'rechazar'
+        
+        const solicitud = await Carga.findById(id);
+        if (!solicitud) {
+            return res.status(404).json({ exito: false, mensaje: "La solicitud de carga ya no existe." });
+        }
+
+        if (accion === 'aprobar') {
+            solicitud.estado = 'aprobado';
+            
+            // 💰 AUTOMATIZACIÓN: Buscamos al cliente y le incrementamos sus créditos en la BD
+            const clienteActualizado = await Cliente.findOneAndUpdate(
+                { usuarioCasino: solicitud.usuario },
+                { $inc: { creditos: solicitud.monto } },
+                { new: true }
+            );
+
+            if (!clienteActualizado) {
+                return res.status(404).json({ exito: false, mensaje: "La carga se aprobó pero no se encontró al usuario para sumarle los créditos." });
+            }
+            
+            // Avisar en tiempo real si el usuario tiene un canal socket abierto
+            if (io) {
+                io.emit('actualizar_saldo_cliente', { usuario: solicitud.usuario, nuevoSaldo: clienteActualizado.creditos });
+            }
+
+        } else {
+            solicitud.estado = 'rechazado';
+        }
+
+        await solicitud.save();
+        res.json({ exito: true, mensaje: `La solicitud fue ${solicitud.estado} con éxito.` });
+
+    } catch (err) {
+        console.error("Error al procesar la carga administrativa:", err);
+        res.status(500).json({ exito: false, mensaje: "Error interno al guardar la resolución." });
     }
 });
 // ==========================================
