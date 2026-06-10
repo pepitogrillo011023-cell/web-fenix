@@ -1283,3 +1283,25 @@ socket.on('resultado_carga_cliente', (data) => {
         }
     }
 });
+/* =======================================================
+   🔥 SECCIÓN DE NOTIFICACIONES (PEGALO ACÁ ABAJO DE TODO)
+   ======================================================= */
+
+// 1. Escuchamos soporte para prender el punto verde
+if (typeof socket !== 'undefined' && socket) {
+    socket.on('cliente_accion', (data) => {
+        if (data.estado === 'Soporte') {
+            const noditoVerde = document.getElementById('notif-verde-soporte');
+            if (noditoVerde) noditoVerde.classList.remove('oculto-notif');
+        }
+    });
+}
+
+// 2. Apagamos el punto verde al hacer clic en el botón
+const btnNavChats = document.getElementById('btn-nav-chats');
+if (btnNavChats) {
+    btnNavChats.addEventListener('click', () => {
+        const noditoVerde = document.getElementById('notif-verde-soporte');
+        if (noditoVerde) noditoVerde.classList.add('oculto-notif');
+    });
+}
