@@ -620,8 +620,8 @@ async function enviarSolicitudCreditos(event) {
         console.error("Error en enviarSolicitudCreditos:", error);
         alert("Hubo un error de red al intentar subir el comprobante.");
     }
-    window.enviarSolicitudCreditos = enviarSolicitudCreditos;
 }
+ window.enviarSolicitudCreditos = enviarSolicitudCreditos;
         
     } else if (opcion === 'Soporte') {
         mostrarChat();
