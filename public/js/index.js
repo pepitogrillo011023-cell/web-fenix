@@ -1227,16 +1227,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- 2. NUEVA Lógica de notificaciones ---
     const badge = document.getElementById('badge-contador');
-
-    // Nos aseguramos de que el badge exista antes de intentar usarlo
     if (badge) {
         socket.on('nueva_notificacion', (data) => {
             console.log("Notificación recibida:", data);
-
-            // 1. Hacemos visible el badge
             badge.style.display = 'block';
-
-            // 2. Incrementamos el contador
             let count = parseInt(badge.innerText) || 0;
             badge.innerText = count + 1;
         });
@@ -1251,14 +1245,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Lógica para cambiar contraseña (limpia y sin duplicados)
+    // Lógica para cambiar contraseña
     const btnChangePass = document.getElementById('btn-change-password');
     if (btnChangePass) {
         btnChangePass.addEventListener('click', async (e) => {
             e.preventDefault();
-            
             const nuevaPassword = prompt("Ingresá tu nueva contraseña (mínimo 6 caracteres):");
-            
             if (nuevaPassword !== null && nuevaPassword.trim().length >= 6) {
                 try {
                     const response = await fetch('/api/cambiar-contrasena', {
@@ -1267,9 +1259,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         credentials: 'include',
                         body: JSON.stringify({ nuevaPassword })
                     });
-
                     const data = await response.json();
-                    
                     if (response.ok) {
                         alert("¡Contraseña actualizada correctamente! ✅");
                     } else {
@@ -1284,12 +1274,13 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     }
-  // 🔥 CONFIGURACIÓN DEL BOTÓN DE REPORTES (Agregalo acá abajo antes de cerrar el DOMContentLoaded)
+
+    // 🔥 CONFIGURACIÓN DEL BOTÓN DE REPORTES (Agregalo acá abajo antes de cerrar el DOMContentLoaded)
     const botonReporte = document.getElementById('btn-enviar-reporte');
     if (botonReporte) {
         botonReporte.addEventListener('click', enviarSolicitudCreditos);
     }
-}); <--- CORREGIDO: Se quitó la llave '}' extra que sobraba acá al final
+});
 // ==========================================
 // REGISTRO DE SERVICE WORKER (PWA)
 // ==========================================
