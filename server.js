@@ -484,30 +484,49 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
             return res.status(404).json({ exito: false, mensaje: "La solicitud de carga ya no existe." });
         }
 
+        // Buscamos al cliente para tener sus datos de saldo y su suscripción Push (campanita)
+        const cliente = await Cliente.findOne({ usuarioCasino: solicitud.usuario });
+        if (!cliente) {
+            return res.status(404).json({ exito: false, mensaje: "No se encontró al usuario de casino." });
+        }
+
+        let mensajePush = "";
+
         if (accion === 'aprobar') {
             solicitud.estado = 'aprobado';
-            
-            // 💰 AUTOMATIZACIÓN: Buscamos al cliente y le incrementamos sus créditos en la BD
-            const clienteActualizado = await Cliente.findOneAndUpdate(
-                { usuarioCasino: solicitud.usuario },
-                { $inc: { creditos: solicitud.monto } },
-                { new: true }
-            );
-
-            if (!clienteActualizado) {
-                return res.status(404).json({ exito: false, mensaje: "La carga se aprobó pero no se encontró al usuario para sumarle los créditos." });
-            }
-            
-            // Avisar en tiempo real si el usuario tiene un canal socket abierto
-            if (io) {
-                io.emit('actualizar_saldo_cliente', { usuario: solicitud.usuario, nuevoSaldo: clienteActualizado.creditos });
-            }
-
+            cliente.creditos += solicitud.monto; // Sumamos créditos
+            mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉`;
         } else {
             solicitud.estado = 'rechazado';
+            mensajePush = `Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue rechazada. ❌ Revisa el comprobante.`;
         }
 
         await solicitud.save();
+        await cliente.save();
+
+        // 📡 CANAL 1: TIEMPO REAL POR SOCKET (Si está adentro del juego)
+        if (io) {
+            io.emit('resultado_carga_cliente', {
+                usuario: solicitud.usuario,
+                estado: solicitud.estado,
+                monto: solicitud.monto,
+                plataforma: solicitud.plataforma,
+                nuevoSaldo: cliente.creditos
+            });
+        }
+
+        // 🔕 CANAL 2: NOTIFICACIÓN PUSH A LA CAMPANITA (Si tiene el celular bloqueado o app cerrada)
+        if (cliente.pushSubscription) {
+            const payload = JSON.stringify({
+                title: '🎰 Casino Fénix',
+                body: mensajePush,
+                icon: '/icon.png' // Asegurate de tener tu icono de la PWA
+            });
+
+            webpush.sendNotification(cliente.pushSubscription, payload)
+                .catch(err => console.error("Error al enviar Push de carga:", err));
+        }
+
         res.json({ exito: true, mensaje: `La solicitud fue ${solicitud.estado} con éxito.` });
 
     } catch (err) {
