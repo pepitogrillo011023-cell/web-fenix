@@ -154,15 +154,19 @@
 </div>
 
     <div id="modal-cargar-creditos" class="modal-overlay" style="display:none;">
-        <div class="modal-content" style="border-color: #ffaa00;">
-            <h3 style="color:white; margin-top:0; font-size: 20px;">🟡 Comprar Créditos</h3>
-            <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos de minijuegos.</p>
-            <input type="number" id="input-creditos-monto" class="input-dark" placeholder="Monto transferido ($)...">
-            <input type="url" id="input-creditos-url" class="input-dark" placeholder="URL de la imagen del comprobante...">
-            <button class="btn-spin" style="background: #ffaa00; color: #000; margin-top:10px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4);" onclick="solicitarCargaCreditos()">ENVIAR REPORTE</button>
-            <button class="btn-action btn-close-modal" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('cargar-creditos')">Cancelar</button>
-        </div>
+    <div class="modal-content" style="border-color: #ffaa00;">
+        <h3 style="color:white; margin-top:0; font-size: 20px;">🟡 Comprar Créditos</h3>
+        <p style="color: #64748b; font-size:12px; margin:5px 0 15px 0;">Transferí y enviá el comprobante para recargar tus créditos de minijuegos.</p>
+        
+        <input type="number" id="input-creditos-monto" class="input-dark" placeholder="Monto transferido ($)..." style="width:100%; box-sizing:border-box; margin-bottom:10px;">
+        
+        <label style="color: #a1a1aa; font-size: 13px; display: block; text-align: left; margin-bottom: 5px;">Adjuntar foto del comprobante:</label>
+        <input type="file" id="input-creditos-comprobante" class="input-dark" accept="image/*" style="width:100%; box-sizing:border-box; margin-bottom:15px; padding: 10px;">
+        
+        <button class="btn-spin" style="background: #ffaa00; color: #000; margin-top:10px; box-shadow: 0 4px 15px rgba(255, 170, 0, 0.4); width: 100%;" onclick="enviarSolicitudCreditos(event)">ENVIAR REPORTE</button>
+        <button class="btn-action btn-close-modal" style="margin-top:10px; width:100%; background-color:#374151;" onclick="cerrarModal('cargar-creditos')">Cancelar</button>
     </div>
+</div>
 
     <div id="modal-ruleta" class="modal-overlay" style="display:none;">
         <div class="modal-content">
