@@ -429,7 +429,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 // ==========================================================================
-// 📥 ENDPOINT 1: RECIBE EL COMPROBANTE DE COMPROBANTES DE CARGA
+// 📥 1. RECIBE EL COMPROBANTE QUE SUBE EL USUARIO DESDE EL JUEGO
 // ==========================================================================
 app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res) => {
     try {
@@ -440,7 +440,6 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
             return res.status(400).json({ exito: false, mensaje: "No se recibió ninguna imagen de comprobante." });
         }
 
-        // Guardamos la solicitud en la colección 'Carga' con estado 'pendiente'
         const nuevaSolicitud = new Carga({
             usuario: usuario,
             plataforma: plataforma,
@@ -462,26 +461,36 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
 });
 
 // ==========================================================================
-// 👑 ENDPOINT 2: PROCESA LA DECISIÓN DEL CAJERO (APROBAR/RECHAZAR)
+// 👁️ 2. TRAE LA LISTA DE COMPROBANTES PENDIENTES AL PANEL ADMIN (El que faltaba)
+// ==========================================================================
+app.get('/api/admin/cargas-pendientes', requireLogin, async (req, res) => {
+    try {
+        const pendientes = await Carga.find({ estado: 'pendiente' }).sort({ fecha: 1 });
+        res.json(pendientes);
+    } catch (err) {
+        console.error("Error al obtener cargas pendientes:", err);
+        res.status(500).json({ exito: false, mensaje: "Error en el servidor al traer la lista." });
+    }
+});
+
+// ==========================================================================
+// 👑 3. PROCESA LA DECISIÓN DEL CAJERO (APROBAR CON CRÉDITO LOCAL O RECHAZAR)
 // ==========================================================================
 app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
     try {
-        const { id, accion } = req.body; // accion: 'aprobar' o 'rechazar'
+        const { id, accion } = req.body; 
         
         const solicitud = await Carga.findById(id);
         if (!solicitud) {
             return res.status(404).json({ exito: false, mensaje: "La solicitud de carga ya no existe." });
         }
 
-        // Buscamos al cliente para el saldo interno y la suscripción Push
         const cliente = await Cliente.findOne({ usuarioCasino: solicitud.usuario });
-
         let mensajePush = "";
 
         if (accion === 'aprobar') {
             solicitud.estado = 'aprobado';
 
-            // Si es Créditos locales, sumamos saldo automático internamente en Mongo
             if (solicitud.plataforma === 'Créditos') {
                 if (cliente) {
                     cliente.creditos += solicitud.monto;
@@ -489,7 +498,6 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
                 }
                 mensajePush = `¡Tu carga de $${solicitud.monto} en CRÉDITOS fue APROBADA! 💰 Tu saldo se actualizó.`;
             } else {
-                // Si es un casino externo, no toca créditos locales y actúa de forma manual
                 mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉 Revisa tu cajero.`;
             }
 
@@ -498,10 +506,8 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
             mensajePush = `Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue rechazada. ❌ Revisa el comprobante.`;
         }
 
-        // Guardamos el cambio de estado definitivo en la colección Carga
         await solicitud.save();
 
-        // 📡 CANAL 1: NOTIFICACIÓN POR SOCKET EN TIEMPO REAL
         if (io) {
             io.emit('resultado_carga_cliente', {
                 usuario: solicitud.usuario,
@@ -512,7 +518,6 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
             });
         }
 
-        // 🔕 CANAL 2: NOTIFICACIÓN PUSH A LA CAMPANITA
         if (cliente && cliente.pushSubscription) {
             const payload = JSON.stringify({
                 title: '🎰 Casino Fénix',
