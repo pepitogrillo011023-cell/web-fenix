@@ -17,7 +17,11 @@
     <div class="sidebar">
         <h2>⚡ Club Fenix</h2>
         <div class="menu-category">Soporte</div>
-        <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')">💬 Chats en Vivo</button>
+        <button id="btn-nav-chats" class="nav-btn active-nav" onclick="cambiarSeccion('chats')" style="display: flex; align-items: center; width: 100%;">
+    💬 Chats en Vivo
+    
+    <span id="notif-verde-soporte" class="dot-notificacion oculto-notif"></span>
+</button>
         
         <div class="menu-category">Control Personal</div>
         <button id="btn-nav-usuarios" class="nav-btn" onclick="cambiarSeccion('usuarios')">👥 Usuarios Internos</button>
