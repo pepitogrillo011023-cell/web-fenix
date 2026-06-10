@@ -983,7 +983,9 @@ async function abrirTienda() {
         alert("No se pudo conectar con la tienda.");
     }
     
-    window.canjearProducto = async function(nombre, costo) {
+    
+}
+window.canjearProducto = async function(nombre, costo) {
         console.log(`Intentando canjear: ${nombre} por ${costo} CR`);
 
         // 1. Verificación básica de seguridad
@@ -1034,7 +1036,6 @@ async function abrirTienda() {
             alert("Hubo un error de conexión con el servidor.");
         }
     };
-}
 
 // ==============================================================
 // MENÚ DESPLEGABLE DE TRES PUNTOS (PEGADO AL FINAL)
