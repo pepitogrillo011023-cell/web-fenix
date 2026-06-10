@@ -652,7 +652,7 @@ async function enviarSolicitudCreditos(event) {
 }
 window.enviarSolicitudCreditos = enviarSolicitudCreditos;
         
-    } else if (opcion === 'Soporte') {
+     else if (opcion === 'Soporte') {
         mostrarChat();
         let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
@@ -692,7 +692,7 @@ window.enviarSolicitudCreditos = enviarSolicitudCreditos;
     }
     
     msgArea.scrollTop = msgArea.scrollHeight;
-}
+
 
 function ejecutarAccionDeposito(accion) {
     let msg = accion === 'Subir Comprobante' ? "📁 Archivo recibido." : "✅ Pago reportado.";
@@ -1317,7 +1317,6 @@ socket.on('actualizar_creditos_en_vivo', (data) => {
     }
   
 });
-// --- ESCUCHAR SI EL ADMIN APRUEBA O RECHAZA NUESTRA CARGA ---
 // --- ESCUCHAR SI EL ADMIN APRUEBA O RECHAZA NUESTRA CARGA ---
 socket.on('resultado_carga_cliente', (data) => {
     // Verificamos si el evento pertenece al usuario logueado en esta pestaña
