@@ -503,6 +503,12 @@ function seleccionarOpcion(opcion) {
     
     if (opcion === 'Depósito') {
         mostrarChat();
+        
+        // 🔥 LIMPIEZA: Borramos todo el historial visual previo del chat
+        if (typeof msgArea !== 'undefined' && msgArea) {
+            msgArea.innerHTML = '';
+        }
+        
         const dep = document.getElementById('container-deposit-options');
         if (dep) dep.style.display = 'grid';
         
@@ -523,12 +529,23 @@ function seleccionarOpcion(opcion) {
         // Auto-scroll al fondo del chat
         msgArea.scrollTop = msgArea.scrollHeight;
        
-        
     } else if (opcion === 'Soporte') {
         mostrarChat();
+        
+        // 🔥 LIMPIEZA: También borramos el historial visual al entrar a soporte
+        if (typeof msgArea !== 'undefined' && msgArea) {
+            msgArea.innerHTML = '';
+        }
+        
         let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
         msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+        
         socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+        
+        // Auto-scroll al fondo del chat en soporte
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
+}
 
     } else if (opcion === 'Retiro') {
         // 1. Ocultamos el menú principal
