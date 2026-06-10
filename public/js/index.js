@@ -220,22 +220,41 @@ function descontarCreditoVisual(juegoKey) {
         if (document.getElementById('txt-creditos')) document.getElementById('txt-creditos').innerText = misCreditos;
     }
 }
-// 1. Escuchamos soporte para prender el punto verde
 if (typeof socket !== 'undefined' && socket) {
+    console.log("🔌 Socket detectado y escuchando en admin.js");
+
     socket.on('cliente_accion', (data) => {
-        if (data.estado === 'Soporte') {
+        // 🔥 Este log te va a mostrar en la consola TODO lo que llega del cliente
+        console.log("🚀 ¡Llegó una acción del cliente al Admin!", data); 
+
+        // Validamos si viene como 'Soporte' o 'soporte' (por las dudas)
+        if (data && (data.estado === 'Soporte' || data.estado === 'soporte')) {
+            console.log("🟢 Condición cumplida. Intentando mostrar puntito verde...");
+            
             const noditoVerde = document.getElementById('notif-verde-soporte');
-            if (noditoVerde) noditoVerde.classList.remove('oculto-notif');
+            if (noditoVerde) {
+                noditoVerde.classList.remove('oculto-notif');
+                console.log("✅ ¡Puntito verde desbloqueado en el HTML!");
+            } else {
+                console.error("❌ ERROR: El HTML no tiene ningún elemento con ID 'notif-verde-soporte'");
+            }
+        } else {
+            console.log("⚠️ Llegó una acción, pero el estado no es 'Soporte'. Estado recibido:", data ? data.estado : 'indefinido');
         }
     });
+} else {
+    console.error("❌ CRÍTICO: El objeto 'socket' no está definido en este punto de admin.js");
 }
 
-// 2. Apagamos el punto verde al hacer clic en el botón
+// Apagamos el punto verde al hacer clic
 const btnNavChats = document.getElementById('btn-nav-chats');
 if (btnNavChats) {
     btnNavChats.addEventListener('click', () => {
         const noditoVerde = document.getElementById('notif-verde-soporte');
-        if (noditoVerde) noditoVerde.classList.add('oculto-notif');
+        if (noditoVerde) {
+            noditoVerde.classList.add('oculto-notif');
+            console.log("🔵 Notificación apagada por el administrador.");
+        }
     });
 }
 // ==========================================
