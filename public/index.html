@@ -354,20 +354,9 @@
 
     // Iniciamos la verificación automática apenas se lee este script
     verificarEstadoNotificaciones();
-                // ========================================================
-    // ⚡ [NUEVO] RECEPTOR DE CRÉDITOS EN TIEMPO REAL
-    // ========================================================
-    if (typeof socket !== 'undefined') {
-        socket.on('actualizar_creditos_en_vivo', (datos) => {
-            const elementoSaldo = document.getElementById('txt-creditos'); 
-            if (elementoSaldo) {
-                // Actualiza el número de fichas al instante con puntos de miles (Ej: 15.500)
-                elementoSaldo.innerText = Number(datos.creditos).toLocaleString('es-AR');
-                }
-            });
-        }
-
-                (function() {
+</script>
+            <script>
+(function() {
     window.enviarSolicitudCreditos = async function(event) {
         if (event) event.preventDefault();
 
@@ -432,7 +421,6 @@
         }
     };
 })();
-               
 </script>
              <script src="js/index.js"></script>
             <script src="/socket.io/socket.io.js"></script>
