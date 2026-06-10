@@ -886,23 +886,34 @@ io.on('connection', (socket) => {
     });
     // ==========================================
 
-    socket.on('cliente_accion', async (datos) => {
-        let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
-        if (usuario) {
-            usuario.estado = datos.estado;
-            let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
-            if (datos.mensajeCliente) { usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); }
-            if (datos.mensajeBot) { usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); }
-            await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
-            if (sharedState.adminSocketId) {
-                io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
-                io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
-            }
-            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
+   socket.on('cliente_accion', async (datos) => {
+    let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
+    if (usuario) {
+        usuario.estado = datos.estado;
+        let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
+        
+        if (datos.mensajeCliente) { 
+            usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); 
         }
-        socket.broadcast.emit('cliente_accion', data);
-    });
-
+        if (datos.mensajeBot) { 
+            usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); 
+        }
+        
+        await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
+        
+        // El servidor acá verifica si el Admin está conectado
+        if (sharedState.adminSocketId) {
+            io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+            io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+            
+            // 🔥 LA MEJOR ENTRADA: Le avisamos directo al Admin que hubo una acción
+            io.to(sharedState.adminSocketId).emit('cliente_accion', datos); 
+        }
+        
+        if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
+    }
+    // ❌ Quitamos el socket.broadcast.emit de acá abajo para evitar errores de tipeo y envíos duplicados
+});
     socket.on('cliente_envia_mensaje_libre', async (datos) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
         if (usuario) {
