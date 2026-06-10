@@ -1124,17 +1124,30 @@ socket.on('lista_usuarios_actualizada', (usuarios) => {
     });
 });
 
+/* =======================================================
+   🔥 DETECTOR INTELIGENTE: Alertas por Mensajes Sin Leer
+   ======================================================= */
 if (typeof socket !== 'undefined' && socket) {
-    socket.on('cliente_accion', (data) => {
-        console.log("🚀 [WEB_SOCKET] El servidor envió una acción al Admin:", data);
+    // Nos colgamos del canal que el servidor actualiza con cada mensaje nuevo
+    socket.on('lista_usuarios_actualizada', (usuarios) => {
+        console.log("📊 Analizando mensajes nuevos en la lista de usuarios...");
 
-        if (data && (data.estado === 'Soporte' || data.estado === 'soporte')) {
-            console.log("🟢 ¡Señal de Soporte confirmada! Aplicando estilos forzados...");
+        // Buscamos si hay AL MENOS UN usuario en 'Soporte' que tenga mensajes del cliente SIN LEER
+        const haySoporteSinLeer = usuarios.some(u => {
+            const esSoporte = (u.estado === 'Soporte' || u.estado === 'soporte');
+            // Filtramos si en su historial hay mensajes donde el emisor sea el cliente y NO estén leídos
+            const tieneMensajesNuevos = u.historial && u.historial.some(m => m.emisor === 'cliente' && !m.leido);
             
-            const noditoVerde = document.getElementById('notif-verde-soporte');
-            const botonChats = document.getElementById('btn-nav-chats');
+            return esSoporte && tieneMensajesNuevos;
+        });
 
-            // 1. Forzamos los estilos directamente por JS (Ignoramos el archivo CSS)
+        const noditoVerde = document.getElementById('notif-verde-soporte');
+        const botonChats = document.getElementById('btn-nav-chats');
+
+        if (haySoporteSinLeer) {
+            console.log("🟢 ¡Mensaje nuevo de soporte detectado! Encendiendo notificación.");
+            
+            // 1. Encendemos el puntito verde con fuerza
             if (noditoVerde) {
                 noditoVerde.style.setProperty('display', 'inline-block', 'important');
                 noditoVerde.style.width = '10px';
@@ -1142,26 +1155,34 @@ if (typeof socket !== 'undefined' && socket) {
                 noditoVerde.style.backgroundColor = '#22c55e';
                 noditoVerde.style.borderRadius = '50%';
                 noditoVerde.style.marginLeft = 'auto';
-                noditoVerde.style.boxShadow = '0 0 10px #22c55e';
+                noditoVerde.style.boxShadow = '0 0 10px #22c55e, 0 0 20px #22c55e';
             }
-
-            // 2. PRUEBA RADICAL: Si entra la señal, le hace un borde verde al botón entero
+            // 2. Pintamos el borde izquierdo del botón de navegación
             if (botonChats) {
                 botonChats.style.borderLeft = '5px solid #22c55e';
                 botonChats.style.background = 'rgba(34, 197, 94, 0.1)';
+            }
+        } else {
+            // AUTOMÁTICO: Si ya leíste todos los chats de soporte, el puntito se apaga solo
+            if (noditoVerde) noditoVerde.style.display = 'none';
+            if (botonChats) {
+                botonChats.style.borderLeft = 'none';
+                botonChats.style.background = '';
             }
         }
     });
 }
 
-// Apagar todo cuando el Admin entra a los chats
+// Limpieza manual instantánea al hacer clic en el botón por seguridad visual
 const btnNavChats = document.getElementById('btn-nav-chats');
 if (btnNavChats) {
     btnNavChats.addEventListener('click', () => {
         const noditoVerde = document.getElementById('notif-verde-soporte');
         if (noditoVerde) noditoVerde.style.display = 'none';
-        btnNavChats.style.borderLeft = 'none';
-        btnNavChats.style.background = '';
+        if (btnNavChats) {
+            btnNavChats.style.borderLeft = 'none';
+            btnNavChats.style.background = '';
+        }
     });
 }
 
