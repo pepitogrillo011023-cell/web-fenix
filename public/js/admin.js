@@ -1124,6 +1124,47 @@ socket.on('lista_usuarios_actualizada', (usuarios) => {
     });
 });
 
+if (typeof socket !== 'undefined' && socket) {
+    socket.on('cliente_accion', (data) => {
+        console.log("🚀 [WEB_SOCKET] El servidor envió una acción al Admin:", data);
+
+        if (data && (data.estado === 'Soporte' || data.estado === 'soporte')) {
+            console.log("🟢 ¡Señal de Soporte confirmada! Aplicando estilos forzados...");
+            
+            const noditoVerde = document.getElementById('notif-verde-soporte');
+            const botonChats = document.getElementById('btn-nav-chats');
+
+            // 1. Forzamos los estilos directamente por JS (Ignoramos el archivo CSS)
+            if (noditoVerde) {
+                noditoVerde.style.setProperty('display', 'inline-block', 'important');
+                noditoVerde.style.width = '10px';
+                noditoVerde.style.height = '10px';
+                noditoVerde.style.backgroundColor = '#22c55e';
+                noditoVerde.style.borderRadius = '50%';
+                noditoVerde.style.marginLeft = 'auto';
+                noditoVerde.style.boxShadow = '0 0 10px #22c55e';
+            }
+
+            // 2. PRUEBA RADICAL: Si entra la señal, le hace un borde verde al botón entero
+            if (botonChats) {
+                botonChats.style.borderLeft = '5px solid #22c55e';
+                botonChats.style.background = 'rgba(34, 197, 94, 0.1)';
+            }
+        }
+    });
+}
+
+// Apagar todo cuando el Admin entra a los chats
+const btnNavChats = document.getElementById('btn-nav-chats');
+if (btnNavChats) {
+    btnNavChats.addEventListener('click', () => {
+        const noditoVerde = document.getElementById('notif-verde-soporte');
+        if (noditoVerde) noditoVerde.style.display = 'none';
+        btnNavChats.style.borderLeft = 'none';
+        btnNavChats.style.background = '';
+    });
+}
+
 function renderizarHistorialChat(historial) {
     const areaMsg = document.getElementById('active-chat-messages'); 
     if (!areaMsg) return;
