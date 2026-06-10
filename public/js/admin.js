@@ -1543,3 +1543,36 @@ async function procesarSolicitudCarga(id, accion) {
         alert("Hubo un error de red al intentar procesar la carga.");
     }
 }
+// ==========================================================================
+// REGISTRO DE REVISIÓN AUTOMÁTICA (CADA 60 SEGUNDOS)
+// ==========================================================================
+
+setInterval(() => {
+    // Verificamos si la cajera está mirando la pantalla de cargas en este momento
+    const seccionCargas = document.getElementById('section-cargas');
+    
+    if (seccionCargas && seccionCargas.classList.contains('active-view')) {
+        obtenerCargasPendientes(); // Si está adentro, refresca la tabla entera en vivo
+    } else {
+        actualizarBadgeSilencioso(); // Si está en otra sección, solo actualiza el globito rojo del menú
+    }
+}, 60000);
+
+async function actualizarBadgeSilencioso() {
+    try {
+        const res = await fetch('/api/admin/cargas-pendientes');
+        const cargas = await res.json();
+        const badge = document.getElementById('admin-badge-cargas');
+        
+        if (badge) {
+            if (cargas.length > 0) {
+                badge.innerText = cargas.length;
+                badge.style.display = 'inline-block';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+    } catch (e) {
+        console.log("Error silencioso al actualizar el badge:", e);
+    }
+}
