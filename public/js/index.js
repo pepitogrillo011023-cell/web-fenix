@@ -498,7 +498,12 @@ async function procesarEnvioFormulario() {
 
 function seleccionarOpcion(opcion) {
     const menu = document.getElementById('container-menu-options');
-    socket.emit('cliente_cambia_pestaña', { pestaña: opcion });
+    
+    // Validamos que socket exista antes de emitir
+    if (typeof socket !== 'undefined') {
+        socket.emit('cliente_cambia_pestaña', { pestaña: opcion });
+    }
+    
     if (menu) menu.style.display = 'none';
     
     if (opcion === 'Depósito') {
@@ -519,15 +524,16 @@ function seleccionarOpcion(opcion) {
                       <button class="btn-elegir-plataforma" data-plataforma="Oropuro" style="background: #eab308; color: black; border: none; padding: 10px 18px; border-radius: 6px; cursor: pointer; font-weight: bold; font-size: 13px;">IR A OROPURO</button>
                   </div>`;
         
-        msgArea.innerHTML += `
-            <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
-            <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+        if (typeof msgArea !== 'undefined' && msgArea) {
+            msgArea.innerHTML += `
+                <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
+                <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
         
-        // Emitimos la acción inicial al servidor
-        socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: 'Selección de plataforma iniciada.' });
-        
-        // Auto-scroll al fondo del chat
-        msgArea.scrollTop = msgArea.scrollHeight;
+        if (typeof socket !== 'undefined') {
+            socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: 'Selección de plataforma iniciada.' });
+        }
        
     } else if (opcion === 'Soporte') {
         mostrarChat();
@@ -538,27 +544,26 @@ function seleccionarOpcion(opcion) {
         }
         
         let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
-        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
         
-        socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+        if (typeof msgArea !== 'undefined' && msgArea) {
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
         
-        // Auto-scroll al fondo del chat en soporte
-        msgArea.scrollTop = msgArea.scrollHeight;
-    }
-}
+        if (typeof socket !== 'undefined') {
+            socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+        }
 
     } else if (opcion === 'Retiro') {
-        // 1. Ocultamos el menú principal
-        const menu = document.getElementById('container-menu-options');
-        if (menu) menu.style.display = 'none';
-
-        // 2. Ocultamos el chat si estaba abierto
-        const msgArea = document.getElementById('messages-area');
+        // 💡 Quitamos la redeclaración de 'menu' porque ya se heredó de la línea 2
+        
+        // Ocultamos el chat si estaba abierto
         const chatInput = document.getElementById('container-chat-input');
-        if (msgArea) msgArea.style.display = 'none';
+        const localMsgArea = document.getElementById('messages-area');
+        if (localMsgArea) localMsgArea.style.display = 'none';
         if (chatInput) chatInput.style.display = 'none';
 
-        // 3. MOSTRAMOS EL FORMULARIO DE RETIRO
+        // MOSTRAMOS EL FORMULARIO DE RETIRO
         const formRetiro = document.getElementById('container-retiro-form');
         if (formRetiro) {
             formRetiro.style.display = 'flex'; 
@@ -567,21 +572,34 @@ function seleccionarOpcion(opcion) {
         }
 
     } else if (opcion === 'Referido') {
-        // --- AQUÍ ESTÁ LA NUEVA LÓGICA ---
-        abrirModalReferidos();
-        // Volvemos a mostrar el menú para que no desaparezca si el usuario cierra el modal
+        if (typeof abrirModalReferidos === 'function') {
+            abrirModalReferidos();
+        }
+        // Volvemos a mostrar el menú usando la variable del inicio
         if (menu) menu.style.display = 'grid'; 
 
     } else {
         mostrarChat();
         let msgBot = `⏳ Derivando a un asesor... (Opción: ${opcion})`;
-        msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
-        socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
-        setTimeout(irAlMenuPrincipal, 4000); 
+        
+        if (typeof msgArea !== 'undefined' && msgArea) {
+            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
+        
+        if (typeof socket !== 'undefined') {
+            socket.emit('cliente_accion', { estado: opcion, mensajeCliente: opcion, mensajeBot: msgBot });
+        }
+        if (typeof irAlMenuPrincipal === 'function') {
+            setTimeout(irAlMenuPrincipal, 4000); 
+        }
     }
-    
-    msgArea.scrollTop = msgArea.scrollHeight;
-} // <--- FIX: Se cerró correctamente la función seleccionarOpcion aquí
+
+    // Auto-scroll final de seguridad por si quedó algo pendiente
+    if (typeof msgArea !== 'undefined' && msgArea) {
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
+} // <--- Acá cierra CORRECTAMENTE la función completa
 
 function ejecutarAccionDeposito(accion) {
     let msg = accion === 'Subir Comprobante' ? "📁 Archivo recibido." : "✅ Pago reportado.";
