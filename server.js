@@ -865,6 +865,23 @@ app.post('/api/sumar-premio-bonus', async (req, res) => {
         res.status(500).json({ exito: false, mensaje: "Error interno en el servidor" });
     }
 });*/
+app.post('/api/retiros/gestion', async (req, res) => {
+    try {
+        const { id, accion } = req.body; // 'id' del retiro y 'accion' (aprobar/rechazar)
+
+        if (accion === 'aprobar') {
+            await RetiroSolicitud.findByIdAndUpdate(id, { estado: 'aprobado' });
+        } else if (accion === 'rechazar') {
+            await RetiroSolicitud.findByIdAndUpdate(id, { estado: 'rechazado' });
+        }
+
+        // Importante: RESPONDER SIEMPRE CON JSON
+        res.json({ exito: true }); 
+    } catch (error) {
+        console.error("Error en gestión de retiro:", error);
+        res.status(500).json({ exito: false, mensaje: "Error interno del servidor" });
+    }
+});
 
 // ==============================================================
 // 6. IMPORTACIÓN DE RUTAS MODULARES
