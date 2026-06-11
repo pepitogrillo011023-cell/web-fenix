@@ -166,25 +166,34 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
                 console.error("❌ Error en la migración de referidos:", err);
             }
 
-            // 🎁 2. NUEVA MIGRACIÓN: Inicializar bonos en tus CLIENTES reales
-            try {
-                const totalClientes = await Cliente.countDocuments();
-                const clientesConBono = await Cliente.countDocuments({ bonoPendiente: { $exists: true } });
-                
-                console.log(`📊 [REPORTE REAL] Total de jugadores en DB: ${totalClientes}`);
-                
-                if (totalClientes > clientesConBono) {
-                    const resultado = await Cliente.updateMany(
-                        { bonoPendiente: { $exists: false } },
-                        { $set: { bonoPendiente: null } }
-                    );
-                    console.log(`✅ Migración de bonos completada. Jugadores actualizados: ${resultado.modifiedCount}`);
-                } else {
-                    console.log(`😎 Todo perfecto: Todos los jugadores ya tienen el campo 'bonoPendiente'.`);
-                }
-            } catch (err) {
-                console.error("❌ Error en la migración de bonos:", err);
-            }
+           // 🎁 2. NUEVA MIGRACIÓN: Inicializar bonos en tus CLIENTES reales
+try {
+    const totalClientes = await Cliente.countDocuments();
+    const clientesConBono = await Cliente.countDocuments({ bonoPendiente: { $exists: true } });
+    
+    console.log(`📊 [REPORTE REAL] Total de jugadores en DB: ${totalClientes}`);
+    console.log(`📊 [REPORTE REAL] Jugadores que YA tienen el campo: ${clientesConBono}`);
+    
+    if (totalClientes > clientesConBono) {
+        // Agregamos { strict: false } al final para saltear bloqueos del esquema temporalmente
+        const resultado = await Cliente.updateMany(
+            { bonoPendiente: { $exists: false } },
+            { $set: { bonoPendiente: null } },
+            { strict: false } 
+        );
+        
+        // Esto nos va a mostrar en la consola EXACTAMENTE qué respondió MongoDB
+        console.log("🔍 Respuesta cruda de Mongo:", JSON.stringify(resultado));
+        
+        // Detecta la cantidad de modificados según tu versión de Mongoose
+        const actualizados = resultado.modifiedCount !== undefined ? resultado.modifiedCount : (resultado.nModified !== undefined ? resultado.nModified : "OK");
+        console.log(`✅ Migración de bonos ejecutada. Estado: ${actualizados}`);
+    } else {
+        console.log(`😎 Todo perfecto: Todos los jugadores ya tienen el campo 'bonoPendiente'.`);
+    }
+} catch (err) {
+    console.error("❌ Error en la migración de bonos:", err);
+}
 
             await inicializarDatosDePrueba();
         })
