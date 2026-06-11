@@ -333,29 +333,9 @@ socket.on('nueva_notificacion', (data) => {
 // 📡 EL JUGADOR RECIBE LA ORDEN DE CERRAR Y LIMPIAR EL CHAT DE SOPORTE
 // ==========================================================================
 socket.on('servidor_limpia_pantalla_soporte', () => {
-    console.log("🛑 Soporte finalizado por la administración. Limpiando interfaz...");
-
-    // 1. Limpiamos el área de mensajes usando tu variable global 'msgArea'
-    // (Esta variable ya la usás en tus funciones mostrarChat y mostrarSubMenuMinijuegos)
-    if (typeof msgArea !== 'undefined' && msgArea) {
-        msgArea.innerHTML = `
-            <div style="text-align: center; color: #9ca3af; padding: 20px; font-size: 14px;">
-                El chat de soporte ha finalizado. ¡Gracias por comunicarte!
-            </div>
-        `;
-    }
-
-    // 2. Ocultamos el área de input usando el ID que me pasaste antes
-    const inputArea = document.getElementById('container-chat-input');
-    if (inputArea) {
-        inputArea.style.display = 'none';
-    }
-
-    // 3. Volvemos al menú principal usando TU propia función
-    // Esto es lo mejor porque ya tiene toda la lógica de ocultar/mostrar elementos que necesitás
-    if (typeof irAlMenuPrincipal === 'function') {
-        irAlMenuPrincipal();
-    }
+    console.log("¡Recibí la señal de limpieza!");
+    if (typeof msgArea !== 'undefined') msgArea.innerHTML = '';
+    if (typeof irAlMenuPrincipal === 'function') irAlMenuPrincipal();
 });
 
 // ==========================================
