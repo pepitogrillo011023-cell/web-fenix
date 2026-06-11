@@ -819,7 +819,7 @@ async function abrirModalReferidos() {
     }
 }
 
-async function enviarRetiro() {
+/*async function enviarRetiro() {
     // Usamos la variable global que ya tienes al inicio de este archivo
     const usuario = window.usuarioLogueado;
     
@@ -868,7 +868,7 @@ async function enviarRetiro() {
         console.error("Error al enviar retiro:", error);
         alert("Error de conexión con el servidor.");
     }
-}
+}*/
 
 // Función para copiar (también global)
 function copiarLinkReferido() {
