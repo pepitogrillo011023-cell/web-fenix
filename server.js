@@ -166,6 +166,22 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
         .catch(err => console.log('🔴 ERROR DE MONGODB:', err));
 }
 
+// ⚡ MIGRACIÓN TEMPORAL: Corre una sola vez al iniciar el servidor
+const inicializarBonosViejos = async () => {
+    try {
+        // Busca todos los usuarios que NO tengan el campo 'bonoPendiente' y se los crea en null
+        const resultado = await User.updateMany(
+            { bonoPendiente: { $exists: false } },
+            { $set: { bonoPendiente: null } }
+        );
+        console.log(`✅ Migración de bonos completada. Usuarios actualizados: ${resultado.modifiedCount}`);
+    } catch (err) {
+        console.error("❌ Error en la migración de bonos:", err);
+    }
+};
+// Ejecutar la función
+inicializarBonosViejos();
+
 // ==============================================================
 // 3. MIDDLEWARES, SESIÓN Y SEGURIDAD
 // ==============================================================
