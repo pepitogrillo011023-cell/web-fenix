@@ -257,6 +257,16 @@ if (btnNavChats) {
         }
     });
 }
+// Escuchamos cuando el soporte responde desde el admin
+if (typeof socket !== 'undefined') {
+    socket.on('notificacion_mensaje_soporte', (data) => {
+        // Si el cliente NO está metido en Soporte ahora mismo, le prendemos el puntito rojo
+        if (!chatSoporteAbierto) {
+            const puntito = document.getElementById('puntito-soporte');
+            if (puntito) puntito.style.display = 'block';
+        }
+    });
+}
 // ==========================================
 // NOTIFICACIONES (CORREGIDO Y OPTIMIZADO)
 // ==========================================
