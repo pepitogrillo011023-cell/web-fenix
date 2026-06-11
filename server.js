@@ -166,20 +166,31 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
         .catch(err => console.log('🔴 ERROR DE MONGODB:', err));
 }
 
-// ⚡ MIGRACIÓN TEMPORAL: Corre una sola vez al iniciar el servidor
 const inicializarBonosViejos = async () => {
     try {
-        // Busca todos los usuarios que NO tengan el campo 'bonoPendiente' y se los crea en null
-        const resultado = await User.updateMany(
-            { bonoPendiente: { $exists: false } },
-            { $set: { bonoPendiente: null } }
-        );
-        console.log(`✅ Migración de bonos completada. Usuarios actualizados: ${resultado.modifiedCount}`);
+        // 1. Contamos cuántos usuarios existen en total en la base de datos
+        const totalUsuarios = await User.countDocuments();
+        
+        // 2. Contamos cuántos de esos usuarios tienen el campo bonoPendiente (aunque sea en null)
+        const usuariosConBonoSeteado = await User.countDocuments({ bonoPendiente: { $exists: true } });
+
+        console.log(`📊 [REPORTE] Total de usuarios en DB: ${totalUsuarios}`);
+        console.log(`📊 [REPORTE] Usuarios que ya tienen el campo 'bonoPendiente': ${usuariosConBonoSeteado}`);
+
+        if (totalUsuarios > usuariosConBonoSeteado) {
+            // Si falta alguno, lo actualiza
+            const resultado = await User.updateMany(
+                { bonoPendiente: { $exists: false } },
+                { $set: { bonoPendiente: null } }
+            );
+            console.log(`✅ Migración forzada completada. Nuevos actualizados: ${resultado.modifiedCount}`);
+        } else {
+            console.log(`😎 Todo perfecto: Todos los usuarios viejos ya tienen el campo incorporado.`);
+        }
     } catch (err) {
-        console.error("❌ Error en la migración de bonos:", err);
+        console.error("❌ Error en el reporte de bonos:", err);
     }
 };
-// Ejecutar la función
 inicializarBonosViejos();
 
 // ==============================================================
