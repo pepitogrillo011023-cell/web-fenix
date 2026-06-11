@@ -1287,6 +1287,11 @@ socket.on('admin_decide_retiro', async (datos) => {
     io.to(sharedState.adminSocketId).emit('lista_retiros_actualizada', listaPendientes);
 
 });
+    socket.on('pedir_lista_retiros', async () => {
+    if (socket.id !== sharedState.adminSocketId) return; // Seguridad
+    const lista = await RetiroSolicitud.find({ estado: 'pendiente' });
+    socket.emit('lista_retiros_actualizada', lista);
+});
     });
 // ==============================================================
 // 8. INICIALIZADOR DE DATOS
