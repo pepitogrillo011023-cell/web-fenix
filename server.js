@@ -460,13 +460,27 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
     }
 });
 
-// ==========================================================================
-// 👁️ 2. TRAE LA LISTA DE COMPROBANTES PENDIENTES AL PANEL ADMIN (El que faltaba)
-// ==========================================================================
 app.get('/api/admin/cargas-pendientes', requireLogin, async (req, res) => {
     try {
-        const pendientes = await Carga.find({ estado: 'pendiente' }).sort({ fecha: 1 });
-        res.json(pendientes);
+        // 1. Traemos las cargas pendientes ordenadas por fecha
+        const pendientes = await Carga.find({ estado: 'pendiente' }).sort({ fecha: 1 }).lean();
+        
+        // 2. Cruzamos los datos con la colección de usuarios (User)
+        const cargasConBono = await Promise.all(pendientes.map(async (carga) => {
+            
+            // ✨ CORREGIDO: Buscamos usando 'username' que es el campo real de tu User.js
+            const usuarioDB = await User.findOne({ username: carga.usuario }); 
+            
+            return {
+                ...carga,
+                // Si el usuario existe y tiene un bono activo en su perfil, se lo pegamos a la carga
+                bonoPendiente: usuarioDB ? usuarioDB.bonoPendiente : null 
+            };
+        }));
+
+        // 3. Mandamos la lista final con los bonos incluidos al frontend
+        res.json(cargasConBono);
+
     } catch (err) {
         console.error("Error al obtener cargas pendientes:", err);
         res.status(500).json({ exito: false, mensaje: "Error en el servidor al traer la lista." });
