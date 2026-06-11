@@ -227,3 +227,23 @@ input:checked + .slider:before { transform: translateX(22px); }
     border-radius: 4px;
     font-size: 12px;
 }
+.btn-finalizar-soporte {
+    background: #ef4444; /* Rojo vibrante */
+    color: white;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.1s ease;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.btn-finalizar-soporte:hover {
+    background: #dc2626; /* Rojo un poco más oscuro al pasar el mouse */
+}
+
+.btn-finalizar-soporte:active {
+    transform: scale(0.96); /* Efecto de hundido al cliquear */
+}
