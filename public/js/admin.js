@@ -1151,6 +1151,31 @@ socket.on('lista_usuarios_actualizada', (usuarios) => {
         if (usuarioSeleccionadoActivo === user.nombre) renderizarHistorialChat(user.historial);
     });
 });
+// 1. Escuchar el resultado del envío
+socket.on('error_retiro', (msg) => {
+    alert("❌ " + msg);
+});
+
+socket.on('retiro_enviado_exito', (msg) => {
+    alert("✅ " + msg);
+    // Opcional: Cerrar el modal o limpiar inputs aquí
+});
+
+// 2. Escuchar la disponibilidad (para bloquear el botón si pasaron menos de 24hs)
+socket.on('resultado_disponibilidad', (data) => {
+    const btnRetirar = document.getElementById('btnRetirar'); // El botón de confirmación
+    if (btnRetirar) {
+        if (data.bloqueado) {
+            btnRetirar.disabled = true;
+            btnRetirar.innerText = "⏳ Espera 24hs para retirar";
+            btnRetirar.style.opacity = "0.5";
+        } else {
+            btnRetirar.disabled = false;
+            btnRetirar.innerText = "Confirmar Retiro";
+            btnRetirar.style.opacity = "1";
+        }
+    }
+});
 
 /* =======================================================
    🔥 DETECTOR INTELIGENTE: Alertas por Mensajes Sin Leer
@@ -1271,6 +1296,19 @@ function enviarMensajeManual() {
 
     // 4. Limpiar input
     input.value = '';
+}
+function enviarSolicitudRetiro() {
+    // Asegurate que estos IDs coincidan con los de tu HTML (Imagen 1)
+    const datos = {
+        monto: document.getElementById('montoRetiro').value,
+        cbu_alias: document.getElementById('cbuRetiro').value,
+        titular: document.getElementById('titularRetiro').value
+    };
+    
+    // Validar que los campos no estén vacíos
+    if(!datos.monto || !datos.cbu_alias) return alert("Completa todos los campos");
+
+    socket.emit('solicitar_retiro', datos);
 }
 
 // ==========================================
