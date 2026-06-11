@@ -55,7 +55,7 @@ function cambiarSeccion(seccion) {
     if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
     if (seccion === 'creditos') cargarSolicitudesCreditos();
     if (seccion === 'costos') cargarCostosMinijuegos();
-    if (seccion === 'cargas') obtenerCargasPendientes();
+    if (seccion === 'cargas') ();
 }
 
 function cambiarSubJuego(juego) {
@@ -1547,6 +1547,8 @@ async function obtenerCargasPendientes() {
     try {
         const res = await fetch('/api/admin/cargas-pendientes');
         const cargas = await res.json();
+        // 👁️ AGREGÁ ESTA LÍNEA PARA INVESTIGAR:
+        console.log("🔍 DATOS DE LAS CARGAS:", cargas);
         
         const tbody = document.getElementById('tabla-cargas-body');
         if (!tbody) return;
