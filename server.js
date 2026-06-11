@@ -1123,7 +1123,7 @@ socket.on('admin_finaliza_soporte', async (datos) => {
 
         // 2. BUSCAMOS AL USUARIO EN TU ARRAY DE CONEXIONES (sharedState)
         // Buscamos el objeto que contiene el socket.id del usuario
-        const usuarioConectado = sharedState.usuariosConectados.find(u => u.nombre === nombre);
+       io.to(nombre).emit('servidor_limpia_pantalla_soporte');
 
         if (usuarioConectado) {
             // Enviamos el evento usando el ID de socket que guardaste en el array
