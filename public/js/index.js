@@ -13,7 +13,7 @@ let ruletaConfig = []; let raspaConfig = [];
 let currentRotation = 0; let raspaYaJugada = false;
 let tragaJugado = false; let cartasJugado = false; let monedaJugado = false;
 let misCreditos = 0;
-
+let chatSoporteAbierto = false;
 // Memoria local de costos
 let costosMinijuegosCache = {
     "Ruleta": 0, "Raspa": 0, "Tragamonedas": 0, "Cartas": 0, "Moneda": 0
@@ -535,6 +535,16 @@ async function procesarEnvioFormulario() {
 
 function seleccionarOpcion(opcion) {
     const menu = document.getElementById('container-menu-options');
+    // ==========================================
+    // 🔥 CONTROL AUTOMÁTICO DEL PUNTITO ROJO
+    // ==========================================
+    if (opcion === 'Soporte') {
+        chatSoporteAbierto = true;
+        const puntito = document.getElementById('puntito-soporte');
+        if (puntito) puntito.style.display = 'none'; // Se apaga la alerta porque ya está leyendo
+    } else {
+        chatSoporteAbierto = false; // Si navega a otra sección, el chat ya no está visible
+    }
     
     // Validamos que socket exista antes de emitir
     if (typeof socket !== 'undefined') {
