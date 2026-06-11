@@ -55,7 +55,7 @@ function cambiarSeccion(seccion) {
     if (seccion === 'eventos') setTimeout(dibujarRuletaAdmin, 100);
     if (seccion === 'creditos') cargarSolicitudesCreditos();
     if (seccion === 'costos') cargarCostosMinijuegos();
-    if (seccion === 'cargas') ();
+    if (seccion === 'cargas') obtenerCargasPendientes();
 }
 
 function cambiarSubJuego(juego) {
