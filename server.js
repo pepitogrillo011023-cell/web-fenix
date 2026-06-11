@@ -77,10 +77,12 @@ const clienteSchema = new mongoose.Schema({
     ultimaCarta: { type: Date, default: null },
     ultimaMoneda: { type: Date, default: null },
     lastWithdrawal: { type: Date, default: null },
+    
      // --- CAMPOS NUEVOS ---
     referralCode: { type: String, unique: true, index: true }, 
     referredBy: { type: String, default: null },
-    pushSubscription: { type: Object, default: null } // <--- AGREGÁ ESTA LÍNEA ACÁ
+    pushSubscription: { type: Object, default: null },
+    bonoPendiente: { type: String, default: null }// <--- AGREGÁ ESTA LÍNEA ACÁ
     
   
 });
