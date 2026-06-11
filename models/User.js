@@ -30,6 +30,10 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     },
+    bonoPendiente: {
+        type: String,
+        default: null
+    },
     lastFreeSpin: {
         type: Date,
         default: null
