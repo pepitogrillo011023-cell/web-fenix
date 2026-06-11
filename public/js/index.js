@@ -7,6 +7,14 @@ const socket = io({
     reconnectionDelay: 1000,      // Esperar 1 segundo entre intentos
     timeout: 5000                 // Tiempo de espera para considerar falla
 });
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        console.log("Usuario volvió a la pestaña, reconectando socket...");
+        if (!socket.connected) {
+            socket.connect();
+        }
+    }
+});
 
 const msgArea = document.getElementById('messages-area'); //
 window.usuarioLogueado = null; //
