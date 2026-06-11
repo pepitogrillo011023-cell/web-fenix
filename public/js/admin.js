@@ -1176,6 +1176,24 @@ socket.on('resultado_disponibilidad', (data) => {
         }
     }
 });
+socket.on('lista_retiros_actualizada', (lista) => {
+    const tbody = document.getElementById('lista-retiros-body');
+    tbody.innerHTML = ''; // Limpiamos la tabla antes de renderizar
+
+    lista.forEach(retiro => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${retiro.usuario}</td>
+            <td>$${retiro.monto}</td>
+            <td>${retiro.cbu_alias} <br> <small>Titular: ${retiro.titular}</small></td>
+            <td>
+                <button onclick="aprobarRetiro('${retiro._id}')" style="background: green; color: white;">Aprobar</button>
+                <button onclick="rechazarRetiro('${retiro._id}')" style="background: red; color: white;">Rechazar</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+});
 
 /* =======================================================
    🔥 DETECTOR INTELIGENTE: Alertas por Mensajes Sin Leer
@@ -1266,6 +1284,20 @@ function renderizarHistorialChat(historial) {
         areaMsg.appendChild(wrap);
     });
     areaMsg.scrollTop = areaMsg.scrollHeight;
+}
+// Función para aprobar
+function aprobarRetiro(id) {
+    if(confirm("¿Confirmar este retiro?")) {
+        socket.emit('admin_decide_retiro', { retiroId: id, accion: 'aprobado' });
+    }
+}
+
+// Función para rechazar
+function rechazarRetiro(id) {
+    const motivo = prompt("Ingresá el motivo del rechazo:");
+    if (motivo) {
+        socket.emit('admin_decide_retiro', { retiroId: id, accion: 'rechazado', motivo: motivo });
+    }
 }
 
 function enviarMensajeManual() {
@@ -1753,3 +1785,4 @@ async function actualizarBadgeSilencioso() {
     }
 }
   
+socket.emit('pedir_lista_retiros');
