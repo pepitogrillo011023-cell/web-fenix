@@ -74,7 +74,14 @@
                     <div class="user-list" id="lista-usuarios"></div>
                 </div>
                 <div class="live-chat-monitor">
-                    <div class="monitor-header" id="active-chat-username" style="padding: 15px; border-bottom: 1px solid #1f2937; background: #111827; font-weight: bold;">Ningún usuario seleccionado</div>
+                    <div class="monitor-header" style="padding: 15px; border-bottom: 1px solid #1f2937; background: #111827; font-weight: bold; display: flex; justify-content: space-between; align-items: center;">
+    
+    <span id="active-chat-username">Ningún usuario seleccionado</span>
+    
+    <button onclick="finalizarSoporteCliente()" class="btn-finalizar-soporte">
+        🛑 Finalizar Soporte
+    </button>
+</div>
                     <div class="monitor-messages" id="active-chat-messages"><div style="color: #64748b; text-align: center; margin-top: 150px;">Seleccioná un cliente para chatear en tiempo real.</div></div>
                     <div class="monitor-input-area">
                         <input type="text" id="admin-message-input" class="admin-chat-input" placeholder="Escribí un mensaje..." disabled>
