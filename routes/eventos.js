@@ -111,6 +111,44 @@ module.exports = function(app, requireLogin, io, sharedState) {
         io.emit('nueva_notificacion', { titulo: titulo, mensaje: mensaje, fecha: new Date() });
         res.status(200).send('Notificación enviada');
     });
+    // ==============================================================
+    // 💬 1.6 RESPUESTA DE SOPORTE (ADMIN A CLIENTE)
+    // ==============================================================
+    app.post('/api/soporte/responder-cliente', requireLogin, async (req, res) => {
+        try {
+            const { usuarioCliente, mensaje } = req.body;
+            
+            // 1. Buscamos al cliente en la base de datos
+            const cliente = await Cliente.findOne({ usuarioCasino: usuarioCliente });
+            if (!cliente) return res.json({ exito: false, mensaje: 'Cliente no encontrado.' });
+
+            // 2. Guardamos el mensaje en su historial (emisor: 'soporte' o 'admin')
+            // Lo guardamos como leido: false para poder controlar las notificaciones
+            cliente.historialChat.push({ emisor: 'soporte', mensaje: mensaje, leido: false });
+            await cliente.save();
+
+            // 3. SI EL CLIENTE ESTÁ CONECTADO: Le mandamos el socket en tiempo real
+            const usuarioEnVivo = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
+            if (usuarioEnVivo && usuarioEnVivo.id) {
+                io.to(usuarioEnVivo.id).emit('notificacion_mensaje_soporte', {
+                    mensaje: mensaje,
+                    mostrarPuntito: true
+                });
+            } else {
+                // 4. SI EL CLIENTE TIENE LA APP CERRADA: Disparamos la notificación Push real
+                // Aquí conectarías con tu sistema de Web Push / Firebase / OneSignal pasándole el token del usuario.
+                // Por ahora, podés dejar asentado el trigger o usar tu lógica de push enviando solo a ese canal.
+                console.log(`Usuario ${usuarioCliente} desconectado. Enviando Push nativa...`);
+            }
+
+            // Avisamos al panel de admin que el chat se actualizó para reflejar el cambio en tu pantalla
+            await notificarPanelAdmin(usuarioCliente, cliente);
+
+            res.json({ exito: true });
+        } catch (e) { 
+            res.status(500).json({ exito: false, error: e.message }); 
+        }
+    });
 
     // ==============================================================
     // 🎫 2. RASPA Y GANA
