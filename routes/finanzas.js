@@ -183,7 +183,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
     app.get('/api/transacciones-pendientes', requireLogin, async (req, res) => {
         try {
             const tipo = req.query.tipo;
-            const transacciones = await Transaction.find({ type: tipo, status: 'pending' }).populate('userId', 'usuarioCasino');
+            const transacciones = await Transaction.find({ type: tipo, status: 'pending' }).populate('userId', 'usuarioCasino', 'usuarioCasino bonoPendiente');
             res.json({ transacciones });
         } catch (e) {
             res.status(500).json({ error: e.message });
@@ -223,6 +223,7 @@ module.exports = function(app, requireLogin, io, sharedState) {
 
             const cliente = await Cliente.findById(transaccion.userId);
             cliente.creditos = (cliente.creditos || 0) + transaccion.amount;
+            cliente.bonoPendiente = null;
             await cliente.save();
 
             const socketCliente = sharedState.usuariosConectados.find(u => u.nombre === cliente.usuarioCasino);
