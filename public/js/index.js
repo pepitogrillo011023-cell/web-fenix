@@ -267,6 +267,7 @@ if (typeof socket !== 'undefined') {
         }
     });
 }
+
 // ==========================================
 // NOTIFICACIONES (CORREGIDO Y OPTIMIZADO)
 // ==========================================
@@ -326,6 +327,43 @@ socket.on('nueva_notificacion', (data) => {
         `;
         
         lista.prepend(li); // Lo mete arriba de todo
+    }
+});
+// ==========================================================================
+// 📡 EL JUGADOR RECIBE LA ORDEN DE CERRAR Y LIMPIAR EL CHAT DE SOPORTE
+// ==========================================================================
+socket.on('servidor_limpia_pantalla_soporte', () => {
+    console.log(" Soporte finalizado por la administración. Limpiando interfaz...");
+
+    // 1. Limpiamos por completo el cuadro donde se ven los globos de mensajes.
+    // Reemplazá 'chat-container' por el ID real de tu contenedor de mensajes del cliente
+    const contenedorChatCliente = document.getElementById('chat-container'); 
+    if (contenedorChatCliente) {
+        contenedorChatCliente.innerHTML = `
+            <div style="text-align: center; color: #9ca3af; padding: 20px; font-size: 14px;">
+                El chat de soporte ha finalizado. ¡Gracias por comunicarte!
+            </div>
+        `;
+    }
+
+    // 2. Vaciamos el input de texto por si el cliente se quedó escribiendo algo a medias
+    // Reemplazá 'chat-input' por el ID real de tu caja de texto en el celular
+    const inputMensajeCliente = document.getElementById('chat-input'); 
+    if (inputMensajeCliente) {
+        inputMensajeCliente.value = '';
+    }
+
+    // 3. Redirigimos al jugador automáticamente al Menú / Home del casino
+    // Si manejás el cambio de secciones mediante una función común (por ejemplo cambiarSeccion), usala acá:
+    if (typeof cambiarSeccion === 'function') {
+        cambiarSeccion('menu'); // O 'home', según como se llame tu vista principal
+    } else {
+        // Si lo manejás manualmente ocultando/mostrando divs, adaptalo así:
+        const vistaSoporte = document.getElementById('view-soporte'); // Tu ID de sección soporte
+        const vistaMenu = document.getElementById('view-menu');       // Tu ID de sección menú principal
+        
+        if (vistaSoporte) vistaSoporte.style.display = 'none';
+        if (vistaMenu) vistaMenu.style.display = 'block';
     }
 });
 
