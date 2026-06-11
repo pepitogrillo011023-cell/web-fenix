@@ -1299,6 +1299,40 @@ function cerrarChatActual() {
         item.classList.remove('selected-user');
     });
 }
+// 🔥 FUNCIÓN PARA MANDAR DESDE EL ADMIN LA ORDEN DE CERRAR EL CHAT
+function finalizarSoporteCliente() {
+    if (!usuarioSeleccionadoActivo) {
+        alert("No hay ningún chat activo para finalizar.");
+        return;
+    }
+
+    if (confirm(`¿Estás seguro de finalizar el soporte de ${usuarioSeleccionadoActivo}?`)) {
+        // Le avisamos al servidor que este chat se terminó oficialmente
+        socket.emit('admin_finaliza_soporte', { nombre: usuarioSeleccionadoActivo });
+        
+        // Limpiamos visualmente nuestro panel de administración usando tus mismos IDs
+        usuarioSeleccionadoActivo = null;
+        document.getElementById('active-chat-username').innerText = "Ningún usuario seleccionado";
+        document.getElementById('active-chat-messages').innerHTML = '<div style="color: #64748b; text-align: center; margin-top: 150px;">Soporte finalizado con éxito. Seleccioná otro cliente.</div>';
+        
+        const inputMsg = document.getElementById('admin-message-input');
+        if (inputMsg) {
+            inputMsg.disabled = true;
+            inputMsg.value = '';
+        }
+        
+        const btnEnviar = document.getElementById('btn-enviar-msg');
+        if (btnEnviar) btnEnviar.disabled = true;
+        
+        // Desmarcamos al usuario de la lista de la izquierda
+        document.querySelectorAll('.user-item').forEach(item => {
+            item.classList.remove('selected-user');
+        });
+    }
+}
+
+// Hacemos la función global por si la llamás desde un onclick en el HTML
+window.finalizarSoporteCliente = finalizarSoporteCliente;
 
 async function guardarConfig(seccion) {
     let datos = {};
