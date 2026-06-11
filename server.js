@@ -733,13 +733,40 @@ app.post('/api/canjear-producto', async (req, res) => {
     try {
         const { usuario, nombre, costo } = req.body;
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
+        
         if (!cliente) return res.status(404).json({ exito: false, mensaje: "Usuario no encontrado" });
+        
+        // 🛑 1. CONTROL DE SEGURIDAD: Evita que el usuario compre otro bono si ya tiene uno activo
+        if (cliente.bonoPendiente) {
+            return res.status(400).json({ 
+                exito: false, 
+                mensaje: `Ya tenés un '${cliente.bonoPendiente}' pendiente para tu próxima carga. ¡Usalo primero!` 
+            });
+        }
+
         if (cliente.creditos < costo) return res.status(400).json({ exito: false, mensaje: "Créditos insuficientes" });
 
+        // 💸 Descontamos los créditos
         cliente.creditos -= costo;
+        
+        // 🎁 🔥 ¡ESTA ES LA LÍNEA QUE FALTA EN TU CÓDIGO! 🔥
+        // Guarda el nombre del bono (ej: "Bono 100%") en el perfil del jugador
+        cliente.bonoPendiente = nombre; 
+
+        // Guardamos los dos cambios juntos en MongoDB (los créditos y el bono)
         await cliente.save();
-        res.json({ exito: true, nuevoSaldo: cliente.creditos });
-    } catch (error) { res.status(500).json({ exito: false, mensaje: "Error al canjear el producto" }); }
+        
+        // Respondemos con éxito mandando el nuevo saldo
+        res.json({ 
+            exito: true, 
+            mensaje: `El '${nombre}' se aplicará automáticamente en tu próxima carga.`,
+            nuevoSaldo: cliente.creditos 
+        });
+
+    } catch (error) { 
+        console.error("Error al canjear el producto:", error);
+        res.status(500).json({ exito: false, mensaje: "Error al canjear el producto" }); 
+    }
 });
 
 app.post('/api/simular-pago-test', requireLogin, (req, res) => {
