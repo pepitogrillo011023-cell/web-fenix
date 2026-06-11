@@ -1119,23 +1119,17 @@ socket.on('admin_finaliza_soporte', async (datos) => {
 
         console.log(`[SOPORTE] Finalizando soporte para: ${nombre}`);
 
-        // 1. Actualizamos la BD
-        await Usuario.updateOne({ nombre: nombre }, { $set: { estado: 'Menú', soportePendiente: false } });
+        // 1. Ahora usamos 'User' (tu modelo correcto)
+        await User.updateOne(
+            { nombre: nombre }, 
+            { $set: { estado: 'Menú', soportePendiente: false } }
+        );
 
-        // 2. BUSCAMOS AL USUARIO EN TU ARRAY DE CONEXIONES (sharedState)
-        // Buscamos el objeto que contiene el socket.id del usuario
-       io.to(nombre).emit('servidor_limpia_pantalla_soporte');
-
-        if (usuarioConectado) {
-            // Enviamos el evento usando el ID de socket que guardaste en el array
-            io.to(usuarioConectado.id).emit('servidor_limpia_pantalla_soporte');
-            console.log(`[SOPORTE] Señal enviada exitosamente al socket: ${usuarioConectado.id}`);
-        } else {
-            console.warn(`[SOPORTE] El usuario ${nombre} no está en la lista de conectados.`);
-        }
-
-        // 3. Avisamos a los admins
-        const listaActualizada = await Usuario.find({}); 
+        // 2. Envío a la sala (usando el 'join' que configuramos antes)
+        io.to(nombre).emit('servidor_limpia_pantalla_soporte');
+        
+        // 3. Avisamos a los admins usando 'User' también
+        const listaActualizada = await User.find({}); 
         io.emit('lista_usuarios_actualizada', listaActualizada); 
 
     } catch (error) {
