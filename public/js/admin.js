@@ -1107,8 +1107,8 @@ socket.on('lista_usuarios_actualizada', (usuarios) => {
     
     usuarios.forEach(user => {
         let tieneMensajesSinLeer = user.historial.some(h => h.emisor === 'cliente' && h.leido === false);
-        let claseNoLeido = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? 'unread-chat' : '';
-        let dotVisual = (tieneMensajesSinLeer && usuarioSeleccionadoActivo !== user.nombre) ? '<span class="unread-indicator"></span>' : '';
+        let claseNoLeido = (user.soportePendiente === true && usuarioSeleccionadoActivo !== user.nombre) ? 'unread-chat' : '';
+        let dotVisual = (user.soportePendiente === true && usuarioSeleccionadoActivo !== user.nombre) ? '<span class="unread-indicator"></span>' : '';
         
         // ==============================================================
         // OPTIMIZACIÓN: Colores dinámicos para identificar el estado al toque
@@ -1141,6 +1141,9 @@ socket.on('lista_usuarios_actualizada', (usuarios) => {
             document.getElementById('admin-message-input').disabled = false; 
             document.getElementById('btn-enviar-msg').disabled = false;
             socket.emit('admin_cambio_chat_activo', { usuario: user.nombre });
+            if (typeof socket !== 'undefined' && socket) {
+                socket.emit('admin_selecciona_usuario', { nombre: user.nombre });
+            }
             renderizarHistorialChat(user.historial);
         };
         
