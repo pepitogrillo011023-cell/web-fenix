@@ -1157,14 +1157,8 @@ if (typeof socket !== 'undefined' && socket) {
     socket.on('lista_usuarios_actualizada', (usuarios) => {
         console.log("📊 Analizando mensajes nuevos en la lista de usuarios...");
 
-        // Buscamos si hay AL MENOS UN usuario en 'Soporte' que tenga mensajes del cliente SIN LEER
-        const haySoporteSinLeer = usuarios.some(u => {
-            const esSoporte = (u.estado === 'Soporte' || u.estado === 'soporte');
-            // Filtramos si en su historial hay mensajes donde el emisor sea el cliente y NO estén leídos
-            const tieneMensajesNuevos = u.historial && u.historial.some(m => m.emisor === 'cliente' && !m.leido);
-            
-            return esSoporte && tieneMensajesNuevos;
-        });
+        // 🔥 LA CORRECCIÓN: Ahora solo buscamos si AL MENOS UN usuario tiene la alerta activa en la DB
+        const haySoporteSinLeer = usuarios.some(u => u.soportePendiente === true);
 
         const noditoVerde = document.getElementById('notif-verde-soporte');
         const botonChats = document.getElementById('btn-nav-chats');
@@ -1188,13 +1182,23 @@ if (typeof socket !== 'undefined' && socket) {
                 botonChats.style.background = 'rgba(34, 197, 94, 0.1)';
             }
         } else {
-            // AUTOMÁTICO: Si ya leíste todos los chats de soporte, el puntito se apaga solo
+            // AUTOMÁTICO: Si ya leíste todos los chats, el puntito se apaga solo de verdad
             if (noditoVerde) noditoVerde.style.display = 'none';
             if (botonChats) {
                 botonChats.style.borderLeft = 'none';
                 botonChats.style.background = '';
             }
         }
+    });
+}
+
+// 🛠️ MODIFICACIÓN SEGURA: Al hacer clic en la sección de chats, NO borramos el punto a la fuerza.
+// Dejamos que se borre de verdad solo cuando abras el chat del usuario que te escribió.
+const btnNavChats = document.getElementById('btn-nav-chats');
+if (btnNavChats) {
+    btnNavChats.addEventListener('click', () => {
+        // Quitamos la limpieza manual ciega para evitar falsos estados visuales
+        console.log("📂 Abriendo bandeja de chats...");
     });
 }
 
