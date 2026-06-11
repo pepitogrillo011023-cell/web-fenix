@@ -157,6 +157,18 @@ function renderizarControlesPaginacion() {
 
     const totalPaginas = Math.ceil(clientesBuscador.length / filasPorPaginaClientes);
     
+    // ⏮️ BOTÓN: PRIMERA PÁGINA
+    const btnPrim = document.createElement('button');
+    btnPrim.className = 'btn-action-small';
+    btnPrim.style.backgroundColor = '#1f2937';
+    btnPrim.style.color = paginaActualClientes === 1 ? '#4b5563' : 'white';
+    btnPrim.innerText = '« Primera';
+    btnPrim.style.marginRight = '4px';
+    btnPrim.disabled = paginaActualClientes === 1;
+    btnPrim.onclick = () => { paginaActualClientes = 1; renderizarTablaClientes(); };
+    contenedor.appendChild(btnPrim);
+
+    // ◀ BOTÓN: ANTERIOR
     const btnAnt = document.createElement('button');
     btnAnt.className = 'btn-action-small';
     btnAnt.style.backgroundColor = '#1f2937';
@@ -166,6 +178,7 @@ function renderizarControlesPaginacion() {
     btnAnt.onclick = () => { paginaActualClientes--; renderizarTablaClientes(); };
     contenedor.appendChild(btnAnt);
 
+    // 📄 TEXTO: INDICADOR DE PÁGINA
     const info = document.createElement('span');
     info.style.color = '#94a3b8';
     info.style.fontSize = '13px';
@@ -175,6 +188,7 @@ function renderizarControlesPaginacion() {
     info.innerText = `Página ${paginaActualClientes} de ${totalPaginas || 1}`;
     contenedor.appendChild(info);
 
+    // ▶ BOTÓN: SIGUIENTE
     const btnSig = document.createElement('button');
     btnSig.className = 'btn-action-small';
     btnSig.style.backgroundColor = '#1f2937';
@@ -183,6 +197,17 @@ function renderizarControlesPaginacion() {
     btnSig.disabled = paginaActualClientes === totalPaginas || totalPaginas === 0;
     btnSig.onclick = () => { paginaActualClientes++; renderizarTablaClientes(); };
     contenedor.appendChild(btnSig);
+
+    // ⏭️ BOTÓN: ÚLTIMA PÁGINA
+    const btnUlt = document.createElement('button');
+    btnUlt.className = 'btn-action-small';
+    btnUlt.style.backgroundColor = '#1f2937';
+    btnUlt.style.color = paginaActualClientes === totalPaginas || totalPaginas === 0 ? '#4b5563' : 'white';
+    btnUlt.innerText = 'Última »';
+    btnUlt.style.marginLeft = '4px';
+    btnUlt.disabled = paginaActualClientes === totalPaginas || totalPaginas === 0;
+    btnUlt.onclick = () => { paginaActualClientes = totalPaginas; renderizarTablaClientes(); };
+    contenedor.appendChild(btnUlt);
 }
 
 function cambiarPaginacionClientes() {
