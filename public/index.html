@@ -85,7 +85,20 @@
             <div id="container-menu-options" class="menu-grid" style="display: none; margin-top: auto; gap: 12px;">
                 <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Depósito')">💰 Cargar</button>
                 <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Retiro')">💸 Retirar</button>
-                <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Soporte')">🛠️ Soporte</button>
+               <button id="btn-soporte-cliente" class="btn-action" style="padding: 14px; position: relative;" onclick="seleccionarOpcion('Soporte')">
+    🛠️ Soporte
+    <span id="puntito-soporte" style="
+        display: none; 
+        position: absolute; 
+        top: 6px; 
+        right: 8px; 
+        width: 9px; 
+        height: 9px; 
+        background-color: #ef4444; /* Rojo alerta */
+        border-radius: 50%;
+        box-shadow: 0 0 8px #ef4444;
+    "></span>
+</button>
                 <button class="btn-action" style="padding: 14px;" onclick="seleccionarOpcion('Referido')">🎁 Referí</button>
                 <button class="btn-action" style="grid-column: span 2; padding: 14px;" onclick="abrirModal('cargar-creditos')">🟡 Cargar Créditos</button>
                 <button class="btn-action" style="grid-column: span 2; background: #7c3aed; padding: 14px;" onclick="abrirTienda()">🛒 TIENDA</button>
