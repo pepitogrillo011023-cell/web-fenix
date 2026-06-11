@@ -485,23 +485,19 @@ app.post('/api/subir-comprobante', upload.single('comprobante'), async (req, res
 
 app.get('/api/admin/cargas-pendientes', requireLogin, async (req, res) => {
     try {
-        // 1. Traemos las cargas pendientes ordenadas por fecha
         const pendientes = await Carga.find({ estado: 'pendiente' }).sort({ fecha: 1 }).lean();
         
-        // 2. Cruzamos los datos con la colección de usuarios (User)
         const cargasConBono = await Promise.all(pendientes.map(async (carga) => {
             
-            // ✨ CORREGIDO: Buscamos usando 'username' que es el campo real de tu User.js
-            const usuarioDB = await User.findOne({ username: carga.usuario }); 
+            // 🎯 BUSCAMOS EN CLIENTE: Usamos usuarioCasino para machear con carga.usuario
+            const clienteDB = await Cliente.findOne({ usuarioCasino: carga.usuario }); 
             
             return {
                 ...carga,
-                // Si el usuario existe y tiene un bono activo en su perfil, se lo pegamos a la carga
-                bonoPendiente: usuarioDB ? usuarioDB.bonoPendiente : null 
+                bonoPendiente: clienteDB ? clienteDB.bonoPendiente : null 
             };
         }));
 
-        // 3. Mandamos la lista final con los bonos incluidos al frontend
         res.json(cargasConBono);
 
     } catch (err) {
@@ -528,23 +524,36 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
         if (accion === 'aprobar') {
             solicitud.estado = 'aprobado';
 
-            if (solicitud.plataforma === 'Créditos') {
-                if (cliente) {
+            // 🎁 SI EL CLIENTE EXISTE, CONSUMIMOS SU BONO AL APROBAR
+            if (cliente) {
+                cliente.bonoPendiente = null; 
+                
+                // Si es la plataforma interna de Créditos, le sumamos el monto
+                if (solicitud.plataforma === 'Créditos') {
                     cliente.creditos += solicitud.monto;
-                    await cliente.save();
                 }
+                
+                // 🔥 Guardamos al cliente (guarda el reseteo del bono y/o los créditos)
+                await cliente.save();
+            }
+
+            // Armamos el mensaje para la notificación push según la plataforma
+            if (solicitud.plataforma === 'Créditos') {
                 mensajePush = `¡Tu carga de $${solicitud.monto} en CRÉDITOS fue APROBADA! 💰 Tu saldo se actualizó.`;
             } else {
                 mensajePush = `¡Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue APROBADA! 🎉 Revisa tu cajero.`;
             }
 
         } else {
+            // ❌ Si se rechaza, NO tocamos al cliente. Así conserva el bono para la próxima carga.
             solicitud.estado = 'rechazado';
             mensajePush = `Tu carga de $${solicitud.monto} en ${solicitud.plataforma} fue rechazada. ❌ Revisa el comprobante.`;
         }
 
+        // Guardamos los cambios de la solicitud de carga
         await solicitud.save();
 
+        // Avisamos por WebSockets al frontend del cliente en tiempo real
         if (io) {
             io.emit('resultado_carga_cliente', {
                 usuario: solicitud.usuario,
@@ -555,6 +564,7 @@ app.post('/api/admin/procesar-carga', requireLogin, async (req, res) => {
             });
         }
 
+        // Enviamos la notificación push al celular/navegador del cliente si está suscrito
         if (cliente && cliente.pushSubscription) {
             const payload = JSON.stringify({
                 title: '🎰 Casino Fénix',
