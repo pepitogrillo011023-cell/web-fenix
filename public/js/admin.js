@@ -1693,4 +1693,4 @@ async function actualizarBadgeSilencioso() {
         console.log("Error silencioso al actualizar el badge:", e);
     }
 }
-console.log("🚨 ¡SI PODÉS LEER ESTO, EL ARCHIVO ADMIN.JS SE ACTUALIZÓ CORRECTAMENTE! 🚨");
+  
