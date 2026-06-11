@@ -1543,10 +1543,10 @@ async function guardarReglasRetencion() {
 // 🎰 SISTEMA DE GESTIÓN DE CARGAS PENDIENTES (ADMIN)
 // ==========================================================================
 
-// A) Busca las solicitudes con estado 'pendiente' en el servidor y arma la tabla
+// 🔍 Buscá la función encargada de renderizar las cargas pendientes en tu JS
 async function obtenerCargasPendientes() {
     try {
-        const res = await fetch('/api/admin/cargas-pendientes');
+        const res = await fetch('/api/admin/cargas-pendientes'); // O la ruta correspondiente de tu saldo
         const cargas = await res.json();
         
         const tbody = document.getElementById('tabla-cargas-body');
@@ -1554,55 +1554,55 @@ async function obtenerCargasPendientes() {
         
         tbody.innerHTML = '';
 
-        // Caso: No hay transferencias pendientes por revisar
+        // Si no hay cargas, se llena con colspan="6" para ocupar toda la tabla nueva
         if (cargas.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" style="padding:25px; text-align:center; color:#888; font-weight:500;">No hay cargas pendientes por el momento. 🙌</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="padding:20px; text-align:center; color:#888;">No hay cargas pendientes...</td></tr>`;
+            
             const badge = document.getElementById('admin-badge-cargas');
             if (badge) badge.style.display = 'none';
             return;
         }
 
-        // Si hay elementos, actualizamos el globito rojo del menú con el número real
+        // Actualizamos el globito rojo que me mostraste en el HTML
         const badge = document.getElementById('admin-badge-cargas');
         if (badge) {
             badge.innerText = cargas.length;
             badge.style.display = 'inline-block';
         }
 
-        // Rellenamos las filas de la tabla con los datos de MongoDB
+        // 🚀 Dibujamos las filas asegurando las 6 columnas en orden exacto
         cargas.forEach(carga => {
-            // Distinción visual para saber qué es saldo interno y qué es plataforma externa
-            let celdaPlataforma = "";
-            if (carga.plataforma === 'Créditos') {
-                celdaPlataforma = `<span style="background: #10b981; color: #fff; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; border: 1px solid #047857; letter-spacing: 0.5px;">💰 CRÉDITOS LOCALES</span>`;
-            } else {
-                celdaPlataforma = `<span style="background: #27272a; color: #ddd; padding: 4px 10px; border-radius: 4px; font-size: 11px; border: 1px solid #3f3f46;">🎰 ${carga.plataforma.toUpperCase()}</span>`;
-            }
-
-            // Lógica visual para la columna de Bonos
+            
+            // Evaluamos si viene un bono en el reporte
             let celdaBono = `<span style="color: #666; font-size: 13px;">No</span>`;
-            if (carga.bonoPendiente) {
-                celdaBono = `<span style="background-color: #ffc107; color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">🎁 ${carga.bonoPendiente}</span>`;
+            if (carga.userId && carga.userId.bonoPendiente) {
+                celdaBono = `<span style="background: #ffc107; color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 11px;">🎁 ${carga.userId.bonoPendiente}</span>`;
+            } else if (carga.bonoPendiente) {
+                celdaBono = `<span style="background: #ffc107; color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 11px;">🎁 ${carga.bonoPendiente}</span>`;
             }
 
+            // Inyectamos el HTML de la fila con los botones reposicionados
             tbody.innerHTML += `
-                <tr style="border-bottom: 1px solid #2a2a2a; background: #141414; transition: 0.2s;">
-                    <td style="padding: 14px; font-weight: bold; color: #f59e0b;">${carga.usuario}</td>
-                    <td style="padding: 14px; color: #ddd;">${celdaPlataforma}</td>
-                    <td style="padding: 14px; font-weight: bold; color: #10b981; font-size: 15px;">$${Number(carga.monto).toLocaleString('es-AR')}</td>
-                    <td style="padding: 14px;">
+                <tr style="border-bottom: 1px solid #2a2a2a; background: #141414;">
+                    <td style="padding: 12px; font-weight: bold; color: #fff;">${carga.usuario || (carga.userId ? carga.userId.usuarioCasino : 'Sin usuario')}</td>
+                    <td style="padding: 12px; color: #ccc;">🎰 ${carga.plataforma.toUpperCase()}</td>
+                    <td style="padding: 12px; font-weight: bold; color: #10b981;">$${Number(carga.monto).toLocaleString('es-AR')}</td>
+                    <td style="padding: 12px;">
                         <button onclick="verComprobante('/uploads/${carga.comprobante}')" style="background:#3b82f6; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">👁️ Ver Foto</button>
                     </td>
-                    <td style="padding: 14px; font-weight: 500;">${celdaBono}</td>
-                    <td style="padding: 14px; text-align: center;">
-                        <button onclick="procesarSolicitudCarga('${carga._id}', 'aprobar')" style="background:#10b981; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:8px; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">Aprobar ✅</button>
-                        <button onclick="procesarSolicitudCarga('${carga._id}', 'rechazar')" style="background:#ef4444; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-weight:bold; cursor:pointer;">Rechazar ❌</button>
+                    
+                    <td style="padding: 12px;">${celdaBono}</td>
+                    
+                    <td style="padding: 12px; text-align: center;">
+                        <button onclick="procesarSolicitudCarga('${carga._id}', 'aprobar')" style="background:#10b981; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:5px;">Aprobar ✅</button>
+                        <button onclick="procesarSolicitudCarga('${carga._id}', 'rechazar')" style="background:#ef4444; color:#fff; border:none; padding:6px 12px; border-radius:4px; font-weight:bold; cursor:pointer;">Rechazar ❌</button>
                     </td>
                 </tr>
             `;
         });
-    } catch (err) {
-        console.error("❌ Error al conectar con endpoint de cargas pendientes:", err);
+
+    } catch (error) {
+        console.error("Error al renderizar la tabla de cargas externas:", error);
     }
 }
 // ==========================================================================
