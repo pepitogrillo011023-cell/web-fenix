@@ -147,6 +147,8 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
     mongoose.connect(process.env.MONGO_URI, { family: 4 })
         .then(async () => {
             console.log('🟢 CONECTADO A MONGODB');
+            
+            // 1. Tu migración existente de referidos (Queda igual)
             try {
                 const sinCodigo = await Cliente.find({ referralCode: { $exists: false } });
                 for (const user of sinCodigo) {
@@ -161,37 +163,31 @@ if(process.env.MONGO_URI && process.env.MONGO_URI !== 'AQUI_VA_TU_ENLACE_DE_MONG
             } catch (err) {
                 console.error("❌ Error en la migración de referidos:", err);
             }
+
+            // 🎁 2. NUEVA MIGRACIÓN: Inicializar bonos en tus CLIENTES reales
+            try {
+                const totalClientes = await Cliente.countDocuments();
+                const clientesConBono = await Cliente.countDocuments({ bonoPendiente: { $exists: true } });
+                
+                console.log(`📊 [REPORTE REAL] Total de jugadores en DB: ${totalClientes}`);
+                
+                if (totalClientes > clientesConBono) {
+                    const resultado = await Cliente.updateMany(
+                        { bonoPendiente: { $exists: false } },
+                        { $set: { bonoPendiente: null } }
+                    );
+                    console.log(`✅ Migración de bonos completada. Jugadores actualizados: ${resultado.modifiedCount}`);
+                } else {
+                    console.log(`😎 Todo perfecto: Todos los jugadores ya tienen el campo 'bonoPendiente'.`);
+                }
+            } catch (err) {
+                console.error("❌ Error en la migración de bonos:", err);
+            }
+
             await inicializarDatosDePrueba();
         })
         .catch(err => console.log('🔴 ERROR DE MONGODB:', err));
 }
-
-const inicializarBonosViejos = async () => {
-    try {
-        // 1. Contamos cuántos usuarios existen en total en la base de datos
-        const totalUsuarios = await User.countDocuments();
-        
-        // 2. Contamos cuántos de esos usuarios tienen el campo bonoPendiente (aunque sea en null)
-        const usuariosConBonoSeteado = await User.countDocuments({ bonoPendiente: { $exists: true } });
-
-        console.log(`📊 [REPORTE] Total de usuarios en DB: ${totalUsuarios}`);
-        console.log(`📊 [REPORTE] Usuarios que ya tienen el campo 'bonoPendiente': ${usuariosConBonoSeteado}`);
-
-        if (totalUsuarios > usuariosConBonoSeteado) {
-            // Si falta alguno, lo actualiza
-            const resultado = await User.updateMany(
-                { bonoPendiente: { $exists: false } },
-                { $set: { bonoPendiente: null } }
-            );
-            console.log(`✅ Migración forzada completada. Nuevos actualizados: ${resultado.modifiedCount}`);
-        } else {
-            console.log(`😎 Todo perfecto: Todos los usuarios viejos ya tienen el campo incorporado.`);
-        }
-    } catch (err) {
-        console.error("❌ Error en el reporte de bonos:", err);
-    }
-};
-inicializarBonosViejos();
 
 // ==============================================================
 // 3. MIDDLEWARES, SESIÓN Y SEGURIDAD
