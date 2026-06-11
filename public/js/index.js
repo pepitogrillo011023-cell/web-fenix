@@ -1,7 +1,11 @@
 // MODIFICADO: Forzamos la conexión directa por WebSocket para evitar errores 400 en Render
 const socket = io({
     transports: ['websocket'],
-    upgrade: false
+    upgrade: false,
+    reconnection: true,           // Intentar reconectar automáticamente
+    reconnectionAttempts: 10,     // Intentar 10 veces
+    reconnectionDelay: 1000,      // Esperar 1 segundo entre intentos
+    timeout: 5000                 // Tiempo de espera para considerar falla
 });
 
 const msgArea = document.getElementById('messages-area'); //
@@ -267,6 +271,24 @@ if (typeof socket !== 'undefined') {
         }
     });
 }
+// Listener para detectar cuando se pierde la conexión
+socket.on('disconnect', (reason) => {
+    console.warn("Socket desconectado:", reason);
+    if (reason === 'io server disconnect') {
+        // Si el servidor lo desconectó, reconectar manualmente
+        socket.connect();
+    }
+});
+
+// Listener para cuando se reconecta
+socket.on('reconnect', (attemptNumber) => {
+    console.log("¡Reconectado exitosamente en el intento:", attemptNumber);
+    // IMPORTANTE: Volver a identificarse al reconectar
+    const usuarioActual = localStorage.getItem('usuario'); // O de donde saques el nombre
+    if (usuarioActual) {
+        socket.emit('identificar_usuario', { usuario: usuarioActual });
+    }
+});
 
 // ==========================================
 // NOTIFICACIONES (CORREGIDO Y OPTIMIZADO)
