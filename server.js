@@ -41,10 +41,13 @@ webpush.setVapidDetails(
 );
 const io = new Server(server, {
     cors: {
-        origin: "*", // O el dominio específico de tu app si lo tenés restringido
+        origin: "*", 
         methods: ["GET", "POST"]
     },
-    transports: ['websocket'] // 🔥 Obliga al servidor a hablar solo por WebSocket
+    transports: ['websocket'],
+    // 🔥 AGREGÁ ESTAS DOS LÍNEAS AQUÍ ABAJO:
+    pingTimeout: 60000, 
+    pingInterval: 25000 
 });
 
 // ==============================================================
