@@ -818,6 +818,49 @@ async function abrirModalReferidos() {
         console.error("Error de conexión:", error);
     }
 }
+// Cambiamos el nombre a solicitarRetiro para diferenciarla de la del Admin
+async function solicitarRetiro() {
+    const usuario = window.usuarioLogueado;
+    
+    // Estos son los IDs que existen en el HTML del cliente
+    const monto = document.getElementById('input-monto-retiro').value;
+    const cbuAlias = document.getElementById('input-cbu-alias').value;
+    const titular = document.getElementById('input-titular').value;
+
+    if (!monto || !cbuAlias || !titular) {
+        alert("Por favor, completá todos los datos del retiro.");
+        return;
+    }
+
+    try {
+        const res = await fetch('/api/solicitar-retiro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ usuario, monto, cbuAlias, titular })
+        });
+        
+        const data = await res.json();
+
+        if (data.exito) {
+            alert("¡Solicitud enviada con éxito! El cajero la procesará pronto.");
+            
+            // ... (tu código de socket y chat sigue igual)
+            const textoRetiro = `💸 SOLICITUD DE RETIRO:\n💰 Monto: $${monto}\n🏦 CBU/Alias: ${cbuAlias}\n👤 Titular: ${titular}`;
+            socket.emit('cliente_envia_mensaje_libre', { mensaje: textoRetiro });
+            
+            // Limpiar y cerrar
+            document.getElementById('input-monto-retiro').value = '';
+            document.getElementById('input-cbu-alias').value = '';
+            document.getElementById('input-titular').value = '';
+            irAlMenuPrincipal();
+        } else {
+            alert(data.mensaje);
+        }
+    } catch (error) {
+        console.error("Error al solicitar:", error);
+        alert("Error de conexión.");
+    }
+}
 
 /*async function enviarRetiro() {
     // Usamos la variable global que ya tienes al inicio de este archivo
