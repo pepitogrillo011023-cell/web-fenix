@@ -1107,7 +1107,55 @@ io.on('connection', (socket) => {
             }
         }
     });
+    // ==========================================================================
+// 🛑 EVENTO: FINALIZAR SOPORTE DESDE EL PANEL DE ADMINISTRACIÓN
+// ==========================================================================
+socket.on('admin_finaliza_soporte', async (datos) => {
+    try {
+        const { nombre } = datos;
+        if (!nombre) return;
+
+        console.log(`[SOPORTE] El administrador finalizó el chat de: ${nombre}`);
+
+        // 1. Actualizamos el estado del cliente en la Base de Datos (vuelve al Menú)
+        // Reemplazá 'Usuario' por el nombre exacto de tu modelo de Mongoose/MongoDB
+        await Usuario.updateOne(
+            { nombre: nombre },
+            { 
+                $set: { 
+                    estado: 'Menú',
+                    soportePendiente: false // Si usás un flag para alertas
+                } 
+            }
+        );
+
+        // 2. Buscamos si el jugador está conectado en este momento para vaciarle la pantalla.
+        // NOTA: Esto depende de cómo guardes los usuarios activos. 
+        // Si usás salas (rooms) por nombre, podés hacer: io.to(nombre).emit(...)
+        // Si guardás los sockets en un objeto global (ej: usuariosConectados[nombre] = socket.id), usá esto:
+        
+        // Ejemplo A (Si usás salas/rooms para cada usuario):
+        io.to(nombre).emit('servidor_limpia_pantalla_soporte');
+
+        /* // Ejemplo B (Si usás un objeto en memoria para trackear IDs):
+        const clienteSocketId = usuariosConectados[nombre];
+        if (clienteSocketId) {
+            io.to(clienteSocketId).emit('servidor_limpia_pantalla_soporte');
+        }
+        */
+
+        // 3. Avisamos a todas las cajeras/admins conectados que la lista cambió
+        // para que impacte el cambio de estado de 'Soporte' a 'Menú' en vivo
+        const listaActualizada = await Usuario.find({}); // Trae la lista de la DB
+        
+        // Emití el evento con el que refrescás la lista en tu admin.js
+        io.emit('lista_usuarios_actualizada', listaActualizada); 
+
+    } catch (error) {
+        console.error("❌ Error en servidor al finalizar soporte:", error);
+    }
 });
+    });
 
 // ==============================================================
 // 8. INICIALIZADOR DE DATOS
