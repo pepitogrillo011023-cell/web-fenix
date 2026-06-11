@@ -22,6 +22,7 @@ const bcrypt = require('bcryptjs');
 const webpush = require('web-push');
 const multer = require('multer'); // <--- 🛠️ AGREGÁ ESTA LÍNEA ACÁ
 const fs = require('fs');
+const Usuario = require('./models/User');
 
 
 // Importar modelos
