@@ -333,6 +333,9 @@ socket.on('nueva_notificacion', (data) => {
 // MENÚS Y CHAT
 // ==========================================
 function irAlMenuPrincipal() {
+    // 🔔 CONTROL: El usuario vuelve al menú, apagamos el estado del chat
+    chatSoporteAbierto = false;
+
     if (typeof socket !== 'undefined' && socket.emit) {
         socket.emit('cliente_cambia_pestaña', { pestaña: 'Menú' });
     }
@@ -346,15 +349,19 @@ function irAlMenuPrincipal() {
     if (chatIn) chatIn.style.display = 'none';
     if (games) games.style.display = 'none';
     if (msgArea) msgArea.style.display = 'none';
-    // --- ESTE ES EL CAMBIO: Ocultamos y vaciamos el chat ---
+    
     if (msgArea) {
         msgArea.style.display = 'none';
-        if (formRetiro) formRetiro.style.display = 'none';// Esto borra todos los mensajes acumulados
+        if (formRetiro) formRetiro.style.display = 'none';
     }
-    if (menu) menu.style.display = 'grid'; // <-- Usamos grid para que se vea ordenado
+    if (menu) menu.style.display = 'grid'; 
 }
 
 function mostrarChat() {
+    // 🟢 CONTROL: Si se ejecuta mostrarChat, el cliente pasa a estar adentro de soporte/depósito
+    // Nota: Si entra a Depósito, nuestra función "seleccionarOpcion" se va a encargar de ponerlo en false,
+    // pero ponerlo en true acá nos asegura que si el admin escribe, el flujo de pantalla funcione bien.
+    
     const menu = document.getElementById('container-menu-options');
     const games = document.getElementById('container-games-options');
     const chatIn = document.getElementById('container-chat-input');
@@ -367,12 +374,15 @@ function mostrarChat() {
 }
 
 function mostrarSubMenuMinijuegos() {
+    // 🔔 CONTROL: Si se va a jugar a las tragamonedas/ruletas, ya NO está viendo el chat
+    chatSoporteAbierto = false; 
+
     const menu = document.getElementById('container-menu-options');
     const games = document.getElementById('container-games-options');
 
     if (menu) menu.style.display = 'none';
     if (msgArea) msgArea.style.display = 'none'; 
-    if (games) games.style.display = 'grid'; // <-- Usamos grid para los botones
+    if (games) games.style.display = 'grid'; 
 }
 // ==============================================================
 // 🎯 SISTEMA AUTOMÁTICO DE CONTROL DE CARGAS POR EVENTOS
@@ -592,23 +602,39 @@ function seleccionarOpcion(opcion) {
             socket.emit('cliente_accion', { estado: 'Depósito', mensajeCliente: opcion, mensajeBot: 'Selección de plataforma iniciada.' });
         }
        
-    } else if (opcion === 'Soporte') {
+   } else if (opcion === 'Soporte') {
         mostrarChat();
         
-        // 🔥 LIMPIEZA: También borramos el historial visual al entrar a soporte
-        if (typeof msgArea !== 'undefined' && msgArea) {
-            msgArea.innerHTML = '';
+        // 🔍 CONTROL: Nos fijamos si el socket ya inyectó un mensaje del admin en el fondo
+        const tieneMensajeAdmin = msgArea ? msgArea.querySelector('.admin') : null;
+        
+        // Si NO hay ningún mensaje del admin esperando, ponemos el saludo inicial del bot
+        if (!tieneMensajeAdmin) {
+            if (typeof msgArea !== 'undefined' && msgArea) {
+                msgArea.innerHTML = ''; // Acá sí limpiamos porque está vacío
+            }
+            
+            let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
+            
+            if (typeof msgArea !== 'undefined' && msgArea) {
+                msgArea.innerHTML += `
+                    <div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div>
+                    <div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>
+                `;
+            }
+        } else {
+            // Si SÍ había un mensaje del admin esperándolo, NO BORRAMOS NADA.
+            // Simplemente marcamos los tildes de los mensajes anteriores como 'Visto'
+            document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
         }
         
-        let msgBot = `🛠️ <b>Soporte:</b> Escribí tu consulta, un asesor te responderá.`;
-        
+        // Auto-scroll para asegurar que vea el final del chat
         if (typeof msgArea !== 'undefined' && msgArea) {
-            msgArea.innerHTML += `<div class="bubble-wrapper"><div class="bubble cliente">${opcion}</div><span class="status-text">✓ Enviado</span></div><div class="bubble-wrapper"><div class="bubble bot">${msgBot}</div></div>`;
             msgArea.scrollTop = msgArea.scrollHeight;
         }
         
         if (typeof socket !== 'undefined') {
-            socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: msgBot });
+            socket.emit('cliente_accion', { estado: 'Soporte', mensajeCliente: opcion, mensajeBot: 'Cliente entró a ver el soporte.' });
         }
 
     } else if (opcion === 'Retiro') {
