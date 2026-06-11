@@ -1205,19 +1205,6 @@ if (btnNavChats) {
     });
 }
 
-// Limpieza manual instantánea al hacer clic en el botón por seguridad visual
-const btnNavChats = document.getElementById('btn-nav-chats');
-if (btnNavChats) {
-    btnNavChats.addEventListener('click', () => {
-        const noditoVerde = document.getElementById('notif-verde-soporte');
-        if (noditoVerde) noditoVerde.style.display = 'none';
-        if (btnNavChats) {
-            btnNavChats.style.borderLeft = 'none';
-            btnNavChats.style.background = '';
-        }
-    });
-}
-
 function renderizarHistorialChat(historial) {
     const areaMsg = document.getElementById('active-chat-messages'); 
     if (!areaMsg) return;
