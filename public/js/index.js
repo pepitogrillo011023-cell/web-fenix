@@ -333,37 +333,28 @@ socket.on('nueva_notificacion', (data) => {
 // 📡 EL JUGADOR RECIBE LA ORDEN DE CERRAR Y LIMPIAR EL CHAT DE SOPORTE
 // ==========================================================================
 socket.on('servidor_limpia_pantalla_soporte', () => {
-    console.log(" Soporte finalizado por la administración. Limpiando interfaz...");
+    console.log("🛑 Soporte finalizado por la administración. Limpiando interfaz...");
 
-    // 1. Limpiamos por completo el cuadro donde se ven los globos de mensajes.
-    // Reemplazá 'chat-container' por el ID real de tu contenedor de mensajes del cliente
-    const contenedorChatCliente = document.getElementById('chat-container'); 
-    if (contenedorChatCliente) {
-        contenedorChatCliente.innerHTML = `
+    // 1. Limpiamos el área de mensajes usando tu variable global 'msgArea'
+    // (Esta variable ya la usás en tus funciones mostrarChat y mostrarSubMenuMinijuegos)
+    if (typeof msgArea !== 'undefined' && msgArea) {
+        msgArea.innerHTML = `
             <div style="text-align: center; color: #9ca3af; padding: 20px; font-size: 14px;">
                 El chat de soporte ha finalizado. ¡Gracias por comunicarte!
             </div>
         `;
     }
 
-    // 2. Vaciamos el input de texto por si el cliente se quedó escribiendo algo a medias
-    // Reemplazá 'chat-input' por el ID real de tu caja de texto en el celular
-    const inputMensajeCliente = document.getElementById('chat-input'); 
-    if (inputMensajeCliente) {
-        inputMensajeCliente.value = '';
+    // 2. Ocultamos el área de input usando el ID que me pasaste antes
+    const inputArea = document.getElementById('container-chat-input');
+    if (inputArea) {
+        inputArea.style.display = 'none';
     }
 
-    // 3. Redirigimos al jugador automáticamente al Menú / Home del casino
-    // Si manejás el cambio de secciones mediante una función común (por ejemplo cambiarSeccion), usala acá:
-    if (typeof cambiarSeccion === 'function') {
-        cambiarSeccion('menu'); // O 'home', según como se llame tu vista principal
-    } else {
-        // Si lo manejás manualmente ocultando/mostrando divs, adaptalo así:
-        const vistaSoporte = document.getElementById('view-soporte'); // Tu ID de sección soporte
-        const vistaMenu = document.getElementById('view-menu');       // Tu ID de sección menú principal
-        
-        if (vistaSoporte) vistaSoporte.style.display = 'none';
-        if (vistaMenu) vistaMenu.style.display = 'block';
+    // 3. Volvemos al menú principal usando TU propia función
+    // Esto es lo mejor porque ya tiene toda la lógica de ocultar/mostrar elementos que necesitás
+    if (typeof irAlMenuPrincipal === 'function') {
+        irAlMenuPrincipal();
     }
 });
 
