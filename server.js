@@ -30,6 +30,7 @@ const slotRoutes = require('./routes/slot');
 console.log("CONTENIDO DE SLOTROUTES:", slotRoutes); // <--- AGREGA ESTO
 const Minigame = require('./models/Minigame');
 const User = require('./models/User');
+const RetiroSolicitud = require('./models/RetiroSolicitud');
 
 const app = express();
 const server = http.createServer(app);
@@ -1138,6 +1139,64 @@ socket.on('admin_finaliza_soporte', async (datos) => {
     } catch (error) {
         console.error("❌ Error en servidor al finalizar soporte:", error);
     }
+});
+    socket.on('solicitar_retiro', async (datos) => {
+    try {
+        const usuarioDB = await User.findOne({ nombre: socket.username });
+        
+        // Verificación de 24hs (si el campo ultimoRetiro existe y es menor a 24hs)
+        const hace24hs = new Date(Date.now() - 24 * 60 * 60 * 1000);
+        if (usuarioDB.ultimoRetiro && usuarioDB.ultimoRetiro > hace24hs) {
+            return socket.emit('error_retiro', "Debes esperar 24hs para solicitar otro retiro.");
+        }
+
+        const nuevaSolicitud = new RetiroSolicitud({
+            usuario: socket.username,
+            monto: datos.monto,
+            cbu_alias: datos.cbu_alias,
+            titular: datos.titular
+        });
+        await nuevaSolicitud.save();
+
+        // Avisamos al Admin
+        if (sharedState.adminSocketId) {
+            io.to(sharedState.adminSocketId).emit('nuevo_retiro_pendiente', nuevaSolicitud);
+        }
+        
+        socket.emit('retiro_enviado_exito', "Solicitud enviada correctamente.");
+    } catch (error) {
+        console.error("Error al solicitar retiro:", error);
+    }
+});
+    socket.on('admin_decide_retiro', async (datos) => {
+    // 🔥 BLOQUE DE SEGURIDAD (Gatekeeper)
+    if (socket.id !== sharedState.adminSocketId) {
+        console.warn(`❌ Intento de acceso no autorizado detectado desde socket: ${socket.id}`);
+        return; // Cortamos la ejecución aquí si no es el admin
+    }
+
+    // --- A partir de aquí, solo entra si es el admin ---
+    const { retiroId, accion, motivo } = datos; 
+    const solicitud = await RetiroSolicitud.findById(retiroId);
+    
+    if (!solicitud) return;
+
+    if (accion === 'aprobado') {
+        solicitud.estado = 'aprobado';
+        // Marcamos la fecha de retiro en el usuario para el bloqueo de 24hs
+        await User.updateOne({ nombre: solicitud.usuario }, { ultimoRetiro: new Date() });
+        
+        io.to(solicitud.usuario).emit('notificacion', "✅ Tu retiro ha sido aprobado.");
+    } else {
+        solicitud.estado = 'rechazado';
+        io.to(solicitud.usuario).emit('notificacion', `❌ Tu retiro fue rechazado. Motivo: ${motivo}`);
+    }
+    
+    await solicitud.save();
+    
+    // Actualizamos la lista del admin
+    const listaRetiros = await RetiroSolicitud.find({ estado: 'pendiente' });
+    io.emit('lista_retiros_actualizada', listaRetiros);
 });
     });
 // ==============================================================
