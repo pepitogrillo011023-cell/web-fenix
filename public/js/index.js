@@ -1209,6 +1209,9 @@ window.canjearProducto = async function(nombre, costo) {
                     elementoSaldo.innerText = Number(data.nuevoSaldo).toLocaleString('es-AR');
                 }
             }
+            // 🌟 DETALLE OPCIONAL: Cierra el modal automáticamente al terminar con éxito
+            const modal = document.getElementById('modal-tienda');
+            if (modal) modal.style.display = 'none';
         } else {
             alert("Error al canjear: " + (data.mensaje || "Error desconocido"));
         }
