@@ -970,46 +970,64 @@ io.on('connection', (socket) => {
         }
     });
     // ==========================================
+    // CHAT & SOPORTE EN TIEMPO REAL
+    // ==========================================
 
-   socket.on('cliente_accion', async (datos) => {
-    let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
-    if (usuario) {
-        usuario.estado = datos.estado;
-        let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
-        
-        if (datos.mensajeCliente) { 
-            usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); 
-        }
-        if (datos.mensajeBot) { 
-            usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); 
-        }
-        
-        await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial, estado: datos.estado });
-        
-        // El servidor acá verifica si el Admin está conectado
-        if (sharedState.adminSocketId) {
-            io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
-            io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+    socket.on('cliente_accion', async (datos) => {
+        let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
+        if (usuario) {
+            usuario.estado = datos.estado;
+            let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
             
-            // 🔥 LA MEJOR ENTRADA: Le avisamos directo al Admin que hubo una acción
-            io.to(sharedState.adminSocketId).emit('cliente_accion', datos); 
+            if (datos.mensajeCliente) { 
+                usuario.historial.push({ emisor: 'cliente', mensaje: datos.mensajeCliente, leido: estaMirandome }); 
+                // 🔥 Si el admin no lo está mirando, dejamos la alerta encendida
+                if (!estaMirandome) usuario.soportePendiente = true; 
+            }
+            if (datos.mensajeBot) { 
+                usuario.historial.push({ emisor: 'bot', mensaje: datos.mensajeBot, leido: true }); 
+            }
+
+            // Si el cliente entra físicamente a soporte, lee los mensajes que le dejó el Admin
+            if (datos.estado === 'soporte') {
+                usuario.historial.forEach(m => { if (m.emisor === 'admin') m.leido = true; });
+            }
+            
+            await Cliente.updateOne(
+                { usuarioCasino: usuario.nombre }, 
+                { historialChat: usuario.historial, estado: datos.estado, soportePendiente: usuario.soportePendiente }
+            );
+            
+            if (sharedState.adminSocketId) {
+                io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+                io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
+                io.to(sharedState.adminSocketId).emit('cliente_accion', datos); 
+            }
+            
+            if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
         }
-        
-        if (estaMirandome) socket.emit('tus_mensajes_fueron_leidos');
-    }
-    // ❌ Quitamos el socket.broadcast.emit de acá abajo para evitar errores de tipeo y envíos duplicados
-});
+    });
+
     socket.on('cliente_envia_mensaje_libre', async (datos) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
         if (usuario) {
             let estaMirandome = (sharedState.usuarioSeleccionadoActivoAdmin === usuario.nombre);
+            
+            // 🔥 Si el admin no está con su chat abierto, se activa la notificación persistente
+            if (!estaMirandome) usuario.soportePendiente = true; 
+
             usuario.historial.push({ 
                 emisor: 'cliente', 
                 mensaje: datos.mensaje, 
                 leido: estaMirandome, 
                 hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })
             });
-            await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
+
+            await Cliente.updateOne(
+                { usuarioCasino: usuario.nombre }, 
+                { historialChat: usuario.historial, soportePendiente: usuario.soportePendiente }
+            );
+
             if (sharedState.adminSocketId) {
                 io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
                 io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
@@ -1022,9 +1040,40 @@ io.on('connection', (socket) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === socket.username);
         if (usuario) {
             usuario.estado = datos.pestaña; 
-            await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { estado: datos.pestaña });
+            
+            // Si el cliente va a la pestaña de soporte, marca como leídos los mensajes que le mandó el admin
+            if (datos.pestaña === 'soporte') {
+                usuario.historial.forEach(m => { if (m.emisor === 'admin') m.leido = true; });
+            }
+
+            await Cliente.updateOne(
+                { usuarioCasino: usuario.nombre }, 
+                { estado: datos.pestaña, historialChat: usuario.historial }
+            );
+
             if (sharedState.adminSocketId) {
                 io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+            }
+        }
+    });
+
+    // 🔥 NUEVO EVENTO CLAVE: El Admin hace click en el usuario para ver su chat
+    socket.on('admin_selecciona_usuario', async (datos) => {
+        sharedState.usuarioSeleccionadoActivoAdmin = datos.nombre;
+        let usuario = sharedState.usuariosConectados.find(u => u.nombre === datos.nombre);
+        
+        if (usuario) {
+            usuario.soportePendiente = false; // 🟢 ¡Aquí y SOLO aquí se apaga el punto de notificación!
+            usuario.historial.forEach(m => { if (m.emisor === 'cliente') m.leido = true; }); // Todo leído
+
+            await Cliente.updateOne(
+                { usuarioCasino: usuario.nombre }, 
+                { soportePendiente: false, historialChat: usuario.historial }
+            );
+
+            if (sharedState.adminSocketId) {
+                io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
+                io.to(sharedState.adminSocketId).emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
             }
         }
     });
@@ -1032,24 +1081,32 @@ io.on('connection', (socket) => {
     socket.on('admin_envia_mensaje', async (datos) => {
         let usuario = sharedState.usuariosConectados.find(u => u.nombre === datos.paraUsuario);
         if (usuario) {
-            usuario.historial.push({ emisor: 'admin', mensaje: datos.mensaje, leido: true, hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) });
+            // 🛠️ CORRECCIÓN: Nace en 'leido: false' porque el cliente aún no abrió soporte para verlo
+            usuario.historial.push({ 
+                emisor: 'admin', 
+                mensaje: datos.mensaje, 
+                leido: false, 
+                hora: new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) 
+            });
+
             await Cliente.updateOne({ usuarioCasino: usuario.nombre }, { historialChat: usuario.historial });
-            if(usuario.id) io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
+            
+            if (usuario.id) io.to(usuario.id).emit('recibir_mensaje_admin', { mensaje: datos.mensaje });
             socket.emit('actualizar_chat_activo', { nombre: usuario.nombre, historial: usuario.historial });
         }
     });
 
     socket.on('disconnect', () => {
         if (socket.username) {
+            // Nota: Al desconectarse, el estado 'soportePendiente' queda guardado intacto en MongoDB
             sharedState.usuariosConectados = sharedState.usuariosConectados.filter(u => u.nombre !== socket.username);
             if (sharedState.usuarioSeleccionadoActivoAdmin === socket.username) sharedState.usuarioSeleccionadoActivoAdmin = null;
+            
             if (sharedState.adminSocketId) {
                 io.to(sharedState.adminSocketId).emit('lista_usuarios_actualizada', sharedState.usuariosConectados);
             }
         }
     });
-
-});
 
 // ==============================================================
 // 8. INICIALIZADOR DE DATOS
