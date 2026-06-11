@@ -1141,6 +1141,7 @@ socket.on('admin_finaliza_soporte', async (datos) => {
         console.error("❌ Error en servidor al finalizar soporte:", error);
     }
 });
+    });
 // ==============================================================
 // 8. INICIALIZADOR DE DATOS
 // ==============================================================
