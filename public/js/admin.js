@@ -1554,9 +1554,9 @@ async function obtenerCargasPendientes() {
         
         tbody.innerHTML = '';
 
-        // Caso: No hay transferencias pendientes por revisar
+        // Caso: No hay transferencias pendientes por revisar (Cambiamos colspan="5" a "6" por la nueva columna)
         if (cargas.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="5" style="padding:25px; text-align:center; color:#888; font-weight:500;">No hay cargas pendientes por el momento. 🙌</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" style="padding:25px; text-align:center; color:#888; font-weight:500;">No hay cargas pendientes por el momento. 🙌</td></tr>`;
             const badge = document.getElementById('admin-badge-cargas');
             if (badge) badge.style.display = 'none';
             return;
@@ -1571,22 +1571,28 @@ async function obtenerCargasPendientes() {
 
         // Rellenamos las filas de la tabla con los datos de MongoDB
         cargas.forEach(carga => {
-            // 🔥 NUEVO: Distinción visual para saber qué es saldo interno y qué es plataforma externa
+            // Distinción visual para saber qué es saldo interno y qué es plataforma externa
             let celdaPlataforma = "";
             if (carga.plataforma === 'Créditos') {
                 celdaPlataforma = `<span style="background: #10b981; color: #fff; padding: 4px 10px; border-radius: 4px; font-weight: bold; font-size: 11px; border: 1px solid #047857; letter-spacing: 0.5px;">💰 CRÉDITOS LOCALES</span>`;
             } else {
                 celdaPlataforma = `<span style="background: #27272a; color: #ddd; padding: 4px 10px; border-radius: 4px; font-size: 11px; border: 1px solid #3f3f46;">🎰 ${carga.plataforma}</span>`;
             }
+
+            // 🎁 NUEVO: Lógica visual para la columna de Bonos
+            let celdaBono = `<span style="color: #666; font-size: 13px;">No</span>`;
+            if (carga.bonoPendiente) {
+                celdaBono = `<span style="background-color: #ffc107; color: #000; font-weight: bold; padding: 4px 8px; border-radius: 4px; font-size: 12px; display: inline-block; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">🎁 ${carga.bonoPendiente}</span>`;
+            }
+
             tbody.innerHTML += `
                 <tr style="border-bottom: 1px solid #2a2a2a; background: #141414; transition: 0.2s;">
                     <td style="padding: 14px; font-weight: bold; color: #f59e0b;">${carga.usuario}</td>
-                    <td style="padding: 14px; color: #ddd;">${carga.plataforma}</td>
-                    <td style="padding: 14px; font-weight: bold; color: #10b981; font-size: 15px;">$${Number(carga.monto).toLocaleString('es-AR')}</td>
+                    <td style="padding: 14px; color: #ddd;">${celdaPlataforma}</td> <td style="padding: 14px; font-weight: bold; color: #10b981; font-size: 15px;">$${Number(carga.monto).toLocaleString('es-AR')}</td>
                     <td style="padding: 14px;">
-                        <button onclick="verComprobante('/uploads/${carga.comprobante}')" style="background:#3b82f6; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold; hover: opacity 0.8;">👁️ Ver Foto</button>
+                        <button onclick="verComprobante('/uploads/${carga.comprobante}')" style="background:#3b82f6; color:#fff; border:none; padding:6px 12px; border-radius:4px; cursor:pointer; font-size:12px; font-weight:bold;">👁️ Ver Foto</button>
                     </td>
-                    <td style="padding: 14px; text-align: center;">
+                    <td style="padding: 14px; font-weight: 500;">${celdaBono}</td> <td style="padding: 14px; text-align: center;">
                         <button onclick="procesarSolicitudCarga('${carga._id}', 'aprobar')" style="background:#10b981; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:8px; shadow: 0 2px 4px rgba(0,0,0,0.2);">Aprobar ✅</button>
                         <button onclick="procesarSolicitudCarga('${carga._id}', 'rechazar')" style="background:#ef4444; color:#fff; border:none; padding:7px 14px; border-radius:4px; font-weight:bold; cursor:pointer;">Rechazar ❌</button>
                     </td>
@@ -1595,46 +1601,6 @@ async function obtenerCargasPendientes() {
         });
     } catch (err) {
         console.error("❌ Error al conectar con endpoint de cargas pendientes:", err);
-    }
-}
-
-// B) Controladores visuales de la ventana modal (Agrandar comprobante)
-function verComprobante(url) {
-    const modal = document.getElementById('modal-comprobante-admin');
-    const img = document.getElementById('img-comprobante-modal');
-    if (modal && img) {
-        img.src = url;
-        modal.style.display = 'flex';
-    }
-}
-
-function cerrarModalComprobante() {
-    const modal = document.getElementById('modal-comprobante-admin');
-    if (modal) modal.style.display = 'none';
-}
-
-// C) Envía la resolución definitiva del cajero al backend (Aprobar/Rechazar)
-async function procesarSolicitudCarga(id, accion) {
-    const mensajeConfirmar = `¿Estás seguro de que querés ${accion.toUpperCase()} esta solicitud de carga?`;
-    if (!confirm(mensajeConfirmar)) return;
-
-    try {
-        const res = await fetch('/api/admin/procesar-carga', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id, accion })
-        });
-        const data = await res.json();
-
-        if (data.exito) {
-            alert("¡Operación exitosa!: " + data.mensaje);
-            obtenerCargasPendientes(); // Recargamos la tabla de inmediato para limpiar la fila resuelta
-        } else {
-            alert("⚠️ Error del Servidor: " + data.mensaje);
-        }
-    } catch (err) {
-        console.error("❌ Error en la petición fetch de procesamiento:", err);
-        alert("Hubo un error de red al intentar procesar la carga.");
     }
 }
 // ==========================================================================
