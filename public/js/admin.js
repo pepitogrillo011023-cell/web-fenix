@@ -1638,6 +1638,32 @@ async function guardarReglasRetencion() {
         alert('Error de conexión con el backend.');
     }
 }
+
+
+async function enviarRetiro(id, accion) {
+    if (!confirm(`¿Confirmas que deseas ${accion} este retiro?`)) return;
+
+    try {
+        const response = await fetch('/api/retiros/gestion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: id, accion: accion })
+        });
+
+        const data = await response.json(); // Ahora sí recibirá un JSON válido
+
+        if (data.exito) {
+            alert(`✅ Retiro ${accion}do exitosamente.`);
+            // Emitimos para que el servidor refresque la lista en todos los admin
+            socket.emit('pedir_lista_retiros'); 
+        } else {
+            alert("❌ Hubo un error al procesar la solicitud.");
+        }
+    } catch (error) {
+        console.error("Error:", error);
+        alert("❌ Error de conexión con el servidor.");
+    }
+}
 // ==========================================================================
 // 🎰 SISTEMA DE GESTIÓN DE CARGAS PENDIENTES (ADMIN)
 // ==========================================================================
