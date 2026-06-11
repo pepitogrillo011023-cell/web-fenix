@@ -917,6 +917,7 @@ io.on('connection', (socket) => {
 
     socket.on('identificar_usuario', async (datos) => {
         socket.username = datos.usuario;
+        socket.join(datos.usuario);
         let clienteDB = await Cliente.findOne({ usuarioCasino: datos.usuario });
         if (!clienteDB) {
             clienteDB = new Cliente({
