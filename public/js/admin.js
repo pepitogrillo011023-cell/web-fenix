@@ -56,6 +56,7 @@ function cambiarSeccion(seccion) {
     if (seccion === 'creditos') cargarSolicitudesCreditos();
     if (seccion === 'costos') cargarCostosMinijuegos();
     if (seccion === 'cargas') obtenerCargasPendientes();
+    if (seccion === 'retiros') socket.emit('pedir_lista_retiros');
 }
 
 function cambiarSubJuego(juego) {
