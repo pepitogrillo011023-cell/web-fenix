@@ -1185,12 +1185,12 @@ socket.on('lista_retiros_actualizada', (lista) => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${retiro.usuario}</td>
-            <td>$${retiro.monto}</td>
-            <td>${retiro.cbu_alias} <br> <small>Titular: ${retiro.titular}</small></td>
-            <td>
-                <button onclick="aprobarRetiro('${retiro._id}')" style="background: green; color: white;">Aprobar</button>
-                <button onclick="rechazarRetiro('${retiro._id}')" style="background: red; color: white;">Rechazar</button>
-            </td>
+    <td>$${retiro.monto}</td>
+    <td>${retiro.cbu_alias}</td>
+    <td>
+        <button onclick="enviarRetiro('${retiro._id}', 'aprobar')">Aprobar</button>
+        <button onclick="enviarRetiro('${retiro._id}', 'rechazar')">Rechazar</button>
+    </td>
         `;
         tbody.appendChild(row);
     });
