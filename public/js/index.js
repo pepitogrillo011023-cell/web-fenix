@@ -677,23 +677,49 @@ function enviarMensajeLibreCliente() {
 }
 
 socket.on('recibir_mensaje_admin', (datos) => {
-    mostrarChat(); 
-    
     // Si el servidor no manda la hora, el cliente calcula su hora actual en formato 24hs
     const horaActual = datos.hora || new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
 
-    // Modificamos el HTML para meter el tag de la hora abajo del mensaje
-    msgArea.innerHTML += `
-        <div class="bubble-wrapper">
-            <div class="bubble admin">
-                <b>Asesor:</b> ${datos.mensaje}
-                <span class="hora-chat">${horaActual}</span>
-            </div>
-        </div>
-    `;
+    // 🟢 CASO 1: El cliente YA está viendo el chat de soporte
+    if (chatSoporteAbierto) {
+        // Inyectamos el mensaje en vivo
+        if (typeof msgArea !== 'undefined' && msgArea) {
+            msgArea.innerHTML += `
+                <div class="bubble-wrapper">
+                    <div class="bubble admin">
+                        <b>Asesor:</b> ${datos.mensaje}
+                        <span class="hora-chat">${horaActual}</span>
+                    </div>
+                </div>
+            `;
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }
+        // Marcamos los mensajes anteriores como vistos
+        document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
 
-    document.querySelectorAll('.status-text').forEach(m => { m.innerText = '✓ Visto'; m.classList.add('visto'); });
-    msgArea.scrollTop = msgArea.scrollHeight;
+    } else {
+        // 🔴 CASO 2: El cliente tiene el chat cerrado (jugando o en otra pestaña)
+        // ¡NO llamamos a mostrarChat()! La pantalla se queda como está.
+        
+        // 1. Prendemos el puntito rojo discretamente
+        const puntito = document.getElementById('puntito-soporte');
+        if (puntito) {
+            puntito.style.display = 'block';
+        }
+
+        // 2. Dejamos el mensaje ya inyectado "en el fondo". 
+        // Así, cuando el cliente decida hacer click en "Soporte", el mensaje ya va a estar ahí esperándolo.
+        if (typeof msgArea !== 'undefined' && msgArea) {
+            msgArea.innerHTML += `
+                <div class="bubble-wrapper">
+                    <div class="bubble admin">
+                        <b>Asesor:</b> ${datos.mensaje}
+                        <span class="hora-chat">${horaActual}</span>
+                    </div>
+                </div>
+            `;
+        }
+    }
 });
 
 socket.on('tus_mensajes_fueron_leidos', () => {
