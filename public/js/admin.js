@@ -1543,7 +1543,7 @@ async function guardarReglasRetencion() {
 // 🎰 SISTEMA DE GESTIÓN DE CARGAS PENDIENTES (ADMIN)
 // ==========================================================================
 
-/ A) Busca las solicitudes con estado 'pendiente' en el servidor y arma la tabla
+// A) Busca las solicitudes con estado 'pendiente' en el servidor y arma la tabla
 async function obtenerCargasPendientes() {
     try {
         const res = await fetch('/api/admin/cargas-pendientes');
