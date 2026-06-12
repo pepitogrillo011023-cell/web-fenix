@@ -1215,66 +1215,7 @@ socket.on('admin_finaliza_soporte', async (datos) => {
     const listaRetiros = await RetiroSolicitud.find({ estado: 'pendiente' });
     io.emit('lista_retiros_actualizada', listaRetiros);
 });
-    // --- EVENTO: CLIENTE SOLICITA RETIRO ---
-socket.on('solicitar_retiro', async (datos) => {
-    try {
-        const usuarioDB = await User.findOne({ nombre: socket.username });
-        
-        // Validación de 24hs
-        const hace24hs = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        if (usuarioDB.ultimoRetiro && usuarioDB.ultimoRetiro > hace24hs) {
-            return socket.emit('error_retiro', "Debes esperar 24hs para solicitar otro retiro.");
-        }
-
-        const nuevaSolicitud = new RetiroSolicitud({
-            usuario: socket.username,
-            monto: datos.monto,
-            cbu_alias: datos.cbu_alias,
-            titular: datos.titular,
-            estado: 'pendiente'
-        });
-        await nuevaSolicitud.save();
-
-        // Notificar al Admin
-        if (sharedState.adminSocketId) {
-            io.to(sharedState.adminSocketId).emit('nuevo_retiro_pendiente', nuevaSolicitud);
-        }
-        
-        socket.emit('retiro_enviado_exito', "Solicitud enviada. Espera la confirmación del cajero.");
-    } catch (error) {
-        console.error("Error al solicitar retiro:", error);
-    }
-});
-    // --- EVENTO: CLIENTE SOLICITA RETIRO ---
-socket.on('solicitar_retiro', async (datos) => {
-    try {
-        const usuarioDB = await User.findOne({ nombre: socket.username });
-        
-        // Validación de 24hs
-        const hace24hs = new Date(Date.now() - 24 * 60 * 60 * 1000);
-        if (usuarioDB.ultimoRetiro && usuarioDB.ultimoRetiro > hace24hs) {
-            return socket.emit('error_retiro', "Debes esperar 24hs para solicitar otro retiro.");
-        }
-
-        const nuevaSolicitud = new RetiroSolicitud({
-            usuario: socket.username,
-            monto: datos.monto,
-            cbu_alias: datos.cbu_alias,
-            titular: datos.titular,
-            estado: 'pendiente'
-        });
-        await nuevaSolicitud.save();
-
-        // Notificar al Admin
-        if (sharedState.adminSocketId) {
-            io.to(sharedState.adminSocketId).emit('nuevo_retiro_pendiente', nuevaSolicitud);
-        }
-        
-        socket.emit('retiro_enviado_exito', "Solicitud enviada. Espera la confirmación del cajero.");
-    } catch (error) {
-        console.error("Error al solicitar retiro:", error);
-    }
-});
+   
 
 // --- EVENTO: ADMIN APRUEBA O RECHAZA ---
 socket.on('admin_decide_retiro', async (datos) => {
