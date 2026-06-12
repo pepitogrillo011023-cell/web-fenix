@@ -1,0 +1,24 @@
+/* Animación suave de aparición */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+}
+
+/* Efecto al pasar el mouse por las tarjetas */
+.card { 
+    background: #1e1e1e; padding: 20px; border-radius: 10px; width: 250px; 
+    border: 1px solid #333; transition: transform 0.3s ease; 
+}
+.card:hover { 
+    transform: translateY(-10px); 
+    border-color: #f59e0b;
+}
+
+/* Estilo para los pasos */
+.pasos-container { display: flex; justify-content: center; gap: 30px; margin-top: 40px; flex-wrap: wrap; }
+.paso { width: 200px; padding: 20px; text-align: center; }
+.paso-num { font-size: 2rem; color: #f59e0b; font-weight: bold; }
