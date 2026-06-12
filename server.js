@@ -822,7 +822,7 @@ app.post('/api/sumar-premio-bonus', async (req, res) => {
     } catch (error) { res.status(500).json({ exito: false, mensaje: "Error sumando bonus" }); }
 });
 // --- NUEVA RUTA: SOLICITAR RETIRO ---
-/*app.post('/api/solicitar-retiro', async (req, res) => {
+app.post('/api/solicitar-retiro', async (req, res) => {
     try {
         const { usuario, monto, cbuAlias, titular } = req.body;
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
@@ -864,7 +864,7 @@ app.post('/api/sumar-premio-bonus', async (req, res) => {
         console.error("Error al solicitar retiro:", error);
         res.status(500).json({ exito: false, mensaje: "Error interno en el servidor" });
     }
-});*/
+});
 app.post('/api/retiros/gestion', async (req, res) => {
     try {
         const { id, accion } = req.body; // 'id' del retiro y 'accion' (aprobar/rechazar)
