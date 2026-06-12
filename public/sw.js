@@ -1,4 +1,4 @@
-const CACHE_NAME = 'casino-fenix-v3'; // Subimos la versión para forzar actualización
+const CACHE_NAME = 'casino-fenix-v4'; // Subimos la versión para forzar actualización
 const ASSETS = [
     '/',
     '/index.html',
