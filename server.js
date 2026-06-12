@@ -826,21 +826,19 @@ app.post('/api/solicitar-retiro', async (req, res) => {
         const { usuario, monto, cbuAlias, titular } = req.body;
 
         // 1. BUSCAR EL ÚLTIMO RETIRO DEL USUARIO
-        // Buscamos ordenando por fecha descendente (el más reciente primero)
+        // Usamos 'fechaCreacion' tal cual está en tu esquema
         const ultimoRetiro = await RetiroSolicitud.findOne({ usuario: usuario })
-            .sort({ fecha: -1 });
+            .sort({ fechaCreacion: -1 }); // Ordenamos por fechaCreacion
 
         // 2. VALIDACIÓN DE 24 HORAS
         if (ultimoRetiro) {
             const ahora = new Date();
-            const fechaUltimoRetiro = new Date(ultimoRetiro.fecha);
+            const fechaUltimoRetiro = new Date(ultimoRetiro.fechaCreacion); // Accedemos a fechaCreacion
             
-            // Calculamos la diferencia en milisegundos
             const diferenciaMs = ahora - fechaUltimoRetiro;
             const veinticuatroHorasMs = 24 * 60 * 60 * 1000;
 
             if (diferenciaMs < veinticuatroHorasMs) {
-                // Calculamos cuánto falta para cumplir las 24hs (para el mensaje al usuario)
                 const tiempoRestanteMs = veinticuatroHorasMs - diferenciaMs;
                 const horasRestantes = Math.ceil(tiempoRestanteMs / (60 * 60 * 1000));
                 
@@ -858,7 +856,7 @@ app.post('/api/solicitar-retiro', async (req, res) => {
             cbu_alias: cbuAlias,
             titular: titular,
             estado: 'pendiente',
-            fecha: new Date() // Guardamos la hora actual
+            fechaCreacion: new Date() // Asignamos fecha actual
         });
 
         await nuevaSolicitud.save();
