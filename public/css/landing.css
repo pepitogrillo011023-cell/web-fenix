@@ -4,11 +4,21 @@ body { margin: 0; font-family: 'Arial', sans-serif; background: #121212; color: 
         h1 { color: #f59e0b; font-size: 3rem; margin-bottom: 20px; }
         p { font-size: 1.2rem; color: #ccc; margin-bottom: 40px; }
         .cta-button { 
-            background: #f59e0b; color: #121212; padding: 20px 40px; 
-            text-decoration: none; font-weight: bold; font-size: 1.2rem; 
-            border-radius: 8px; transition: 0.3s; 
+            background: #f59e0b; 
+            color: #121212; 
+            padding: 20px 40px; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 1.2rem; 
+            border-radius: 8px; 
+            transition: 0.3s; 
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);    
         }
-        .cta-button:hover { background: #d97706; transform: scale(1.05); }
+        .cta-button:hover { 
+                background: #d97706; 
+                transform: scale(1.05);
+                box-shadow: 0 6px 20px rgba(245, 158, 11, 0.6);
+        }
         .features { display: flex; gap: 20px; padding: 40px; flex-wrap: wrap; justify-content: center; }
         .card { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 250px; border: 1px solid #333; }
 @keyframes fadeIn {
