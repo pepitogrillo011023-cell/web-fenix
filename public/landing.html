@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Inteligente de Créditos | Acceso 24/7</title>
+    
+    <style>
+        body { margin: 0; font-family: 'Arial', sans-serif; background: #121212; color: white; display: flex; flex-direction: column; align-items: center; text-align: center; }
+        .hero { padding: 80px 20px; max-width: 800px; }
+        h1 { color: #f59e0b; font-size: 3rem; margin-bottom: 20px; }
+        p { font-size: 1.2rem; color: #ccc; margin-bottom: 40px; }
+        .cta-button { 
+            background: #f59e0b; color: #121212; padding: 20px 40px; 
+            text-decoration: none; font-weight: bold; font-size: 1.2rem; 
+            border-radius: 8px; transition: 0.3s; 
+        }
+        .cta-button:hover { background: #d97706; transform: scale(1.05); }
+        .features { display: flex; gap: 20px; padding: 40px; flex-wrap: wrap; justify-content: center; }
+        .card { background: #1e1e1e; padding: 20px; border-radius: 10px; width: 250px; border: 1px solid #333; }
+    </style>
+</head>
+<body>
+
+    <div class="hero">
+        <h1>Gestión de Créditos al Instante</h1>
+        <p>Tu plataforma preferida, ahora con autogestión 100% automatizada. Retiros rápidos y soporte profesional.</p>
+        <a href="/registro" class="cta-button" id="btn-registro">Comenzar Ahora</a>
+    </div>
+
+    <div class="features">
+        <div class="card"><h3>⚡ Velocidad</h3><p>Procesamiento automático de tus solicitudes.</p></div>
+        <div class="card"><h3>🔒 Seguridad</h3><p>Tecnología encriptada para tu tranquilidad.</p></div>
+        <div class="card"><h3>📱 24/7</h3><p>Disponible desde cualquier dispositivo.</p></div>
+    </div>
+
+    <script>
+        // Seguimiento de conversión al hacer clic
+        document.getElementById('btn-registro').addEventListener('click', function() {
+            if (typeof fbq !== 'undefined') {
+                fbq('track', 'CompleteRegistration');
+            }
+        });
+    </script>
+</body>
+</html>
