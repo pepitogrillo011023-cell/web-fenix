@@ -12,7 +12,22 @@ body { margin: 0; font-family: 'Arial', sans-serif; background: #121212; color: 
             font-size: 1.2rem; 
             border-radius: 8px; 
             transition: 0.3s; 
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);    
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+                /* --- NUEVO: Propiedades para hacerlo flotante --- */
+    position: fixed;   /* Fija el botón en la ventana */
+    bottom: 30px;      /* Distancia desde abajo */
+    right: 30px;       /* Distancia desde la derecha */
+    z-index: 1000;     /* Asegura que el botón esté siempre encima de todo */
+}
+
+/* Ajuste para móviles: Que el botón ocupe más espacio o se vea cómodo */
+@media (max-width: 600px) {
+    .cta-button {
+        right: 15px;
+        bottom: 20px;
+        padding: 15px 25px;
+        font-size: 1rem;
+    }
         }
         .cta-button:hover { 
                 background: #d97706; 
