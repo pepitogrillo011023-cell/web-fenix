@@ -825,26 +825,30 @@ app.post('/api/solicitar-retiro', async (req, res) => {
     try {
         const { usuario, monto, cbuAlias, titular } = req.body;
 
-        // 1. BUSCAR EL ÚLTIMO RETIRO DEL USUARIO
-        // Usamos 'fechaCreacion' tal cual está en tu esquema
-        const ultimoRetiro = await RetiroSolicitud.findOne({ usuario: usuario })
-            .sort({ fechaCreacion: -1 }); // Ordenamos por fechaCreacion
+        // 1. BUSCAR EL ÚLTIMO RETIRO APROBADO
+        // Ahora filtramos por estado: 'aprobado'
+        const ultimoRetiroAprobado = await RetiroSolicitud.findOne({ 
+            usuario: usuario, 
+            estado: 'aprobado' 
+        }).sort({ fechaCreacion: -1 });
 
-        // 2. VALIDACIÓN DE 24 HORAS
-        if (ultimoRetiro) {
-            const ahora = new Date();
-            const fechaUltimoRetiro = new Date(ultimoRetiro.fechaCreacion); // Accedemos a fechaCreacion
+        // 2. VALIDACIÓN DE 24 HORAS (Solo si hubo un retiro previo aprobado)
+        if (ultimoRetiroAprobado) {
+            const ahora = Date.now();
+            const fechaUltimoRetiro = new Date(ultimoRetiroAprobado.fechaCreacion).getTime();
             
-            const diferenciaMs = ahora - fechaUltimoRetiro;
             const veinticuatroHorasMs = 24 * 60 * 60 * 1000;
+            const diferenciaMs = ahora - fechaUltimoRetiro;
 
             if (diferenciaMs < veinticuatroHorasMs) {
+                // Cálculo del tiempo restante
                 const tiempoRestanteMs = veinticuatroHorasMs - diferenciaMs;
-                const horasRestantes = Math.ceil(tiempoRestanteMs / (60 * 60 * 1000));
+                const horas = Math.floor(tiempoRestanteMs / (1000 * 60 * 60));
+                const minutos = Math.floor((tiempoRestanteMs % (1000 * 60 * 60)) / (1000 * 60));
                 
                 return res.json({ 
                     exito: false, 
-                    mensaje: `⚠️ Ya realizaste un retiro recientemente. Por favor, intentá nuevamente en ${horasRestantes} horas.` 
+                    mensaje: `⚠️ Ya realizaste un retiro aprobado recientemente. Podrás solicitar otro en ${horas} horas y ${minutos} minutos.` 
                 });
             }
         }
@@ -855,13 +859,12 @@ app.post('/api/solicitar-retiro', async (req, res) => {
             monto: monto,
             cbu_alias: cbuAlias,
             titular: titular,
-            estado: 'pendiente',
-            fechaCreacion: new Date() // Asignamos fecha actual
+            estado: 'pendiente', // Sigue siendo 'pendiente' al crearse
+            fechaCreacion: new Date()
         });
 
         await nuevaSolicitud.save();
 
-        // Notificar al admin
         io.emit('nueva_solicitud_retiro', { mensaje: "Nueva solicitud de retiro recibida" });
 
         res.json({ exito: true });
