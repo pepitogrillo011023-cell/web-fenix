@@ -1217,34 +1217,6 @@ socket.on('admin_finaliza_soporte', async (datos) => {
 });
    
 
-// --- EVENTO: ADMIN APRUEBA O RECHAZA ---
-socket.on('admin_decide_retiro', async (datos) => {
-    // Seguridad
-    if (socket.id !== sharedState.adminSocketId) return;
-
-    const { retiroId, accion, motivo } = datos;
-    const solicitud = await RetiroSolicitud.findById(retiroId);
-    if (!solicitud) return;
-
-    if (accion === 'aprobado') {
-        solicitud.estado = 'aprobado';
-        // Bloqueo de 24hs: guardamos la fecha
-        await User.updateOne({ nombre: solicitud.usuario }, { ultimoRetiro: new Date() });
-        
-        // Mensaje al chat del usuario
-        io.to(solicitud.usuario).emit('notificacion', "✅ Tu retiro ha sido aprobado y procesado.");
-    } else {
-        solicitud.estado = 'rechazado';
-        io.to(solicitud.usuario).emit('notificacion', `❌ Tu retiro fue rechazado. Motivo: ${motivo}`);
-    }
-    
-    await solicitud.save();
-    
-    // Actualizar lista en panel de admin
-    const listaPendientes = await RetiroSolicitud.find({ estado: 'pendiente' });
-    io.to(sharedState.adminSocketId).emit('lista_retiros_actualizada', listaPendientes);
-
-});
     socket.on('pedir_lista_retiros', async () => {
     if (socket.id !== sharedState.adminSocketId) return; // Seguridad
     const lista = await RetiroSolicitud.find({ estado: 'pendiente' });
