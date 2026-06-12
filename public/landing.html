@@ -22,11 +22,15 @@
     </div>
 
     <script>
-        // Seguimiento de conversión al hacer clic
-        document.getElementById('btn-registro').addEventListener('click', function() {
-            if (typeof fbq !== 'undefined') {
-                fbq('track', 'CompleteRegistration');
-            }
+       // Actualizamos el script para que funcione en cualquier botón de registro
+        const botones = document.querySelectorAll('.cta-button, .cta-floating');
+        
+        botones.forEach(boton => {
+            boton.addEventListener('click', function() {
+                if (typeof fbq !== 'undefined') {
+                    fbq('track', 'CompleteRegistration');
+                }
+            });
         });
     </script>
     <section class="fade-in">
@@ -58,5 +62,6 @@
     <footer style="margin-top: 40px; font-size: 0.8rem; color: #666;">
     <a href="/privacidad" style="color: #666;">Política de Privacidad</a>
 </footer>
+    <a href="/registro" class="cta-floating">Comenzar Ahora</a>
 </body>
 </html>
