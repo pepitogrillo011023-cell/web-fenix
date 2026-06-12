@@ -821,8 +821,60 @@ app.post('/api/sumar-premio-bonus', async (req, res) => {
         res.json({ exito: true, nuevoSaldo: cliente.creditos });
     } catch (error) { res.status(500).json({ exito: false, mensaje: "Error sumando bonus" }); }
 });
-// --- NUEVA RUTA: SOLICITAR RETIRO ---
 app.post('/api/solicitar-retiro', async (req, res) => {
+    try {
+        const { usuario, monto, cbuAlias, titular } = req.body;
+
+        // 1. BUSCAR EL ÚLTIMO RETIRO DEL USUARIO
+        // Buscamos ordenando por fecha descendente (el más reciente primero)
+        const ultimoRetiro = await RetiroSolicitud.findOne({ usuario: usuario })
+            .sort({ fecha: -1 });
+
+        // 2. VALIDACIÓN DE 24 HORAS
+        if (ultimoRetiro) {
+            const ahora = new Date();
+            const fechaUltimoRetiro = new Date(ultimoRetiro.fecha);
+            
+            // Calculamos la diferencia en milisegundos
+            const diferenciaMs = ahora - fechaUltimoRetiro;
+            const veinticuatroHorasMs = 24 * 60 * 60 * 1000;
+
+            if (diferenciaMs < veinticuatroHorasMs) {
+                // Calculamos cuánto falta para cumplir las 24hs (para el mensaje al usuario)
+                const tiempoRestanteMs = veinticuatroHorasMs - diferenciaMs;
+                const horasRestantes = Math.ceil(tiempoRestanteMs / (60 * 60 * 1000));
+                
+                return res.json({ 
+                    exito: false, 
+                    mensaje: `⚠️ Ya realizaste un retiro recientemente. Por favor, intentá nuevamente en ${horasRestantes} horas.` 
+                });
+            }
+        }
+
+        // 3. SI PASÓ LA VALIDACIÓN, CREAMOS EL NUEVO RETIRO
+        const nuevaSolicitud = new RetiroSolicitud({
+            usuario: usuario,
+            monto: monto,
+            cbu_alias: cbuAlias,
+            titular: titular,
+            estado: 'pendiente',
+            fecha: new Date() // Guardamos la hora actual
+        });
+
+        await nuevaSolicitud.save();
+
+        // Notificar al admin
+        io.emit('nueva_solicitud_retiro', { mensaje: "Nueva solicitud de retiro recibida" });
+
+        res.json({ exito: true });
+
+    } catch (error) {
+        console.error("Error al procesar retiro:", error);
+        res.status(500).json({ exito: false, mensaje: "Error interno del servidor" });
+    }
+});
+// --- NUEVA RUTA: SOLICITAR RETIRO ---
+/*app.post('/api/solicitar-retiro', async (req, res) => {
     try {
         const { usuario, monto, cbuAlias, titular } = req.body;
         const cliente = await Cliente.findOne({ usuarioCasino: usuario });
@@ -864,7 +916,7 @@ app.post('/api/solicitar-retiro', async (req, res) => {
         console.error("Error al solicitar retiro:", error);
         res.status(500).json({ exito: false, mensaje: "Error interno en el servidor" });
     }
-});
+});*/
 app.post('/api/retiros/gestion', async (req, res) => {
     try {
         const { id, accion } = req.body; // 'id' del retiro y 'accion' (aprobar/rechazar)
