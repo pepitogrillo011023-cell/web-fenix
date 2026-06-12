@@ -1184,14 +1184,14 @@ socket.on('lista_retiros_actualizada', (lista) => {
     lista.forEach(retiro => {
         const row = document.createElement('tr');
         row.innerHTML = `
-            <td>${retiro.usuario}</td>
+       <td>${retiro.usuario}</td>
     <td>$${retiro.monto}</td>
-    <td>${retiro.cbu_alias}</td>
+    <td>${retiro.cbu_alias} <br> <small style="color: #aaa;">Titular: ${retiro.titular}</small></td>
     <td>
-        <button onclick="enviarRetiro('${retiro._id}', 'aprobar')">Aprobar</button>
-        <button onclick="enviarRetiro('${retiro._id}', 'rechazar')">Rechazar</button>
+        <button onclick="enviarRetiro('${retiro._id}', 'aprobar')" style="background: #28a745; color: white;">Aprobar</button>
+        <button onclick="enviarRetiro('${retiro._id}', 'rechazar')" style="background: #dc3545; color: white;">Rechazar</button>
     </td>
-        `;
+`;
         tbody.appendChild(row);
     });
 });
