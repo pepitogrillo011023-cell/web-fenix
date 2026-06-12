@@ -320,6 +320,9 @@ app.post('/login', async (req, res) => {
 app.get('/landing', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'landing.html'));
 });
+app.get('/privacidad', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'privacidad.html'));
+});
 
 
 // MODIFICADO: Logout seguro con función Callback
