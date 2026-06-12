@@ -316,6 +316,10 @@ app.post('/login', async (req, res) => {
         res.status(500).send("Error interno.");
     }
 });
+// Servir la página de aterrizaje
+app.get('/landing', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'landing.html'));
+});
 
 
 // MODIFICADO: Logout seguro con función Callback
